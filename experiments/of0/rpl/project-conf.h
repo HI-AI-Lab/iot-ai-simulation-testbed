@@ -1,18 +1,21 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
-/* Override compact address logging safely */
+/* Disable compact address logging to prevent redefinition */
 #ifdef LOG_WITH_COMPACT_ADDR
 #undef LOG_WITH_COMPACT_ADDR
 #endif
 #define LOG_WITH_COMPACT_ADDR 0
 
-/* Enable RPL Classic with OF0 */
+/* Enable RPL Classic routing */
 #undef NETSTACK_CONF_ROUTING
 #define NETSTACK_CONF_ROUTING rpl_classic_driver
 
 #undef RPL_CONF_OF
 #define RPL_CONF_OF rpl_of0
+
+#undef RPL_CONF_RPL_CLASSIC
+#define RPL_CONF_RPL_CLASSIC 1
 
 #undef UIP_CONF_ND6_SEND_RA
 #define UIP_CONF_ND6_SEND_RA 0
