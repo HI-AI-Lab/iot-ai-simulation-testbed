@@ -9,9 +9,6 @@
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-/* Declare rpl_classic_driver explicitly to avoid undefined reference */
-extern const struct routing_driver rpl_classic_driver;
-
 PROCESS(app_process, "OF0 Packet Sender");
 AUTOSTART_PROCESSES(&app_process);
 
