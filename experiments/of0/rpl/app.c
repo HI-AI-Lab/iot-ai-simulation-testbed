@@ -6,10 +6,6 @@
 #include "sys/log.h"
 #include <stdio.h>
 
-// 🔧 Only declare for linkage — no type mismatch now
-extern const void *rpl_classic_driver;
-const void *force_linking = &rpl_classic_driver;
-
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
@@ -24,7 +20,7 @@ PROCESS_THREAD(app_process, ev, data)
   static uip_ipaddr_t dest_ipaddr;
 
   PROCESS_BEGIN();
-  etimer_set(&et, CLOCK_SECOND);
+  etimer_set(&et, CLOCK_SECOND * 1);
 
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
