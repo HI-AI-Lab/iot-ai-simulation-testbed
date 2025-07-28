@@ -1,0 +1,11 @@
+CONTIKI_PROJECT = app
+TARGET = cooja
+
+CFLAGS += -DNETSTACK_CONF_ROUTING=rpl_classic_driver
+CFLAGS += -DRPL_CONF_OF=rpl_of0
+CFLAGS += -DUIP_CONF_IPV6_RPL=1
+CFLAGS += -DUIP_CONF_ND6_SEND_RA=0
+CFLAGS += -DLOG_WITH_COMPACT_ADDR=1
+
+CONTIKI = /workspace/contiki-ng
+include $(CONTIKI)/Makefile.include
