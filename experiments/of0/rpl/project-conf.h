@@ -1,9 +1,13 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
+/* Prevent conflict with default log settings */
+#ifdef LOG_WITH_COMPACT_ADDR
 #undef LOG_WITH_COMPACT_ADDR
+#endif
 #define LOG_WITH_COMPACT_ADDR 1
 
+/* Use RPL Classic with OF0 */
 #undef NETSTACK_CONF_ROUTING
 #define NETSTACK_CONF_ROUTING rpl_classic_driver
 
