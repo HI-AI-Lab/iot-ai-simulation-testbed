@@ -4,10 +4,14 @@
 #include "net/ipv6/uip-ds6.h"
 #include "sys/node-id.h"
 #include "sys/log.h"
+
 #include <stdio.h>
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
+
+/* Declare rpl_classic_driver to avoid linker error */
+extern const struct routing_driver rpl_classic_driver;
 
 PROCESS(app_process, "OF0 Packet Sender");
 AUTOSTART_PROCESSES(&app_process);
@@ -29,6 +33,8 @@ PROCESS_THREAD(app_process, ev, data)
     if(NETSTACK_ROUTING.node_is_reachable() &&
        NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
       LOG_INFO("SEND %u %lu %u\n", node_id, clock_time(), seq_id++);
+    } else {
+      LOG_INFO("Not reachable yet.\n");
     }
   }
 
