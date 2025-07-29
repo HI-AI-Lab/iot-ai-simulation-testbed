@@ -5,10 +5,8 @@ CFLAGS += -ULOG_WITH_COMPACT_ADDR -DLOG_WITH_COMPACT_ADDR=0
 
 CONTIKI = /workspace/contiki-ng
 
-# 🔥 Force RPL Classic sources into the build
+# Ensure RPL Classic is compiled and included
 MODULES_REL += os/net/routing/rpl-classic
-
-# 🔥 Optional: force rebuild
-MAKE_CLEAN = 1
+PROJECTDIRS += $(CONTIKI)/os/net/routing/rpl-classic
 
 include $(CONTIKI)/Makefile.include
