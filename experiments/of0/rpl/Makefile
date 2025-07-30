@@ -3,8 +3,7 @@ TARGET = cooja
 
 CONTIKI = /workspace/contiki-ng
 
-MODULES_REL += os/net/routing/rpl-classic
-
-CFLAGS += -ULOG_WITH_COMPACT_ADDR -DLOG_WITH_COMPACT_ADDR=0
+# Include rpl-classic routing module explicitly
+MODULES += os/net/routing/rpl-classic
 
 include $(CONTIKI)/Makefile.include
