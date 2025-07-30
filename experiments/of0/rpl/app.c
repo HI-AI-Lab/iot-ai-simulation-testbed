@@ -9,7 +9,7 @@
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-PROCESS(app_process, "OF0 Packet Sender");
+PROCESS(app_process, "OF0 Packet Sender (RPL Lite)");
 AUTOSTART_PROCESSES(&app_process);
 
 static struct etimer et;
