@@ -1,7 +1,9 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
-/* Set RPL Lite as default */
+#undef LOG_WITH_COMPACT_ADDR
+#define LOG_WITH_COMPACT_ADDR 0
+
 #undef NETSTACK_CONF_ROUTING
 #define NETSTACK_CONF_ROUTING rpl_lite_driver
 
@@ -11,7 +13,6 @@
 #undef UIP_CONF_ND6_SEND_RA
 #define UIP_CONF_ND6_SEND_RA 0
 
-/* Logging levels */
 #define LOG_CONF_LEVEL_RPL   LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_IPV6  LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_TCPIP LOG_LEVEL_WARN
