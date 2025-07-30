@@ -52,6 +52,10 @@ PROCESS_THREAD(app_process, ev, data)
 
   PROCESS_BEGIN();
 
+  if(node_id == 1) {
+    NETSTACK_ROUTING.root_start(); // ✅ Set this node as RPL root at runtime
+  }
+
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, recv_callback);
   etimer_set(&et_tx, TX_BASE_INTERVAL);
   etimer_set(&et_report, REPORT_INTERVAL);
