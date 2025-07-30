@@ -6,7 +6,6 @@
   <speedlimit>0</speedlimit>
   <motedelay_us>10000</motedelay_us>
   <radiomedium>org.contikios.cooja.radiomediums.UDGM</radiomedium>
-  <motetype>cooja.MoteType</motetype>
 
   <!-- Mote Type: app.cooja -->
   <motetypes>
