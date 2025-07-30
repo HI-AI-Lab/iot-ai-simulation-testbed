@@ -2,10 +2,11 @@
 #include "net/netstack.h"
 #include "net/routing/routing.h"
 #include "net/ipv6/uip-ds6.h"
+#include "net/ipv6/simple-udp.h"
 #include "sys/node-id.h"
 #include "sys/log.h"
-#include "net/linkaddr.h"
 #include "sys/energest.h"
+#include "lib/random.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -15,10 +16,12 @@
 #define PAYLOAD_SIZE 128
 #define REPORT_INTERVAL (10 * CLOCK_SECOND)
 #define TX_BASE_INTERVAL CLOCK_SECOND
+#define UDP_PORT 12345
 
 PROCESS(app_process, "OF0 Packet Sender (RPL Lite)");
 AUTOSTART_PROCESSES(&app_process);
 
+static struct simple_udp_connection udp_conn;
 static struct etimer et_tx, et_report;
 static uint16_t seq_id = 0;
 static uint16_t generated = 0, received = 0, dropped = 0;
@@ -26,20 +29,21 @@ static unsigned long cpu = 0, tx = 0, rx = 0;
 static float total_energy_mJ = 0;
 static uint8_t is_dead = 0;
 
-/* ------------ RECEIVE CALLBACK FOR PRR + E2E -------------- */
-static void input_callback(const void *data, uint16_t len,
-                           const linkaddr_t *src, const linkaddr_t *dest) {
-  LOG_INFO("RECV %u %lu %.*s\n", node_id, clock_time(), len, (char *)data);
-  received++;
-}
-
-static struct network_callbacks net_callbacks = {
-  .input_callback = input_callback
-};
-
-/* ------------ Simulate Packet Drop for QLR ---------------- */
+/* ------------ Simulate Packet Drop ------------------------ */
 static int simulate_queue_full(void) {
   return (random_rand() % 10) < 2; // 20% drop probability
+}
+
+/* ------------ RECV Logging Handler ------------------------ */
+static void recv_callback(struct simple_udp_connection *c,
+                          const uip_ipaddr_t *sender_addr,
+                          uint16_t sender_port,
+                          const uip_ipaddr_t *receiver_addr,
+                          uint16_t receiver_port,
+                          const uint8_t *data,
+                          uint16_t datalen) {
+  LOG_INFO("RECV %u %lu %.*s\n", node_id, clock_time(), datalen, (char *)data);
+  received++;
 }
 
 PROCESS_THREAD(app_process, ev, data)
@@ -47,7 +51,8 @@ PROCESS_THREAD(app_process, ev, data)
   static uip_ipaddr_t dest_ipaddr;
 
   PROCESS_BEGIN();
-  NETSTACK_NETWORK.set_input_callback(&net_callbacks);
+
+  simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, recv_callback);
   etimer_set(&et_tx, TX_BASE_INTERVAL);
   etimer_set(&et_report, REPORT_INTERVAL);
 
@@ -71,7 +76,7 @@ PROCESS_THREAD(app_process, ev, data)
         if(simulate_queue_full()) {
           dropped++;
         } else {
-          NETSTACK_NETWORK.output(&dest_ipaddr, payload, sizeof(payload));
+          simple_udp_sendto(&udp_conn, payload, sizeof(payload), &dest_ipaddr);
         }
 
         generated++;
