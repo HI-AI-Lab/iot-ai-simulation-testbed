@@ -13,10 +13,6 @@
       <success_ratio_rx>1.0</success_ratio_rx>
     </radiomedium>
 
-    <script>
-      TIMEOUT(90000);
-    </script>
-
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
@@ -74,5 +70,14 @@
         </interface_config>
       </mote>
     </motetype>
+    <plugin>
+      org.contikios.cooja.plugins.ScriptRunner
+      <active>true</active>
+      <plugin_config>
+        <script>
+          TIMEOUT(90000);
+        </script>
+      </plugin_config>
+    </plugin>
   </simulation>
 </simconf>
