@@ -70,7 +70,6 @@
         </interface_config>
       </mote>
     </motetype>
-  </simulation>
 
   <plugins>
     <plugin>
@@ -85,5 +84,7 @@
       </plugin_config>
     </plugin>
   </plugins>
+
+  </simulation>
 
 </simconf>
