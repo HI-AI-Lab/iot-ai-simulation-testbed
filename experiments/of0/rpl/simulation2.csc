@@ -21,8 +21,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
       <description>Cooja Mote Type #1</description>
-      <filename>build/cooja/app.cooja</filename>
-      <source>/workspace/experiments/of0/rpl/build/cooja/app.cooja</source>
+      <source>/workspace/experiments/of0/rpl/app.c</source>
       <commands>make app.cooja TARGET=cooja</commands>
 
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
