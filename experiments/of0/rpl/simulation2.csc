@@ -5,21 +5,6 @@
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
 
-    <plugins>
-      <plugin>
-        org.contikios.cooja.plugins.ScriptRunner
-        <active>true</active>
-        <control>true</control>
-        <plugin_config>
-          <script><![CDATA[
-            log.log("Simulation started\n");
-            TIMEOUT(30000);
-            log.testOK();
-          ]]></script>
-        </plugin_config>
-      </plugin>
-    </plugins>
-
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
       <transmitting_range>50.0</transmitting_range>
@@ -36,21 +21,7 @@
       <commands>make app.cooja TARGET=cooja</commands>
 
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiBeeper</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRadio</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiButton</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiPIR</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiClock</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiLED</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiCFS</moteinterface>
-      <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.Mote2MoteRelations</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.MoteAttributes</moteinterface>
     </motetype>
 
     <motes>
@@ -58,7 +29,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="90.69403175626056" y="21.41643825962769" />
+          <pos x="90.6" y="21.4" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -70,7 +41,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="60.890826153828336" y="81.0206334282748" />
+          <pos x="60.8" y="81.0" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -82,7 +53,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="50.27036164648134" y="50.59688864429312" />
+          <pos x="50.2" y="50.5" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
