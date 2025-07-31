@@ -70,14 +70,16 @@
         </interface_config>
       </mote>
     </motetype>
-    <plugin>
-      org.contikios.cooja.plugins.ScriptRunner
-      <active>true</active>
-      <plugin_config>
-        <script>
-          TIMEOUT(90000);
-        </script>
-      </plugin_config>
-    </plugin>
+<plugin>
+  org.contikios.cooja.plugins.ScriptRunner
+  <active>true</active>
+  <plugin_config>
+    <script>
+      log.log("Simulation started\n");
+      TIMEOUT(90000);
+      log.log("Simulation ended\n");
+    </script>
+  </plugin_config>
+</plugin>
   </simulation>
 </simconf>
