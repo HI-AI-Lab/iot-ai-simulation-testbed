@@ -70,6 +70,8 @@
         </interface_config>
       </mote>
     </motetype>
+  </simulation>
+
 <plugins>
   <plugin>
     org.contikios.cooja.plugins.ScriptRunner
@@ -83,5 +85,4 @@
   </plugin>
 </plugins>
 
-  </simulation>
 </simconf>
