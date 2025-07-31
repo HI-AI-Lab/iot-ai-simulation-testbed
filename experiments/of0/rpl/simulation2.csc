@@ -5,6 +5,21 @@
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
 
+    <plugins>
+      <plugin>
+        org.contikios.cooja.plugins.ScriptRunner
+        <active>true</active>
+        <control>true</control>
+        <plugin_config>
+          <script><![CDATA[
+            log.log("Simulation started\n");
+            TIMEOUT(30000);
+            log.testOK();
+          ]]></script>
+        </plugin_config>
+      </plugin>
+    </plugins>
+
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
       <transmitting_range>50.0</transmitting_range>
@@ -75,20 +90,5 @@
         </interface_config>
       </mote>
     </motes>
-
-    <plugins>
-      <plugin>
-        org.contikios.cooja.plugins.ScriptRunner
-        <active>true</active>
-        <control>true</control>
-        <plugin_config>
-          <script><![CDATA[
-            log.log("Simulation started\n");
-            TIMEOUT(30000);
-            log.testOK();
-          ]]></script>
-        </plugin_config>
-      </plugin>
-    </plugins>
   </simulation>
 </simconf>
