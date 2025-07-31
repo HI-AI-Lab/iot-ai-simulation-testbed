@@ -63,17 +63,13 @@
 
     <plugins>
       <plugin>
-        org.contikios.cooja.plugins.ScriptRunner
-        <active>true</active>
-        <control>true</control>
-        <plugin_config>
-          <script><![CDATA[
-            log.log("Simulation started\n");
-            TIMEOUT(30000);
-            log.testOK();
-          ]]></script>
-        </plugin_config>
-      </plugin>
+  org.contikios.cooja.plugins.ScriptRunner
+  <active>true</active>
+  <control>true</control>
+  <plugin_config>
+    <scriptfile>simulation2.js</scriptfile>
+  </plugin_config>
+</plugin>
     </plugins>
   </simulation>
 </simconf>
