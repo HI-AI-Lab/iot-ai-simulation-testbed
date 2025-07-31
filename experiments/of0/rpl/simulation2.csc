@@ -72,17 +72,18 @@
     </motetype>
   </simulation>
 
-<plugins>
-  <plugin>
-    org.contikios.cooja.plugins.ScriptRunner
-    <active>true</active>
-    <plugin_config>
-      <script>
-        TIMEOUT(90000);
-        log.testOK();
-      </script>
-    </plugin_config>
-  </plugin>
-</plugins>
+  <plugins>
+    <plugin>
+      org.contikios.cooja.plugins.ScriptRunner
+      <active>true</active>
+      <control>true</control>
+      <plugin_config>
+        <script>
+          TIMEOUT(30000);
+          log.testOK();
+        </script>
+      </plugin_config>
+    </plugin>
+  </plugins>
 
 </simconf>
