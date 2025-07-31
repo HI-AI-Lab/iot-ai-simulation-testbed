@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<simconf version="2023090101">
+<simconf>
   <simulation>
     <title>OF0 simulation</title>
     <randomseed>0</randomseed>
