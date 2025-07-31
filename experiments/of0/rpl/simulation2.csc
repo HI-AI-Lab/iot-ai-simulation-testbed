@@ -36,8 +36,11 @@
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiEEPROM</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Mote2MoteRelations</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.MoteAttributes</moteinterface>
+    </motetype>
 
+    <motes>
       <mote>
+        <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
           <pos x="90.69403175626056" y="21.41643825962769" />
@@ -49,6 +52,7 @@
       </mote>
 
       <mote>
+        <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
           <pos x="60.890826153828336" y="81.0206334282748" />
@@ -60,6 +64,7 @@
       </mote>
 
       <mote>
+        <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
           <pos x="50.27036164648134" y="50.59688864429312" />
@@ -69,22 +74,21 @@
           <id>3</id>
         </interface_config>
       </mote>
-    </motetype>
+    </motes>
 
-<plugins>
-  <plugin>
-    org.contikios.cooja.plugins.ScriptRunner
-    <active>true</active>
-    <control>true</control>
-    <plugin_config>
-      <script><![CDATA[
-        TIMEOUT(30000);
-        log.testOK();
-      ]]></script>
-    </plugin_config>
-  </plugin>
-</plugins>
-
+    <plugins>
+      <plugin>
+        org.contikios.cooja.plugins.ScriptRunner
+        <active>true</active>
+        <control>true</control>
+        <plugin_config>
+          <script><![CDATA[
+            log.log("Simulation started\n");
+            TIMEOUT(30000);
+            log.testOK();
+          ]]></script>
+        </plugin_config>
+      </plugin>
+    </plugins>
   </simulation>
-
 </simconf>
