@@ -4,9 +4,6 @@
     <title>OF0 simulation</title>
     <randomseed>0</randomseed>
     <motedelay_us>100</motedelay_us>
-    <script>
-        TIMEOUT(90000);
-    </script>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
       <transmitting_range>50.0</transmitting_range>
@@ -17,6 +14,9 @@
     <events>
       <logoutput>40000</logoutput>
     </events>
+    <script>
+        TIMEOUT(90000);
+    </script>
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Mote Type #1</description>
