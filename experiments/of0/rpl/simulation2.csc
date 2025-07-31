@@ -61,5 +61,16 @@
         </interface_config>
       </mote>
     </motes>
+
+    <plugins>
+      <plugin>
+        org.contikios.cooja.plugins.ScriptRunner
+        <active>true</active>
+        <control>true</control>
+        <plugin_config>
+          <script>simulation2.js</script>
+        </plugin_config>
+      </plugin>
+    </plugins>
   </simulation>
 </simconf>
