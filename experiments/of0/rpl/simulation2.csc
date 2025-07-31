@@ -4,6 +4,7 @@
     <title>My simulation</title>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
+
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
       <transmitting_range>50.0</transmitting_range>
@@ -18,9 +19,12 @@
 
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
+      <identifier>AppNode</identifier>
       <description>Cooja Mote Type #1</description>
+      <filename>build/cooja/app.cooja</filename>
       <source>/workspace/experiments/of0/rpl/build/cooja/app.cooja</source>
       <commands>make app.cooja TARGET=cooja</commands>
+
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
