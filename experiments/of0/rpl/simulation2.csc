@@ -76,12 +76,12 @@
     <active>true</active>
     <plugin_config>
       <script>
-        log.log("Simulation started\n");
         TIMEOUT(90000);
-        log.log("Simulation ended\n");
+        log.testOK();
       </script>
     </plugin_config>
   </plugin>
 </plugins>
+
   </simulation>
 </simconf>
