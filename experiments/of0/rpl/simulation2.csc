@@ -19,7 +19,6 @@
       <description>Cooja Mote Type #1</description>
       <source>/workspace/experiments/of0/rpl/app.c</source>
       <commands>make app.cooja TARGET=cooja</commands>
-
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
     </motetype>
@@ -68,7 +67,11 @@
         <active>true</active>
         <control>true</control>
         <plugin_config>
-          <script>simulation2.js</script>
+          <script><![CDATA[
+            log.log("Simulation started\n");
+            TIMEOUT(30000);
+            log.testOK();
+          ]]></script>
         </plugin_config>
       </plugin>
     </plugins>
