@@ -35,7 +35,6 @@
           <id>1</id>
         </interface_config>
       </mote>
-
       <mote>
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
@@ -47,7 +46,6 @@
           <id>2</id>
         </interface_config>
       </mote>
-
       <mote>
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
@@ -61,14 +59,15 @@
       </mote>
     </motes>
 
-    <plugin>
-      org.contikios.cooja.plugins.ScriptRunner
-      <active>true</active>
-      <control>true</control>
-      <plugin_config>
-        <scriptfile>simulation2.js</scriptfile>
-      </plugin_config>
-    </plugin>
+    <plugins>
+      <plugin>
+        org.contikios.cooja.plugins.ScriptRunner
+        <active>true</active>
+        <plugin_config>
+          <scriptfile>simulation2.js</scriptfile>
+        </plugin_config>
+      </plugin>
+    </plugins>
     
   </simulation>
 </simconf>
