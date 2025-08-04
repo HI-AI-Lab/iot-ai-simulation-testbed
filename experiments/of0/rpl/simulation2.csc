@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simconf version="2023090101">
   <simulation>
-    <title>My simulation</title>
+    <title>OF0 Headless Simulation</title>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
 
@@ -16,7 +16,7 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
-      <description>Compiling from Source</description>
+      <description>Compiled from app.c</description>
       <source>/workspace/testbed/experiments/of0/rpl/app.c</source>
       <commands>make app.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
@@ -28,7 +28,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="90.6" y="21.4" />
+          <pos x="10.0" y="20.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -39,7 +39,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="60.8" y="81.0" />
+          <pos x="20.0" y="30.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -50,7 +50,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="50.2" y="50.5" />
+          <pos x="30.0" y="40.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -60,10 +60,16 @@
     </motes>
 
     <plugin>
-      <classname>org.contikios.cooja.plugins.LogListener</classname>
+      <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
       <plugin_config>
-        <start_simulation>1</start_simulation>
-        <stop_time>60000000</stop_time> <!-- microseconds = 60s -->
+        <script>
+          log.log("Simulation started\\n");
+          TIMEOUT(60000, function() {
+            log.log("60 seconds passed. Stopping simulation.\\n");
+            sim.stop();
+          });
+        </script>
+        <active>true</active>
       </plugin_config>
     </plugin>
   </simulation>
