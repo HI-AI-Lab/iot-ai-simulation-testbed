@@ -16,10 +16,9 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
-      <description>Precompiled AppNode</description>
-      <source>app.c</source> <!-- Placeholder -->
-      <commands>echo "No-op"</commands> <!-- Dummy compile command required -->
-      <firmware>/workspace/testbed/experiments/of0/rpl/build/cooja/app.cooja</firmware>
+      <description>Compiling from Source</description>
+      <source>/workspace/testbed/experiments/of0/rpl/app.c</source>
+      <commands>make app.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
     </motetype>
