@@ -59,15 +59,14 @@
       </mote>
     </motes>
 
-<plugin>
-  <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
-  <control>true</control>
-  <plugin_config>
-    <scriptfile>simulation2.js</scriptfile>
-  </plugin_config>
-</plugin>
-
+    <plugin control="true">
+      <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
+      <plugin_config>
+        <scriptfile>simulation2.js</scriptfile>
+      </plugin_config>
+    </plugin>
   </simulation>
 </simconf>
+
 
 
