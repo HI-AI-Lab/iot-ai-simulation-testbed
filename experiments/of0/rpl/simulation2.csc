@@ -59,12 +59,13 @@
       </mote>
     </motes>
 
-    <!-- Dummy plugin that satisfies the simulation controller requirement -->
+    <!-- This plugin is necessary to satisfy COOJA's controller requirement -->
     <plugin control="true">
       <classname>org.contikios.cooja.plugins.SimulationControl</classname>
+      <plugin_config/>
     </plugin>
 
-    <!-- Script plugin that manages simulation time and output -->
+    <!-- ScriptRunner can still be used to log and stop -->
     <plugin>
       <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
       <plugin_config>
