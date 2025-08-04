@@ -59,12 +59,12 @@
       </mote>
     </motes>
 
-    <plugin control="true">
-      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
-      <width>300</width>
-      <z>0</z>
-      <location_x>10</location_x>
-      <location_y>10</location_y>
+    <plugin>
+      <classname>org.contikios.cooja.plugins.LogListener</classname>
+      <plugin_config>
+        <start_simulation>1</start_simulation>
+        <stop_time>60000000</stop_time> <!-- microseconds = 60s -->
+      </plugin_config>
     </plugin>
   </simulation>
 </simconf>
