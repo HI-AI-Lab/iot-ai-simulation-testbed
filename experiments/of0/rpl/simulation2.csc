@@ -59,23 +59,23 @@
       </mote>
     </motes>
 
-    <plugin>
-      org.contikios.cooja.plugins.ScriptRunner
-      <active>true</active>
-      <control>true</control> <!-- ✅ This line is the key -->
-      <plugin_config>
-        <scriptfile>simulation2.js</scriptfile>
-      </plugin_config>
-    </plugin>
+<plugin>
+  <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
+  <active>true</active>
+  <control>true</control>
+  <plugin_config>
+    <scriptfile>simulation2.js</scriptfile>
+  </plugin_config>
+</plugin>
 
-  
-    <plugin>
-      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
-      <width>300</width>
-      <z>0</z>
-      <location_x>10</location_x>
-      <location_y>10</location_y>
-    </plugin>
+<plugin>
+  <classname>org.contikios.cooja.plugins.SimulationControl</classname>
+  <width>300</width>
+  <z>0</z>
+  <location_x>10</location_x>
+  <location_y>10</location_y>
+</plugin>
 
   </simulation>
 </simconf>
+
