@@ -17,7 +17,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
       <description>Compile-time App Mote</description>
-      <source>/workspace/testbed/experiments/of0/rpl/app.c</source>
+      <source>[CONFIG_DIR]/app.c</source>
       <commands>make app.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
@@ -39,7 +39,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="20.0" y="30.0"/>
+          <pos x="30.0" y="40.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -50,7 +50,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="30.0" y="40.0"/>
+          <pos x="50.0" y="60.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
