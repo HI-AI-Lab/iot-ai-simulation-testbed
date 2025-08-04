@@ -59,18 +59,20 @@
       </mote>
     </motes>
 
-    <plugin>
-      <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
-      <plugin_config>
-        <script>
-          log.log("Simulation started\\n");
-          TIMEOUT(60000, function() {
-            log.log("60 seconds passed. Stopping simulation.\\n");
-            sim.stop();
-          });
-        </script>
-        <active>true</active>
-      </plugin_config>
-    </plugin>
+<plugin>
+  <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
+  <plugin_config>
+    <script>
+      log.log("Simulation started\\n");
+      TIMEOUT(60000, function() {
+        log.log("60 seconds passed. Stopping simulation.\\n");
+        sim.stop();
+      });
+    </script>
+    <active>true</active>
+  </plugin_config>
+</plugin>
+
   </simulation>
 </simconf>
+
