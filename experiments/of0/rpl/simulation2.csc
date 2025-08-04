@@ -68,5 +68,14 @@
       </plugin_config>
     </plugin>
 
+  
+    <plugin>
+      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
+      <width>300</width>
+      <z>0</z>
+      <location_x>10</location_x>
+      <location_y>10</location_y>
+    </plugin>
+
   </simulation>
 </simconf>
