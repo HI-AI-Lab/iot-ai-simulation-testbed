@@ -17,7 +17,8 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
       <description>Precompiled AppNode</description>
-      <source>app.c</source> <!-- Required placeholder, even when using precompiled .cooja -->
+      <source>app.c</source> <!-- Placeholder -->
+      <commands>echo "No-op"</commands> <!-- Dummy compile command required -->
       <firmware>/workspace/testbed/experiments/of0/rpl/build/cooja/app.cooja</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
