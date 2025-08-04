@@ -59,7 +59,13 @@
       </mote>
     </motes>
 
+    <!-- Dummy plugin that satisfies the simulation controller requirement -->
     <plugin control="true">
+      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
+    </plugin>
+
+    <!-- Script plugin that manages simulation time and output -->
+    <plugin>
       <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
       <plugin_config>
         <script><![CDATA[
