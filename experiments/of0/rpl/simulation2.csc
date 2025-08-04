@@ -16,7 +16,7 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
-      <description>Compile-time App Mote</description>
+      <description>App Mote</description>
       <source>[CONFIG_DIR]/app.c</source>
       <commands>make app.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
@@ -39,7 +39,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="30.0" y="40.0"/>
+          <pos x="20.0" y="40.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -50,7 +50,7 @@
         <motetype_identifier>AppNode</motetype_identifier>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="50.0" y="60.0"/>
+          <pos x="30.0" y="60.0"/>
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -59,20 +59,18 @@
       </mote>
     </motes>
 
-<plugin plugin_class="org.contikios.cooja.plugins.ScriptRunner" control="true">
-  <plugin_config>
-    <script><![CDATA[
-      log.log("Simulation started\n");
-      TIMEOUT(60000, function() {
-        log.log("60 seconds passed. Stopping simulation.\n");
-        sim.stop();
-      });
-    ]]></script>
-    <active>true</active>
-  </plugin_config>
-</plugin>
-
+    <plugin plugin_class="org.contikios.cooja.plugins.ScriptRunner" control="true">
+      <plugin_config>
+        <script><![CDATA[
+          log.log("Simulation started\n");
+          TIMEOUT(60000, function() {
+            log.log("60 seconds passed. Stopping simulation.\n");
+            sim.stop();
+          });
+        ]]></script>
+        <active>true</active>
+      </plugin_config>
+    </plugin>
 
   </simulation>
 </simconf>
-
