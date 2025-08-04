@@ -16,9 +16,8 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>AppNode</identifier>
-      <description>Cooja Mote Type #1</description>
-      <source>/workspace/experiments/of0/rpl/app.c</source>
-      <commands>make app.cooja TARGET=cooja</commands>
+      <description>Precompiled AppNode</description>
+      <firmware>/workspace/testbed/experiments/of0/rpl/build/cooja/app.cooja</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
     </motetype>
@@ -59,14 +58,12 @@
       </mote>
     </motes>
 
-<plugin control="true">
-  <classname>org.contikios.cooja.plugins.SimulationControl</classname>
-  <width>300</width>
-  <z>0</z>
-  <location_x>10</location_x>
-  <location_y>10</location_y>
-</plugin>
-
+    <plugin control="true">
+      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
+      <width>300</width>
+      <z>0</z>
+      <location_x>10</location_x>
+      <location_y>10</location_y>
+    </plugin>
   </simulation>
 </simconf>
-
