@@ -59,14 +59,7 @@
       </mote>
     </motes>
 
-    <!-- This plugin is necessary to satisfy COOJA's controller requirement -->
     <plugin control="true">
-      <classname>org.contikios.cooja.plugins.SimulationControl</classname>
-      <plugin_config/>
-    </plugin>
-
-    <!-- ScriptRunner can still be used to log and stop -->
-    <plugin>
       <classname>org.contikios.cooja.plugins.ScriptRunner</classname>
       <plugin_config>
         <script><![CDATA[
