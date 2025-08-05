@@ -62,14 +62,9 @@
   <plugin control="true">
     org.contikios.cooja.plugins.ScriptRunner
     <plugin_config>
-      <script><![CDATA[
-        log.log("Simulation started\n");
-        TIMEOUT(60000, function() {
-          log.log("Timeout: stopping.\n");
-          sim.stop();
-        });
-      ]]></script>
+      <scriptfile>simulation2.js</scriptfile>
       <active>true</active>
     </plugin_config>
   </plugin>
 </simconf>
+
