@@ -1,6 +1,13 @@
 log.log("Simulation started\n");
-TIMEOUT(60000, function() {
+
+function timeoutHandler() {
   log.log("Timeout: stopping.\n");
   sim.stop();
-  log.testOK();
-});
+}
+
+TIMEOUT(60000, timeoutHandler);
+
+YIELD(); // Wait for any output
+log.log("First output: " + msg + "\n");
+
+log.testOK(); // Mark the test as successful
