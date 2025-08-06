@@ -1,13 +1,9 @@
 log.log("Simulation started\n");
 
-function timeoutHandler() {
-  log.log("Timeout: stopping.\n");
-  sim.stop();
-}
+GENERATE_MSG(60000, "timeout");
 
-TIMEOUT(60000, timeoutHandler);
+YIELD_THEN_WAIT_UNTIL(msg.equals("timeout"));
 
-YIELD(); // Wait for any output
-log.log("First output: " + msg + "\n");
+log.log("Timeout reached. Stopping simulation.\n");
 
-log.testOK(); // Mark the test as successful
+log.testOK(); // Report test success and quit
