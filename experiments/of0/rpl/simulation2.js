@@ -1,11 +1,7 @@
-TIMEOUT(60000);
-
 log.log("Simulation started\n");
-
+TIMEOUT(60000); // Schedule a stop at 60 seconds
 while (time < 60000) {
   YIELD();
-  log.log("MOTE " + id + " @ " + time + "ms: " + msg + "\n");
 }
-
-log.log("Simulation finished at: " + time + "ms\n");
+log.log("Simulation ended at: " + time + "\n");
 log.testOK();
