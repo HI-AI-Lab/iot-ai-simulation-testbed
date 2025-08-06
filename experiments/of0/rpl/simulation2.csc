@@ -62,9 +62,10 @@
   <plugin control="true">
     org.contikios.cooja.plugins.ScriptRunner
     <plugin_config>
-      <scriptfile>simulation2.js</scriptfile>
+      <scriptfile>/workspace/testbed/experiments/of0/rpl/simulation2.js</scriptfile>
       <active>true</active>
     </plugin_config>
   </plugin>
 </simconf>
+
 
