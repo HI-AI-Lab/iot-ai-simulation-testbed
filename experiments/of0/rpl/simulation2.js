@@ -1,8 +1,11 @@
-TIMEOUT(60000, log.testOK());
-while (true) {
-  YIELD();
+TIMEOUT(60000);
 
-  if (msg) {
-    log.log(msg + "\n");  // This prints all printf/LOG_INFO etc. from motes
-  }
+log.log("Simulation started\n");
+
+while (time < 60000) {
+  YIELD();
+  log.log("MOTE " + id + " @ " + time + "ms: " + msg + "\n");
 }
+
+log.log("Simulation finished at: " + time + "ms\n");
+log.testOK();
