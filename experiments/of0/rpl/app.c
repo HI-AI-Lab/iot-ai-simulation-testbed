@@ -121,6 +121,5 @@ PROCESS_THREAD(app_process, ev, data)
       }
     }
   }
-  printf("This is my hello world!");
   PROCESS_END();
 }
