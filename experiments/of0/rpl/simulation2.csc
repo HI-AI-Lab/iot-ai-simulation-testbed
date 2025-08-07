@@ -66,10 +66,6 @@
       <active>true</active>
     </plugin_config>
   </plugin>
-  <plugin>
-    org.contikios.cooja.plugins.LogListener
-    <plugin_config>
-      <append>/workspace/testbed/experiments/of0/rpl/logs/output.txt</append>
-    </plugin_config>
-  </plugin>
+  <plugin>org.contikios.cooja.plugins.HeadlessLogListener</plugin>
 </simconf>
+
