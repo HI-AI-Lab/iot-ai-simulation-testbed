@@ -66,15 +66,8 @@
       <active>true</active>
     </plugin_config>
   </plugin>
-  <plugin>
-    org.contikios.cooja.plugins.HeadlessLogListener
-    <width>0</width>
-    <z>1</z>
-    <height>0</height>
-    <location_x>0</location_x>
-    <location_y>0</location_y>
-  </plugin>
 </simconf>
+
 
 
 
