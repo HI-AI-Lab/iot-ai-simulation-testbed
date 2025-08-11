@@ -1,6 +1,1 @@
-YIELD()
-log.log("I love Ahmad")
-TIMEOUT(60000);
-log.testOK()
-YIELD()
-log.log("I love Mufrah")
+TIMEOUT(60000, log.log("Pakistan"));
