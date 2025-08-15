@@ -1,15 +1,28 @@
-// Run for this many milliseconds of simulation time
-var DURATION_MS = 60000; // 60 seconds
+/*
+ * Example Contiki test script (JavaScript).
+ * A Contiki test script acts on mote output, such as via printf()'s.
+ * The script may operate on the following variables:
+ *  Mote mote, int id, String msg
+ */
 
-// On timeout: just mark success (expression only!)
-TIMEOUT(DURATION_MS, log.testOK());
+/* Make test automatically fail (timeout) after 100 simulated seconds */
+//TIMEOUT(100000); /* milliseconds. no action at timeout */
+TIMEOUT(100000, log.log("last msg: " + msg + "\n")); /* milliseconds. print last msg at timeout */
 
-// Optional: note start in COOJA.testlog
-//log.log("Logging all mote output...\n");
+log.log("first mote output: '" + msg + "'\n");
 
-// Capture every mote line exactly as COOJA provides it.
-// 'id' = mote id, 'time' = sim time (ms), 'msg' = raw string shown in GUI.
-//while (true) {
-//  YIELD(); // wait for next mote output
-//  log.log("ID:" + id + "  TIME:" + time + "  MSG:" + msg + "\n");
-//}
+YIELD(); /* wait for another mote output */
+
+log.log("second mote output: '" + msg + "'\n");
+
+log.log("waiting for hello world output from mote 1\n");
+//WAIT_UNTIL(id == 1 && msg.equals("Hello, world"));
+
+write(mote, "Hello, mote\n"); /* Write to mote serial port */
+
+GENERATE_MSG(15000, "continue");
+YIELD_THEN_WAIT_UNTIL(msg.equals("continue"));
+
+log.log("ok, reporting success now\n");
+log.testOK(); /* Report test success and quit */
+//log.testFailed(); /* Report test failure and quit */
