@@ -70,7 +70,7 @@
     <plugin control="true">
     org.contikios.cooja.plugins.ScriptRunner
     <plugin_config>
-      <scriptfile>/workspace/testbed/experiments/of0/rpl/simulation4.js</scriptfile>
+      <scriptfile>/workspace/testbed/experiments/of0/rpl/simulation.js</scriptfile>
       <active>true</active>
     </plugin_config>
   </plugin>
