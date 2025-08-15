@@ -20,7 +20,7 @@ log.log("waiting for hello world output from mote 1\n");
 
 write(mote, "Hello, mote\n"); /* Write to mote serial port */
 
-GENERATE_MSG(100000, "03314100710");
+GENERATE_MSG(90000, "03314100710");
 YIELD_THEN_WAIT_UNTIL(msg.equals("03314100710"));
 
 log.log("ok, reporting success now\n");
