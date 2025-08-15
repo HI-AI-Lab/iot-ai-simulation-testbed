@@ -1,1 +1,0 @@
-TIMEOUT(1000000000,log.testOK());
