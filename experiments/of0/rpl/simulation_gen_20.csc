@@ -222,11 +222,11 @@
         </mote>
       </motetype>
     </simulation>
-  <plugin control="true">
+    <plugin control="true">
     org.contikios.cooja.plugins.ScriptRunner
-    <plugin_config>
-      <scriptfile>[CONFIG_DIR]/simulation.js</scriptfile>
-      <active>true</active>
+      <plugin_config>
+        <scriptfile>/workspace/testbed/experiments/of0/rpl/simulation.js</scriptfile>
+        <active>true</active>
       </plugin_config>
     </plugin>
   </simconf>
