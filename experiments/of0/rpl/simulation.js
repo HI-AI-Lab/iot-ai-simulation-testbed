@@ -1,11 +1,11 @@
-// simulation.js
-var RUN_DURATION_MS = 300000; // 5 minutes
+// Run simulation for exactly this many milliseconds of simulated time
+var run_duration_ms = 300000; // 5 minutes
 
-// End the test after RUN_DURATION_MS and mark it as success
-TIMEOUT(RUN_DURATION_MS, log.testOK());
+TIMEOUT(300000, log.testOK()); // On timeout, exit with status 0
 
-// Main loop: print all mote output to the COOJA log
 while (true) {
-  YIELD(); // wait for a new mote message
+  YIELD();
+  // Append every mote output to the simulator log
+  // Variables provided: time (ms), id (mote id), msg (string)
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }
