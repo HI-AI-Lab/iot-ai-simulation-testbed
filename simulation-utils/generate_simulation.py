@@ -1,96 +1,149 @@
 #!/usr/bin/env python3
-import argparse, random, xml.etree.ElementTree as ET, copy
+import argparse
+import random
+import sys
+from pathlib import Path
+import xml.etree.ElementTree as ET
 
-def place_points(n, w, h, seed=None, min_dist=None, max_tries=5000):
-    """Generate random (x,y) points with optional minimum spacing."""
-    if seed is not None:
-        random.seed(seed)
-    pts = []
-    for i in range(n):
-        for _ in range(max_tries):
-            x = random.uniform(0.0, w)
-            y = random.uniform(0.0, h)
-            if min_dist is None:
-                pts.append((x, y)); break
-            ok = True
-            for (px, py) in pts:
-                dx, dy = x - px, y - py
-                if (dx*dx + dy*dy) < (min_dist*min_dist):
-                    ok = False; break
-            if ok:
-                pts.append((x, y)); break
-        else:
-            # Fallback: fill remaining without spacing if packing fails
-            for _ in range(i, n):
-                pts.append((random.uniform(0.0, w), random.uniform(0.0, h)))
-            break
-    return pts
+def indent(elem, level=0):
+    # Pretty-print XML
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        for e in elem:
+            indent(e, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
-def find_single(root, path, what):
-    node = root.find(path)
-    if node is None:
-        raise ValueError(f"Template missing {what}: xpath '{path}'")
-    return node
+def parse_args():
+    p = argparse.ArgumentParser(description="Generate a COOJA .csc with N random motes.")
+    p.add_argument("--template", required=True, help="Path to CSC template")
+    p.add_argument("--out", required=True, help="Output CSC path")
+    p.add_argument("--scriptfile", required=True, help="Absolute path to simulation.js inside the container")
+    p.add_argument("--motes", type=int, default=3, help="Number of motes")
+    p.add_argument("--width", type=float, default=300.0, help="Area width for random positions")
+    p.add_argument("--height", type=float, default=300.0, help="Area height for random positions")
+    p.add_argument("--seed", type=int, default=123456, help="Random seed for reproducibility")
+    p.add_argument("--title", default="My simulation", help="Simulation title")
+    p.add_argument("--tx_range", type=float, default=50.0, help="UDGM transmitting range")
+    p.add_argument("--int_range", type=float, default=100.0, help="UDGM interference range")
+    p.add_argument("--motetype_desc", default="Cooja Mote Type #1", help="Mote type description")
+    return p.parse_args()
 
-def ensure_pos_block(interface_config):
-    pos = interface_config.find("pos")
-    if pos is None:
-        pos = ET.Element("pos")
-        interface_config.append(pos)
-    return pos
-
-def generate(input_csc, output_csc, num_motes, area_w, area_h, seed=None, min_dist=None):
-    tree = ET.parse(input_csc)
-    root = tree.getroot()
-
-    motetype = find_single(root, ".//motetype", "<motetype>")
-    template_mote = find_single(motetype, "mote", "<mote> (template)")
-
-    # Remove all existing motes
-    for m in list(motetype.findall("mote")):
-        motetype.remove(m)
-
-    coords = place_points(num_motes, area_w, area_h, seed=seed, min_dist=min_dist)
-
-    for i in range(1, num_motes + 1):
-        nm = copy.deepcopy(template_mote)
-
-        for ifcfg in nm.findall("interface_config"):
-            txt = (ifcfg.text or "").strip()
-            if txt == "org.contikios.cooja.contikimote.interfaces.ContikiMoteID":
-                id_elem = ifcfg.find("id")
-                if id_elem is None:
-                    id_elem = ET.Element("id")
-                    ifcfg.append(id_elem)
-                id_elem.text = str(i)
-            elif txt == "org.contikios.cooja.interfaces.Position":
-                pos = ensure_pos_block(ifcfg)
-                x, y = coords[i-1]
-                pos.set("x", f"{x:.6f}")
-                pos.set("y", f"{y:.6f}")
-
-        motetype.append(nm)
-
-    try:
-        ET.indent(tree, space="  ", level=0)  # Python 3.9+
-    except Exception:
-        pass
-
-    tree.write(output_csc, encoding="utf-8", xml_declaration=True)
+def ensure_abs(p: str) -> str:
+    q = Path(p)
+    if not q.is_absolute():
+        raise SystemExit(f"--scriptfile must be an absolute path (got: {p})")
+    return str(q)
 
 def main():
-    ap = argparse.ArgumentParser(description="Generate a COOJA .csc with N motes at random positions")
-    ap.add_argument("input", help="Template .csc (must contain one <mote> to clone)")
-    ap.add_argument("output", help="Output .csc file")
-    ap.add_argument("-n", "--num-motes", type=int, default=10, help="Number of motes (default: 10)")
-    ap.add_argument("--area-width", type=float, default=300.0, help="Deployment area width in meters (default: 300)")
-    ap.add_argument("--area-height", type=float, default=300.0, help="Deployment area height in meters (default: 300)")
-    ap.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility (default: None)")
-    ap.add_argument("--min-dist", type=float, default=None, help="Minimum spacing between motes in meters (default: None)")
-    args = ap.parse_args()
+    args = parse_args()
 
-    generate(args.input, args.output, args.num_motes, args.area_width, args.area_height,
-             seed=args.seed, min_dist=args.min_dist)
+    tpl_path = Path(args.template)
+    out_path = Path(args.out)
+    script_path = ensure_abs(args.scriptfile)
+
+    if not tpl_path.is_file():
+        raise SystemExit(f"Template not found: {tpl_path}")
+    # script file might be generated later; don't hard-fail if missing on host
+
+    tree = ET.parse(tpl_path)
+    root = tree.getroot()
+
+    # Basic structure checks
+    simulation = root.find("simulation")
+    if simulation is None:
+        raise SystemExit("Template error: <simulation> not found")
+
+    motetype = simulation.find("motetype")
+    if motetype is None:
+        raise SystemExit("Template error: <motetype> must be inside <simulation>")
+
+    # Set simple fields if present
+    title = simulation.find("title")
+    if title is not None:
+        title.text = args.title
+
+    randomseed = simulation.find("randomseed")
+    if randomseed is not None:
+        randomseed.text = str(args.seed)
+
+    radiomedium = simulation.find("radiomedium")
+    if radiomedium is None:
+        raise SystemExit("Template error: <radiomedium> missing")
+
+    tx = radiomedium.find("transmitting_range")
+    if tx is not None:
+        tx.text = str(args.tx_range)
+
+    intr = radiomedium.find("interference_range")
+    if intr is not None:
+        intr.text = str(args.int_range)
+
+    desc = motetype.find("description")
+    if desc is not None:
+        desc.text = args.motetype_desc
+
+    # Clear any existing <mote> elements
+    to_remove = [child for child in list(motetype) if child.tag == "mote"]
+    for child in to_remove:
+        motetype.remove(child)
+
+    rnd = random.Random(args.seed)
+
+    # Helper to create interface_config with class name and children
+    def make_interface_config(parent, classname: str):
+        ic = ET.SubElement(parent, "interface_config")
+        # put the class name as a text node, keeping Cooja's expected style
+        ic.text = f"\n          {classname}\n          "
+        return ic
+
+    # Build motes
+    for i in range(1, args.motes + 1):
+        mote = ET.SubElement(motetype, "mote")
+
+        # Position
+        pos_ic = make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
+        x = rnd.uniform(0.0, args.width)
+        y = rnd.uniform(0.0, args.height)
+        ET.SubElement(pos_ic, "x").text = f"{x:.2f}"
+        ET.SubElement(pos_ic, "y").text = f"{y:.2f}"
+        ET.SubElement(pos_ic, "z").text = "0.0"
+
+        # Mote ID
+        id_ic = make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
+        ET.SubElement(id_ic, "id").text = str(i)
+
+    # ScriptRunner plugin update
+    plugin_found = False
+    for plugin in root.findall("plugin"):
+        # The class name is stored as text inside <plugin>
+        if (plugin.text or "").strip() == "org.contikios.cooja.plugins.ScriptRunner":
+            plugin_found = True
+            cfg = plugin.find("plugin_config")
+            if cfg is None:
+                cfg = ET.SubElement(plugin, "plugin_config")
+            sf = cfg.find("scriptfile")
+            if sf is None:
+                sf = ET.SubElement(cfg, "scriptfile")
+            sf.text = script_path
+
+            active = cfg.find("active")
+            if active is None:
+                active = ET.SubElement(cfg, "active")
+            active.text = "true"
+            break
+
+    if not plugin_found:
+        raise SystemExit("Template error: ScriptRunner <plugin> not found")
+
+    indent(root)
+    out_path.write_text(ET.tostring(root, encoding="unicode"), encoding="utf-8")
+    print(f"Wrote {out_path} with {args.motes} motes, seed={args.seed}, size=({args.width}x{args.height}).")
 
 if __name__ == "__main__":
     main()
