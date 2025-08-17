@@ -3,18 +3,15 @@
 Generate a COOJA .csc from your template.
 
 - Keeps [CONFIG_DIR]/simulation.js as-is (does NOT change <scriptfile>)
-- Puts N motes with random (x,y) in a WxH area (seeded for reproducibility)
+- Places N motes with random (x,y) in a WxH area (seeded)
 - Updates simple fields (title, seed, UDGM ranges, description)
 - Writes Position as: <pos x="..." y="..."/>
 
-Usage example:
+Usage:
   python3 generate_simulation.py \
-    --template /workspace/testbed/experiments/of0/rpl/simulation_template.csc \
-    --out      /workspace/testbed/experiments/of0/rpl/simulation_gen.csc \
-    --motes 20 --width 300 --height 300 --seed 123456 \
-    --tx_range 50 --int_range 100 \
-    --title "My simulation" \
-    --motetype_desc "Cooja Mote Type #1"
+    --template /path/to/simulation_template.csc \
+    --out      /path/to/simulation_gen.csc \
+    --motes 20 --width 300 --height 300 --seed 123456
 """
 import argparse
 import random
@@ -22,7 +19,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 def _indent(elem, level=0):
-    """Pretty-print XML (compact, COOJA-friendly)."""
+    """Pretty-print XML in a COOJA-friendly way."""
     i = "\n" + level * "  "
     if len(elem):
         if not (elem.text or "").strip():
@@ -43,7 +40,7 @@ def _make_interface_config(parent, classname: str):
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Generate a COOJA .csc with N random motes (uses <pos x= y=>; keeps [CONFIG_DIR]/simulation.js)."
+        description="Generate COOJA .csc (uses <pos x= y=>; keeps [CONFIG_DIR]/simulation.js)."
     )
     p.add_argument("--template", required=True, help="Path to CSC template")
     p.add_argument("--out", required=True, help="Output CSC path")
@@ -65,7 +62,6 @@ def main():
     if not tpl_path.is_file():
         raise SystemExit(f"Template not found: {tpl_path}")
 
-    # Parse template
     tree = ET.parse(tpl_path)
     root = tree.getroot()
 
@@ -78,39 +74,37 @@ def main():
         raise SystemExit("Template error: <motetype> must be inside <simulation>")
 
     # Update simple fields
-    title = simulation.find("title")
-    if title is not None:
-        title.text = args.title
+    t = simulation.find("title")
+    if t is not None:
+        t.text = args.title
+    rs = simulation.find("randomseed")
+    if rs is not None:
+        rs.text = str(args.seed)
 
-    randomseed = simulation.find("randomseed")
-    if randomseed is not None:
-        randomseed.text = str(args.seed)
-
-    radiomedium = simulation.find("radiomedium")
-    if radiomedium is None:
+    rm = simulation.find("radiomedium")
+    if rm is None:
         raise SystemExit("Template error: <radiomedium> missing")
-    tx = radiomedium.find("transmitting_range")
+    tx = rm.find("transmitting_range")
     if tx is not None:
         tx.text = str(args.tx_range)
-    intr = radiomedium.find("interference_range")
-    if intr is not None:
-        intr.text = str(args.int_range)
+    ir = rm.find("interference_range")
+    if ir is not None:
+        ir.text = str(args.int_range)
 
     desc = motetype.find("description")
     if desc is not None:
         desc.text = args.motetype_desc
 
-    # Remove any existing <mote> children (the template's placeholder will be replaced)
+    # Remove any existing <mote> entries (replace the template placeholder)
     for child in list(motetype):
         if child.tag == "mote":
             motetype.remove(child)
 
-    # Add N motes with random positions (using <pos x=".." y=".."/>)
+    # Generate motes using <pos x=".." y=".."/>
     rnd = random.Random(args.seed)
     for i in range(1, args.motes + 1):
         mote = ET.SubElement(motetype, "mote")
 
-        # Position
         pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
         x = rnd.uniform(0.0, args.width)
         y = rnd.uniform(0.0, args.height)
@@ -118,11 +112,10 @@ def main():
         pos.set("x", f"{x:.8f}")
         pos.set("y", f"{y:.8f}")
 
-        # Mote ID
         id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
         ET.SubElement(id_ic, "id").text = str(i)
 
-    # Do NOT touch the ScriptRunner plugin block; we keep [CONFIG_DIR]/simulation.js.
+    # Do NOT touch the ScriptRunner plugin; [CONFIG_DIR]/simulation.js remains.
 
     _indent(root)
     out_path.write_text(ET.tostring(root, encoding="unicode"), encoding="utf-8")
