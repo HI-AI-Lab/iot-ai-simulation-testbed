@@ -1,10 +1,12 @@
-# testbed/experiments/iCPLA/rpl/Makefile
+CONTIKI ?= ../../../../contiki-ng
 
-CONTIKI = ../../../../contiki-ng
+CONTIKI_PROJECT = app
+TARGET ?= cooja
 
-MODULES += os/net/routing/rpl-lite
-CONTIKI_PROJECT_SOURCEFILES += rpl-icpla.c
+all: $(CONTIKI_PROJECT)
 
-PROJECT_SOURCEFILES += app.c
+MODULES += $(CONTIKI_NG_SERVICES_DIR)/shell
+
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
 include $(CONTIKI)/Makefile.include
