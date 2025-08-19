@@ -1,8 +1,10 @@
-CONTIKI = ../../../contiki-ng
+# testbed/experiments/iCPLA/rpl/Makefile
 
-# Add rpl-lite module and compile our local sources
+CONTIKI = ../../../../contiki-ng
+
 MODULES += os/net/routing/rpl-lite
 CONTIKI_PROJECT_SOURCEFILES += rpl-icpla.c
 
-# (rest stays the same)
+PROJECT_SOURCEFILES += app.c
+
 include $(CONTIKI)/Makefile.include
