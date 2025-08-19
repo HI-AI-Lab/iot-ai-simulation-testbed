@@ -5,6 +5,10 @@
 #include "sys/log.h"
 #include "random.h"
 #include "sys/node-id.h"
+#include "net/routing/rpl-lite/rpl.h" /* for RPL_ETX_DIVISOR used by iCPLA accessor */
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -102,7 +106,7 @@ recv_cb(struct simple_udp_connection *c,
         const uint8_t *data,
         uint16_t datalen)
 {
-  (void)c; (void)sender_port; (void)receiver_port;
+  (void)c; (void)sender_port; (void)receiver_port; (void)receiver_addr; (void)data;
   received++;
   LOG_INFO("RECV %u %u from ", node_id, datalen);
   LOG_INFO_6ADDR(sender_addr);
@@ -172,4 +176,30 @@ PROCESS_THREAD(app_process, ev, data)
   }
 
   PROCESS_END();
+}
+
+/* ---------------- iCPLA QLR accessor (fixed-point) --------------- */
+/* Optional: simple EWMA to smooth QLR (σ=0.9). Adjust if needed. */
+static float icpla_qlr_ewma = 0.0f;
+
+/* Exported symbol used by the iCPLA Objective Function.
+ * Returns QLR in the same fixed-point scale as ETX: [0 .. RPL_ETX_DIVISOR].
+ * QLR is based on sender-side drops vs generated packets for this mote.
+ */
+uint16_t icpla_current_qlr_fp(void)
+{
+  float qlr_inst = (generated == 0) ? 0.0f : ((float)dropped / (float)generated);
+
+  /* EWMA smoothing */
+  const float sigma = 0.9f; /* match ETX smoothing convention */
+  icpla_qlr_ewma = sigma * icpla_qlr_ewma + (1.0f - sigma) * qlr_inst;
+
+  float q = icpla_qlr_ewma;
+  if(q < 0.0f) q = 0.0f;
+  if(q > 1.0f) q = 1.0f;
+
+  /* Convert to ETX fixed-point */
+  uint32_t fp = (uint32_t)(q * RPL_ETX_DIVISOR + 0.5f);
+  if(fp > RPL_ETX_DIVISOR) fp = RPL_ETX_DIVISOR;
+  return (uint16_t)fp;
 }
