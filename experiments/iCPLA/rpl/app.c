@@ -5,10 +5,15 @@
 #include "sys/log.h"
 #include "random.h"
 #include "sys/node-id.h"
-#include "net/routing/rpl-lite/rpl.h" /* for RPL_ETX_DIVISOR used by iCPLA accessor */
+#include "net/link-stats.h"     /* for LINK_STATS_ETX_DIVISOR */
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifndef LINK_STATS_ETX_DIVISOR
+/* Fallback to the classic 128 fixed-point divisor if the header isn't present */
+#define LINK_STATS_ETX_DIVISOR 128
+#endif
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -28,6 +33,11 @@
 /* Energy budget: when exceeded, mote is considered dead */
 #define ENERGY_BUDGET_mJ      (120000.0f) /* example: 120 J => 120,000 mJ */
 
+/* iCPLA weight (alpha) for QLR term when scoring (ETX + alpha*QLR) */
+#ifndef ICPLA_ALPHA_FP /* fixed-point: alpha * LINK_STATS_ETX_DIVISOR */
+#define ICPLA_ALPHA_FP        (16)       /* ~0.125 if divisor is 128 */
+#endif
+
 /* -------------------- State --------------------------- */
 static struct simple_udp_connection udp_conn;
 static struct etimer periodic_timer;
@@ -43,6 +53,11 @@ static bool is_dead = false;
 static unsigned long last_cpu = 0;
 static unsigned long last_tx  = 0;
 static unsigned long last_rx  = 0;
+
+/* Exponentially-weighted moving average for QLR (like ETX smoothing) */
+static uint16_t icpla_qlr_fp = 0; /* fixed-point with LINK_STATS_ETX_DIVISOR */
+#define ICPLA_Q_SMOOTH_NUM   9    /* sigma=0.9 -> numerator */
+#define ICPLA_Q_SMOOTH_DEN   10   /* denominator */
 
 /* -------------- Utilities / Helpers ------------------- */
 static void
@@ -97,6 +112,29 @@ report_qlr(void)
            qlr);
 }
 
+/* Update smoothed QLR fixed-point with EWMA like ETX */
+static void
+icpla_update_qlr_fp(void)
+{
+  /* instantaneous QLR in fixed-point */
+  float q = (generated == 0) ? 0.0f : ((float)dropped / (float)generated);
+  uint32_t inst_fp = (uint32_t)(q * LINK_STATS_ETX_DIVISOR + 0.5f);
+
+  icpla_qlr_fp = (uint16_t)(
+      (ICPLA_Q_SMOOTH_NUM * (uint32_t)icpla_qlr_fp +
+       (ICPLA_Q_SMOOTH_DEN - ICPLA_Q_SMOOTH_NUM) * inst_fp) / ICPLA_Q_SMOOTH_DEN);
+}
+
+/* Example scoring helper: ETX + alpha * QLR (all in same fixed-point base) */
+static uint16_t
+icpla_score_etx_plus_qlr(uint16_t etx_fp)
+{
+  /* etx_fp already in LINK_STATS_ETX_DIVISOR units */
+  uint32_t score = etx_fp + (uint32_t)ICPLA_ALPHA_FP * (uint32_t)icpla_qlr_fp / (LINK_STATS_ETX_DIVISOR / 1);
+  if(score > 0xFFFF) score = 0xFFFF;
+  return (uint16_t)score;
+}
+
 static void
 recv_cb(struct simple_udp_connection *c,
         const uip_ipaddr_t *sender_addr,
@@ -106,7 +144,7 @@ recv_cb(struct simple_udp_connection *c,
         const uint8_t *data,
         uint16_t datalen)
 {
-  (void)c; (void)sender_port; (void)receiver_port; (void)receiver_addr; (void)data;
+  (void)c; (void)sender_port; (void)receiver_port;
   received++;
   LOG_INFO("RECV %u %u from ", node_id, datalen);
   LOG_INFO_6ADDR(sender_addr);
@@ -145,6 +183,9 @@ PROCESS_THREAD(app_process, ev, data)
     /* Update energy each period and possibly mark death */
     update_energy_and_maybe_die();
 
+    /* Update smoothed QLR (for logging and for iCPLA-style scoring experiments) */
+    icpla_update_qlr_fp();
+
     if(is_dead) {
       /* Still update QLR/energy prints periodically if desired */
       report_qlr();
@@ -173,33 +214,19 @@ PROCESS_THREAD(app_process, ev, data)
 
     /* Periodic sender-side QLR report */
     report_qlr();
+
+    /* Example: print an iCPLA-style parent score preview (for debugging) */
+#if LOG_LEVEL >= LOG_LEVEL_INFO
+    {
+      /* If you later fetch current link ETX to preferred parent, plug it here. */
+      /* For now, just demonstrate the scoring API with a placeholder ETX=1.5 */
+      uint16_t etx_fp = (uint16_t)(1.5f * LINK_STATS_ETX_DIVISOR + 0.5f);
+      uint16_t score  = icpla_score_etx_plus_qlr(etx_fp);
+      LOG_INFO("ICPLA_DEBUG %u etx_fp=%u qlr_fp=%u score=%u\n",
+               node_id, etx_fp, icpla_qlr_fp, score);
+    }
+#endif
   }
 
   PROCESS_END();
-}
-
-/* ---------------- iCPLA QLR accessor (fixed-point) --------------- */
-/* Optional: simple EWMA to smooth QLR (σ=0.9). Adjust if needed. */
-static float icpla_qlr_ewma = 0.0f;
-
-/* Exported symbol used by the iCPLA Objective Function.
- * Returns QLR in the same fixed-point scale as ETX: [0 .. RPL_ETX_DIVISOR].
- * QLR is based on sender-side drops vs generated packets for this mote.
- */
-uint16_t icpla_current_qlr_fp(void)
-{
-  float qlr_inst = (generated == 0) ? 0.0f : ((float)dropped / (float)generated);
-
-  /* EWMA smoothing */
-  const float sigma = 0.9f; /* match ETX smoothing convention */
-  icpla_qlr_ewma = sigma * icpla_qlr_ewma + (1.0f - sigma) * qlr_inst;
-
-  float q = icpla_qlr_ewma;
-  if(q < 0.0f) q = 0.0f;
-  if(q > 1.0f) q = 1.0f;
-
-  /* Convert to ETX fixed-point */
-  uint32_t fp = (uint32_t)(q * RPL_ETX_DIVISOR + 0.5f);
-  if(fp > RPL_ETX_DIVISOR) fp = RPL_ETX_DIVISOR;
-  return (uint16_t)fp;
 }
