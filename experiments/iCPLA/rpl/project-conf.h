@@ -1,19 +1,19 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
-/* Use RPL Lite (Contiki-NG default stack) */
+/* RPL Lite */
 #undef NETSTACK_CONF_ROUTING
 #define NETSTACK_CONF_ROUTING rpl_lite_driver
 
-/* Objective Function: MRHOF (ETX-based) */
+/* Use our local iCPLA */
 #undef RPL_CONF_OF
-#define RPL_CONF_OF rpl_mrhof
+#define RPL_CONF_OF rpl_icpla
 
-/* Don’t send IPv6 Router Advertisements from motes */
+/* ND6 RA off */
 #undef UIP_CONF_ND6_SEND_RA
 #define UIP_CONF_ND6_SEND_RA 0
 
-/* Logging setup */
+/* Logging */
 #undef LOG_WITH_COMPACT_ADDR
 #define LOG_WITH_COMPACT_ADDR 0
 #define LOG_CONF_LEVEL_RPL    LOG_LEVEL_INFO
@@ -21,9 +21,12 @@
 #define LOG_CONF_LEVEL_TCPIP  LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_APP    LOG_LEVEL_INFO
 
-/* Optional: fine-tune MRHOF ETX behavior (defaults are usually OK) */
-/* #define RPL_CONF_DEFAULT_LINK_METRIC   RPL_DAG_MC_ETX */
-/* #define RPL_MRHOF_CONF_MAX_LINK_METRIC 1024 */
-/* #define RPL_MRHOF_CONF_ETX_DIVISOR     128 */
+/* iCPLA knobs (overridable per build) */
+#ifndef RPL_ICPLA_ALPHA
+#define RPL_ICPLA_ALPHA (64) /* ≈0.5 */
+#endif
+#ifndef RPL_ICPLA_PARENT_SWITCH_THRESHOLD
+#define RPL_ICPLA_PARENT_SWITCH_THRESHOLD (RPL_ETX_DIVISOR/2) /* 0.5 */
+#endif
 
 #endif /* PROJECT_CONF_H_ */
