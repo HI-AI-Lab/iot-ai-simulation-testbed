@@ -1,29 +1,28 @@
-#ifndef RPL_ICPLA_H_
-#define RPL_ICPLA_H_
+#ifndef RPL_ICPLA_H
+#define RPL_ICPLA_H
 
+#include "contiki.h"
 #include "net/routing/rpl-lite/rpl.h"
-#include "net/routing/rpl-lite/rpl-of.h"
 
-/* Match Contiki-NG ETX fixed-point scale (128 == 1.0) */
-#ifndef LINK_STATS_ETX_DIVISOR
-#define LINK_STATS_ETX_DIVISOR 128
-#endif
-#ifndef ICPLA_FP_DIVISOR
-#define ICPLA_FP_DIVISOR LINK_STATS_ETX_DIVISOR
-#endif
-
-/* Default alpha (fallback before RL sets it); 16/128 ≈ 0.125 */
-#ifndef ICPLA_ALPHA_FP_DEFAULT
-#define ICPLA_ALPHA_FP_DEFAULT 16
+/* iCPLA scoring:
+ *   link_cost = ETX  +  α * QLR_sender
+ * We use Contiki-NG's fixed-point convention for ETX: RPL_ETX_DIVISOR.
+ * QLR_sender is returned as a fixed-point value in the same scale.
+ *
+ * α is configured via PROJECT_CONF (defaults below if not defined).
+ */
+#ifndef ICPLA_ALPHA_FP
+/* Default α = 0.5 in ETX fixed-point units (RPL_ETX_DIVISOR is typically 128) */
+#define ICPLA_ALPHA_FP (RPL_ETX_DIVISOR / 2)
 #endif
 
-/* Exported by the app: smoothed sender-side QLR in fixed-point (/128) */
-uint16_t icpla_current_qlr_fp(void);
-
-/* Alpha weight (fixed-point /128) — updated by the app's RL loop */
-extern volatile uint16_t icpla_alpha_fp;
-
-/* iCPLA OF instance (defined in rpl-icpla.c) */
+/* The OF instance */
 extern rpl_of_t rpl_icpla;
 
-#endif /* RPL_ICPLA_H_ */
+/* Application can override this (weak) to feed sender-side QLR
+ * scaled in ETX fixed-point units (0 .. RPL_ETX_DIVISOR).
+ * If not provided by the app, this returns 0 (behaves like MRHOF).
+ */
+uint16_t icpla_get_local_qlr_fp(void);
+
+#endif /* RPL_ICPLA_H */
