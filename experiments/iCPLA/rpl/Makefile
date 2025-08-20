@@ -1,16 +1,17 @@
-# experiments/iCPLA/rpl/Makefile
-
 CONTIKI ?= ../../../../contiki-ng
 
+# Application
 CONTIKI_PROJECT = app
-TARGET ?= cooja
+PROJECT_SOURCEFILES += rpl-icpla.c
+
 all: $(CONTIKI_PROJECT)
 
-# Build RPL-Lite and link our custom OF
-MODULES += os/net/routing/rpl-lite
-CONTIKI_PROJECT_SOURCEFILES += rpl-icpla.c
+# Use COOJA
+TARGET ?= cooja
 
-# Use our project configuration
-CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+# (Optional) make the α parameter easy to override from CLI:
+#   make app.cooja TARGET=cooja ICPLA_ALPHA_FP=64
+CFLAGS += -DICPLA_ALPHA_FP=$(ICPLA_ALPHA_FP)
 
+# Normal Contiki-NG include
 include $(CONTIKI)/Makefile.include
