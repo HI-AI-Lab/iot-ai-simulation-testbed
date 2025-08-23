@@ -1,17 +1,10 @@
 CONTIKI ?= ../../../../contiki-ng
 
-# Application
 CONTIKI_PROJECT = app
 PROJECT_SOURCEFILES += rpl-icpla.c
 
-all: $(CONTIKI_PROJECT)
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+CFLAGS += -DICPLA_ENABLE_RL=1
 
-# Use COOJA
-TARGET ?= cooja
-
-# (Optional) make the α parameter easy to override from CLI:
-#   make app.cooja TARGET=cooja ICPLA_ALPHA_FP=64
-CFLAGS += -DICPLA_ALPHA_FP=$(ICPLA_ALPHA_FP)
-
-# Normal Contiki-NG include
+all: $(CONTIKI_PROJECT).cooja
 include $(CONTIKI)/Makefile.include
