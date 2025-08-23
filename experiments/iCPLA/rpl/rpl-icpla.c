@@ -1,139 +1,83 @@
-#include "contiki.h"
-#include "sys/log.h"
-
-#include "net/routing/rpl-lite/rpl.h"
-#include "net/routing/rpl-lite/rpl-dag.h"
-#include "net/routing/rpl-lite/rpl-private.h"
-
 #include "rpl-icpla.h"
+#include <string.h>
 
-#define LOG_MODULE "RPL-ICPLA"
-#define LOG_LEVEL LOG_LEVEL_INFO
+/* ------- Tiny epsilon-greedy Q-learning controller -------
+   State = bucketized (QLR, ETX, ECR)  ->  4 * 4 * 4  = 64 states
+   Actions = app shedding level a in {0..5} => drop_prob_tenths = a
+   Also stores runtime α (milli) pushed from Python/Root. */
 
-/* If the app does not provide a QLR callback, default to zero (MRHOF-like) */
-__attribute__((weak))
-uint16_t icpla_get_local_qlr_fp(void) {
-  return 0;
+#define N_Q   4u
+#define N_E   4u
+#define N_R   4u
+#define N_S  (N_Q * N_E * N_R)
+#define N_A   6u
+
+static float Q[N_S][N_A];
+static float eps = 0.10f, alpha_lr = 0.20f, gamma_ = 0.90f;
+
+static uint8_t last_s = 0, last_a = 0, have_last = 0;
+static uint8_t act = 0;
+static uint16_t my_id = 0;
+
+/* iCPLA α in milli-units (default 0.300 => 300) */
+static uint16_t alpha_milli = 300;
+
+static uint8_t bq(float x){ if(x<0.10f)return 0; if(x<0.30f)return 1; if(x<0.60f)return 2; return 3; }
+static uint8_t be(float etx){ if(etx<1.5f)return 0; if(etx<2.5f)return 1; if(etx<4.0f)return 2; return 3; }
+static uint8_t br(float ecr){ if(ecr<0.20f)return 0; if(ecr<0.50f)return 1; if(ecr<0.80f)return 2; return 3; }
+static uint8_t make_state(float qlr, float etx, float ecr){
+  return (uint8_t)((bq(qlr)*N_E + be(etx))*N_R + br(ecr));
 }
 
-/* Parent link ETX in fixed-point (/RPL_ETX_DIVISOR) */
-static uint16_t
-link_etx_fp(const rpl_parent_t *p)
-{
-  /* RPL-Lite provides the per-parent link metric in ETX fixed-point */
-  return rpl_parent_get_link_metric((rpl_parent_t *)p);
+/* LCG PRNG for epsilon-greedy */
+static uint32_t seed32 = 1;
+static uint32_t rnd32(void){ seed32 = seed32*1103515245u + 12345u; return seed32; }
+static float frand01(void){ return (float)(rnd32() & 0xFFFFFF) / (float)0x1000000; }
+
+void icpla_init(uint16_t node_id){
+  memset(Q, 0, sizeof(Q));
+  seed32 = 0xA5A5A5u ^ (uint32_t)node_id;
+  my_id = node_id;
+  act = 0; have_last = 0;
+  alpha_milli = 300; /* 0.300 default */
 }
 
-/* iCPLA link cost: ETX + α·QLR  (all in ETX fixed-point) */
-static uint16_t
-icpla_link_cost_fp(const rpl_parent_t *p)
-{
-  const uint16_t etx_fp = link_etx_fp(p);
-  const uint16_t qlr_fp = icpla_get_local_qlr_fp();
-
-  /* (alpha * qlr_fp) / RPL_ETX_DIVISOR, with rounding */
-  const uint32_t mix = (uint32_t)ICPLA_ALPHA_FP * (uint32_t)qlr_fp;
-  const uint16_t alpha_term = (uint16_t)((mix + (RPL_ETX_DIVISOR / 2)) / RPL_ETX_DIVISOR);
-
-  uint32_t cost = (uint32_t)etx_fp + alpha_term;
-  if(cost > 0xFFFF) cost = 0xFFFF;
-  return (uint16_t)cost;
+static uint8_t argmax_a(uint8_t s){
+  float best = Q[s][0]; uint8_t a = 0;
+  for(uint8_t i=1;i<N_A;i++){ if(Q[s][i] > best){ best = Q[s][i]; a = i; } }
+  return a;
 }
 
-/* Convert ETX-like fixed-point to rank increase units */
-static uint16_t
-icpla_cost_to_rank_inc(uint16_t cost_fp)
-{
-  /* Same mapping MRHOF uses: scale by RPL_MIN_HOPRANKINC / RPL_ETX_DIVISOR */
-  return (uint16_t)(((uint32_t)cost_fp * RPL_MIN_HOPRANKINC + (RPL_ETX_DIVISOR/2)) / RPL_ETX_DIVISOR);
+/* reward: improve (low QLR, low ECR, low E2E). α shapes QLR emphasis */
+static float compute_reward(float qlr, float ecr, float e2e_ms){
+  float e2e_norm = e2e_ms <= 0 ? 0.0f : (e2e_ms / 2000.0f);
+  if(e2e_norm > 1.0f) e2e_norm = 1.0f;
+
+  float a = (float)alpha_milli / 1000.0f; /* 0..1 */
+  float penalty = (0.45f + 0.35f*a) * qlr + 0.30f * ecr + 0.25f * e2e_norm;
+  float r = 1.0f - penalty;
+  if(r < -1.0f) r = -1.0f; if(r > 1.0f) r = 1.0f;
+  return r;
 }
 
-/* ----- rpl_of_t hooks ------------------------------------------------ */
+void icpla_observe(float qlr, float etx, float ecr, float e2e_ms, uint32_t now_ms){
+  (void)now_ms;
+  uint8_t s = make_state(qlr, etx, ecr);
 
-static void
-reset(rpl_dag_t *dag)
-{
-  (void)dag;
-  LOG_INFO("reset()\n");
-}
-
-static void
-parent_state_callback(rpl_parent_t *p, int known, int etx)
-{
-  (void)p; (void)known; (void)etx;
-  /* No special bookkeeping: we read metrics on demand */
-}
-
-static rpl_parent_t *
-best_parent(rpl_parent_t *p1, rpl_parent_t *p2)
-{
-  if(!p1) return p2;
-  if(!p2) return p1;
-
-  const uint16_t c1 = icpla_link_cost_fp(p1);
-  const uint16_t c2 = icpla_link_cost_fp(p2);
-
-  const uint32_t path1 = (uint32_t)rpl_parent_get_rank(p1) + icpla_cost_to_rank_inc(c1);
-  const uint32_t path2 = (uint32_t)rpl_parent_get_rank(p2) + icpla_cost_to_rank_inc(c2);
-
-  if(path1 < path2) return p1;
-  if(path2 < path1) return p2;
-
-  /* tie-breakers: smaller link cost, then smaller parent rank */
-  if(c1 < c2) return p1;
-  if(c2 < c1) return p2;
-
-  const uint16_t r1 = rpl_parent_get_rank(p1);
-  const uint16_t r2 = rpl_parent_get_rank(p2);
-  if(r1 < r2) return p1;
-  if(r2 < r1) return p2;
-
-  /* final tie: keep current (p1) */
-  return p1;
-}
-
-static rpl_rank_t
-calculate_rank(const rpl_parent_t *p, rpl_rank_t base_rank)
-{
-  if(!p) {
-    /* Root or no parent */
-    return base_rank == 0 ? RPL_MIN_HOPRANKINC : base_rank;
+  if(have_last){
+    float r = compute_reward(qlr, ecr, e2e_ms);
+    float qsa = Q[last_s][last_a];
+    float next_best = Q[s][argmax_a(s)];
+    Q[last_s][last_a] = qsa + alpha_lr * (r + gamma_ * next_best - qsa);
   }
 
-  if(base_rank == 0) {
-    base_rank = rpl_parent_get_rank(p);
-    if(base_rank == 0) {
-      return INFINITE_RANK;
-    }
-  }
-
-  const uint16_t cost_fp = icpla_link_cost_fp(p);
-  const uint16_t inc = icpla_cost_to_rank_inc(cost_fp);
-
-  uint32_t new_rank = (uint32_t)base_rank + inc;
-  if(new_rank > INFINITE_RANK) new_rank = INFINITE_RANK;
-  return (rpl_rank_t)new_rank;
+  act = (frand01() < eps) ? (uint8_t)(rnd32() % N_A) : argmax_a(s);
+  last_s = s; last_a = act; have_last = 1;
 }
 
-static void
-update_metric_container(rpl_instance_t *instance)
-{
-  /* Advertise ETX MC like MRHOF so interop stays sane */
-  rpl_metric_object_t *mc = &instance->mc;
-  mc->type   = RPL_DAG_MC_ETX;
-  mc->flags  = 0;
-  mc->aggr   = RPL_DAG_MC_AGGR_ADDITIVE;
-  mc->prec   = 0;
-  mc->length = sizeof(uint16_t);
-  mc->obj.etx = 0; /* optional: could export DAG path ETX if you track it */
-}
+uint8_t icpla_get_drop_prob_tenths(void){ return act; }
 
-rpl_of_t rpl_icpla = {
-  .reset                  = reset,
-  .parent_state_callback  = parent_state_callback,
-  .best_parent            = best_parent,
-  .calculate_rank         = calculate_rank,
-  .update_metric_container= update_metric_container,
-  .objective_code_point   = 0xF1, /* experimental/private OCP */
-  .of_id                  = "iCPLA(ETX+alpha*QLR)"
-};
+void     icpla_set_alpha_milli(uint16_t a_milli){ if(a_milli>1000) a_milli=1000; alpha_milli = a_milli; }
+uint16_t icpla_get_alpha_milli(void){ return alpha_milli; }
+
+float icpla_get_rank_bias(void){ return 1.0f - (act / 5.0f); }
