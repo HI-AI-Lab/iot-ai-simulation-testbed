@@ -1,28 +1,29 @@
-#ifndef RPL_ICPLA_H
-#define RPL_ICPLA_H
+#ifndef RPL_ICPLA_H_
+#define RPL_ICPLA_H_
 
-#include "contiki.h"
-#include "net/routing/rpl-lite/rpl.h"
+#include <stdint.h>
 
-/* iCPLA scoring:
- *   link_cost = ETX  +  α * QLR_sender
- * We use Contiki-NG's fixed-point convention for ETX: RPL_ETX_DIVISOR.
- * QLR_sender is returned as a fixed-point value in the same scale.
- *
- * α is configured via PROJECT_CONF (defaults below if not defined).
- */
-#ifndef ICPLA_ALPHA_FP
-/* Default α = 0.5 in ETX fixed-point units (RPL_ETX_DIVISOR is typically 128) */
-#define ICPLA_ALPHA_FP (RPL_ETX_DIVISOR / 2)
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-/* The OF instance */
-extern rpl_of_t rpl_icpla;
+/* Init small RL controller */
+void icpla_init(uint16_t node_id);
 
-/* Application can override this (weak) to feed sender-side QLR
- * scaled in ETX fixed-point units (0 .. RPL_ETX_DIVISOR).
- * If not provided by the app, this returns 0 (behaves like MRHOF).
- */
-uint16_t icpla_get_local_qlr_fp(void);
+/* Feed observations once per period */
+void icpla_observe(float qlr, float etx, float ecr, float e2e_ms, uint32_t now_ms);
 
-#endif /* RPL_ICPLA_H */
+/* RL-chosen shedding knob: 0..5 => 0..50% drop-in-tenths */
+uint8_t icpla_get_drop_prob_tenths(void);
+
+/* ---- Runtime α control (milli-units: 350 => 0.350) ---- */
+void     icpla_set_alpha_milli(uint16_t a_milli);
+uint16_t icpla_get_alpha_milli(void);
+
+/* Optional bias if you later map to parent selection */
+float icpla_get_rank_bias(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* RPL_ICPLA_H_ */
