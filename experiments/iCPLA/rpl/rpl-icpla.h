@@ -10,7 +10,7 @@ extern "C" {
 /* Init small RL controller */
 void icpla_init(uint16_t node_id);
 
-/* Feed observations once per period */
+/* Feed observations once per period (optional hook) */
 void icpla_observe(float qlr, float etx, float ecr, float e2e_ms, uint32_t now_ms);
 
 /* RL-chosen shedding knob: 0..5 => 0..50% drop-in-tenths */
