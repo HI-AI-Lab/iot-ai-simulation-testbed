@@ -1,0 +1,33 @@
+# Gradle caches/logs
+.gradle/
+**/.gradle/
+**/build/
+
+# VCS
+.git
+.gitignore
+
+# Logs & temp
+*.log
+**/*.log
+**/*.tmp
+
+# Python
+**/__pycache__/
+**/*.pyc
+RL-agent/.venv/
+RL-agent/.env
+
+# Node
+**/node_modules/
+
+# Cooja/Contiki build artifacts
+**/obj/
+**/*.o
+**/*.class
+
+# Big local folders you don't need in the image
+experiments/
+simulation-utils/
+datasets/
+output/
