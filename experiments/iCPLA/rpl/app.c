@@ -15,263 +15,320 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <inttypes.h>
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-/* ------------ App config ------------ */
-#define UDP_DATA_PORT        8765
-#define UDP_CTRL_PORT        8766  /* for α updates broadcast */
-#ifndef APP_CONF_PAYLOAD_SIZE
-#define APP_CONF_PAYLOAD_SIZE 128
+/* ---------------- Config ---------------- */
+#define DATA_PORT             8765
+#define CTRL_PORT             8766
+
+#define SEND_INTERVAL_SEC     5
+#define METRIC_INTERVAL_SEC   5
+
+/* Energy model (rough CC2420-like) */
+#define V_SUPPLY_V            3.0f
+#define I_CPU_mA              1.8f
+#define I_LPM_mA              0.054f
+#define I_TX_mA               17.4f
+#define I_RX_mA               18.8f
+/* Energy budget in milli-Joules (per node) */
+#ifndef ENERGY_BUDGET_mJ
+#define ENERGY_BUDGET_mJ      (120000.0f) /* 120 J default */
 #endif
-#define SEND_INTERVAL_SEC    5
 
-/* Energy model */
-#define V_SUPPLY_V          3.0f
-#define I_CPU_mA            1.8f
-#define I_TX_mA             17.4f
-#define I_RX_mA             18.8f
-#define ENERGY_BUDGET_mJ    (120000.0f)
+/* Warmup gate (do not send until ALPHA applied, or timeout) */
+#ifndef WARMUP_SEC
+#define WARMUP_SEC            120
+#endif
 
-/* ------------ Types ------------- */
+/* ---------------- Types ---------------- */
 typedef struct {
   uint32_t seq;
-  uint32_t ts_ticks; /* when sent */
-  uint8_t  pad[APP_CONF_PAYLOAD_SIZE - 8];
-} __attribute__((packed)) payload_t;
+  uint32_t ts_ticks; /* when sent (clock_time_t) */
+} __attribute__((packed)) payload_hdr_t;
 
 typedef struct {
   uint8_t  type;          /* 'A' for alpha update */
-  uint16_t alpha_milli;   /* 350 => 0.350 */
+  uint16_t alpha_milli;   /* 350 => 0.35 */
 } __attribute__((packed)) ctrl_alpha_t;
 
-/* ------------ State ------------- */
+/* ---------------- Globals ---------------- */
 static struct simple_udp_connection udp_data;
 static struct simple_udp_connection udp_ctrl;
-static struct etimer periodic_timer;
 
-static uint32_t generated = 0, sent_ok = 0, dropped = 0, recv_local = 0;
-static float    qlr_smoothed = 0.0f;
+static uip_ipaddr_t root_addr;
 
-static float total_energy_mJ = 0.0f;
-static bool  is_dead = false;
+static uint32_t seqno = 0;
+static uint32_t sent_ok = 0;
+static uint32_t dropped_app = 0;
 
-static unsigned long last_cpu = 0, last_tx = 0, last_rx = 0;
+static uint8_t alpha_ready = 0;
+static clock_time_t warmup_deadline;
 
-/* Root-only aggregates */
-static uint64_t root_recv_total = 0;
-static uint64_t root_e2e_sum_ms = 0;
+static float energy_mJ = 0.0f;
+static uint8_t dead = 0;
 
-/* ------------ Helpers ------------- */
-static void update_energy_and_maybe_die(void){
+static clock_time_t last_energest_flush = 0;
+
+/* PRR at sink */
+#define MAX_NODES 256
+typedef struct {
+  uint8_t seen;
+  uint32_t first_seq;
+  uint32_t last_seq;
+  uint32_t rx_count;
+} prr_entry_t;
+static prr_entry_t prr_tbl[MAX_NODES];
+
+/* ---------------- Utilities ---------------- */
+static void
+set_global_address(void)
+{
+  if(NETSTACK_ROUTING.node_is_root()) {
+    uip_ipaddr_t ipaddr;
+    /* aaaa::1 */
+    uip_ip6addr(&ipaddr, 0xaaaa,0,0,0,0,0,0,0x0001);
+    uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
+    memcpy(&root_addr, &ipaddr, sizeof(ipaddr));
+  } else {
+    /* root assumed at aaaa::1 */
+    uip_ip6addr(&root_addr, 0xaaaa,0,0,0,0,0,0,0x0001);
+  }
+}
+
+static void
+energest_update_and_check(void)
+{
   energest_flush();
-  unsigned long cpu_now = energest_type_time(ENERGEST_TYPE_CPU);
-  unsigned long tx_now  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
-  unsigned long rx_now  = energest_type_time(ENERGEST_TYPE_LISTEN);
 
-  unsigned long cpu_diff = cpu_now - last_cpu;
-  unsigned long tx_diff  = tx_now  - last_tx;
-  unsigned long rx_diff  = rx_now  - last_rx;
+  uint32_t cpu = energest_type_time(ENERGEST_TYPE_CPU);
+  uint32_t lpm = energest_type_time(ENERGEST_TYPE_LPM);
+  uint32_t tx  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
+  uint32_t rx  = energest_type_time(ENERGEST_TYPE_LISTEN);
 
-  last_cpu = cpu_now; last_tx = tx_now; last_rx = rx_now;
+  /* energy since last flush approximated by absolute totals; recompute full energy every time */
+  float sec_cpu = (float)cpu / ENERGEST_SECOND;
+  float sec_lpm = (float)lpm / ENERGEST_SECOND;
+  float sec_tx  = (float)tx  / ENERGEST_SECOND;
+  float sec_rx  = (float)rx  / ENERGEST_SECOND;
 
-  const float TICKS_PER_SEC = (float)ENERGEST_SECOND;
-  float cpu_s = cpu_diff / TICKS_PER_SEC;
-  float tx_s  = tx_diff  / TICKS_PER_SEC;
-  float rx_s  = rx_diff  / TICKS_PER_SEC;
+  /* mJ = V * mA * s */
+  energy_mJ = V_SUPPLY_V * (
+      I_CPU_mA * sec_cpu +
+      I_LPM_mA * sec_lpm +
+      I_TX_mA  * sec_tx  +
+      I_RX_mA  * sec_rx) ;
 
-  float energy_period_mJ = V_SUPPLY_V * (
-    (I_CPU_mA/1000.0f) * cpu_s +
-    (I_TX_mA /1000.0f) * tx_s  +
-    (I_RX_mA /1000.0f) * rx_s
-  ) * 1000.0f;
-
-  total_energy_mJ += energy_period_mJ;
-
-  if(!is_dead && total_energy_mJ >= ENERGY_BUDGET_mJ) {
-    is_dead = true;
-    LOG_INFO("METRIC NLT DEAD id=%u energy_mJ=%.1f\n", node_id, total_energy_mJ);
+  if(!dead && energy_mJ >= ENERGY_BUDGET_mJ) {
+    dead = 1;
+    LOG_INFO("METRIC NLT DEAD node=%u t_ms=%lu energy_mJ=%.1f\n",
+             node_id, (unsigned long)(clock_time() * 1000UL / CLOCK_SECOND), energy_mJ);
   }
+  (void)last_energest_flush;
 }
 
-static float energy_consumption_ratio(void){
-  if(total_energy_mJ <= 0) return 0.0f;
-  float e = total_energy_mJ / ENERGY_BUDGET_mJ;
-  return e > 1.0f ? 1.0f : e;
-}
-
-static float best_neighbor_etx(void){
-  const uip_ds6_nbr_t *nbr = uip_ds6_nbr_head();
-  float best = 3.0f;
-  while(nbr) {
-    const linkaddr_t *ll = (const linkaddr_t *)uip_ds6_nbr_get_ll(nbr);
-    const link_stats_t *st = link_stats_from_lladdr(ll);
-    if(st) {
-      float etx = (float)st->etx / LINK_STATS_ETX_DIVISOR;
-      if(etx < best) best = etx;
-    }
-    nbr = uip_ds6_nbr_next(nbr);
-  }
-  return best;
-}
-
-static void report_period_metrics(void){
-  float q_now = (generated == 0) ? 0.0f : ((float)dropped / (float)generated);
-  qlr_smoothed = (0.9f * qlr_smoothed) + (0.1f * q_now);
-  float prr_local = (generated == 0) ? 0.0f : ((float)sent_ok / (float)generated);
-  float ecr = energy_consumption_ratio();
-
-  LOG_INFO("METRIC QLR id=%u gen=%lu sent=%lu drop=%lu qlr=%.3f ecr=%.3f E_mJ=%.1f alpha=%.3f\n",
-           node_id, (unsigned long)generated, (unsigned long)sent_ok, (unsigned long)dropped,
-           qlr_smoothed, ecr, total_energy_mJ, icpla_get_alpha_milli()/1000.0f);
-
-  LOG_INFO("METRIC PRR_LOCAL id=%u prr=%.3f\n", node_id, prr_local);
-
-  if(node_id == 1) {
-    float e2e_avg = (root_recv_total == 0) ? 0.0f : ((float)root_e2e_sum_ms / (float)root_recv_total);
-    LOG_INFO("METRIC PRR_ROOT recv=%llu E2E_AVG_MS=%.1f\n",
-      (unsigned long long)root_recv_total, e2e_avg);
-  }
-}
-
-/* ------------ UDP receive handlers ------------- */
+/* ---------------- Callbacks ---------------- */
 static void
-data_recv_cb(struct simple_udp_connection *c,
-             const uip_ipaddr_t *sender_addr, uint16_t sender_port,
-             const uip_ipaddr_t *receiver_addr, uint16_t receiver_port,
-             const uint8_t *data, uint16_t datalen)
+data_rx_cb(struct simple_udp_connection *c,
+           const uip_ipaddr_t *sender_addr,
+           uint16_t sender_port,
+           const uip_ipaddr_t *receiver_addr,
+           uint16_t receiver_port,
+           const uint8_t *data,
+           uint16_t datalen)
 {
-  (void)c; (void)sender_port; (void)receiver_port;
-  recv_local++;
+  /* Sink receives data */
+  if(!NETSTACK_ROUTING.node_is_root() || datalen < sizeof(payload_hdr_t)) {
+    return;
+  }
+  const payload_hdr_t *ph = (const payload_hdr_t *)data;
+  uint32_t sseq = ph->seq;
+  /* Use last byte of IPv6 IID as src id (matches Cooja node_id in practice) */
+  uint8_t sid = sender_addr->u8[15];
 
-  if(datalen >= sizeof(payload_t)) {
-    const payload_t *p = (const payload_t *)data;
-    clock_time_t now_ticks = clock_time();
-    uint32_t dt_ticks = (uint32_t)(now_ticks - p->ts_ticks);
-    uint32_t dt_ms = (dt_ticks * 1000ul) / CLOCK_SECOND;
+  uint32_t now_ticks = clock_time();
+  uint32_t sent_ticks = ph->ts_ticks;
+  uint32_t diff_ticks = (now_ticks - sent_ticks);
+  uint32_t e2e_ms = (diff_ticks * 1000UL) / CLOCK_SECOND;
 
-    if(node_id == 1) {
-      root_recv_total++;
-      root_e2e_sum_ms += dt_ms;
-      LOG_INFO("METRIC E2E id=%u seq=%lu e2e_ms=%lu\n",
-               node_id, (unsigned long)p->seq, (unsigned long)dt_ms);
-    }
+  /* PRR table update */
+  prr_entry_t *e = &prr_tbl[sid];
+  if(!e->seen) {
+    e->seen = 1;
+    e->first_seq = sseq;
+    e->last_seq = sseq;
+    e->rx_count = 1;
+  } else {
+    if(sseq > e->last_seq) e->last_seq = sseq;
+    e->rx_count++;
   }
 
-  LOG_INFO("RECV id=%u bytes=%u from ", node_id, datalen);
-  LOG_INFO_6ADDR(sender_addr);
-  LOG_INFO_("\n");
+  LOG_INFO("METRIC E2E src=%u seq=%lu e2e_ms=%lu\n",
+           sid, (unsigned long)sseq, (unsigned long)e2e_ms);
 }
 
 static void
-ctrl_recv_cb(struct simple_udp_connection *c,
-             const uip_ipaddr_t *sender_addr, uint16_t sender_port,
-             const uip_ipaddr_t *receiver_addr, uint16_t receiver_port,
-             const uint8_t *data, uint16_t datalen)
+ctrl_rx_cb(struct simple_udp_connection *c,
+           const uip_ipaddr_t *sender_addr,
+           uint16_t sender_port,
+           const uip_ipaddr_t *receiver_addr,
+           uint16_t receiver_port,
+           const uint8_t *data,
+           uint16_t datalen)
 {
-  (void)c; (void)sender_port; (void)receiver_port;
   if(datalen >= sizeof(ctrl_alpha_t)) {
     const ctrl_alpha_t *m = (const ctrl_alpha_t *)data;
     if(m->type == 'A') {
       icpla_set_alpha_milli(m->alpha_milli);
-      LOG_INFO("ICPLA_ALPHA_APPLIED id=%u alpha=%.3f (from ", node_id, m->alpha_milli/1000.0f);
-      LOG_INFO_6ADDR(sender_addr); LOG_INFO_(")\n");
+      alpha_ready = 1;
+      LOG_INFO("ICPLA_ALPHA_APPLIED id=%u alpha=%.3f\n",
+               node_id, icpla_get_alpha_milli() / 1000.0f);
     }
   }
 }
 
-/* ------------ Process ------------- */
-PROCESS(app_process, "iCPLA(+RL) app w/ runtime alpha");
+/* ---------------- Process ---------------- */
+PROCESS(app_process, "iCPLA app");
 AUTOSTART_PROCESSES(&app_process);
 
 PROCESS_THREAD(app_process, ev, data)
 {
-  static payload_t pkt;
-  static uip_ipaddr_t dest;
+  static struct etimer periodic;
+  static struct etimer metric_timer;
 
   PROCESS_BEGIN();
 
-  icpla_init(node_id);
+  /* Set warmup deadline */
+  warmup_deadline = clock_time() + (WARMUP_SEC * CLOCK_SECOND);
 
+  /* If node 1, become RPL root */
   if(node_id == 1) {
     NETSTACK_ROUTING.root_start();
-    LOG_INFO("ROOT STARTED (node 1)\n");
   }
 
-  /* UDP sockets */
-  simple_udp_register(&udp_data, UDP_DATA_PORT, NULL, UDP_DATA_PORT, data_recv_cb);
-  simple_udp_register(&udp_ctrl, UDP_CTRL_PORT, NULL, UDP_CTRL_PORT, ctrl_recv_cb);
+  /* Set global address / root addr */
+  set_global_address();
 
-  /* Serial line (root receives 'ALPHA=0.35' from Python) */
+  /* Register sockets */
+  simple_udp_register(&udp_data, DATA_PORT, NULL, DATA_PORT, data_rx_cb);
+  simple_udp_register(&udp_ctrl, CTRL_PORT, NULL, CTRL_PORT, ctrl_rx_cb);
+
+  /* Serial line for root to accept ALPHA= commands */
   serial_line_init();
 
-  memset(&pkt, 0, sizeof(pkt));
-  etimer_set(&periodic_timer, CLOCK_SECOND * SEND_INTERVAL_SEC);
+  /* Initialize iCPLA controller */
+  icpla_init(node_id);
+
+  etimer_set(&periodic, SEND_INTERVAL_SEC * CLOCK_SECOND);
+  etimer_set(&metric_timer, METRIC_INTERVAL_SEC * CLOCK_SECOND);
 
   while(1) {
     PROCESS_YIELD();
 
-    if(ev == PROCESS_EVENT_TIMER && data == &periodic_timer) {
-      etimer_reset(&periodic_timer);
-
-      /* Energy + life */
-      update_energy_and_maybe_die();
-
-      /* Observe for local RL */
-      float ecr = energy_consumption_ratio();
-      float etx = best_neighbor_etx();
-      icpla_observe(qlr_smoothed, etx, ecr, 0.0f,
-                    (uint32_t)((clock_time()*1000ul)/CLOCK_SECOND));
-
-      /* Periodic report */
-      report_period_metrics();
-
-      if(!is_dead) {
-        if(NETSTACK_ROUTING.node_is_reachable() &&
-           NETSTACK_ROUTING.get_root_ipaddr(&dest)) {
-
-          /* RL-controlled shedding */
-          uint8_t drop_tenths = icpla_get_drop_prob_tenths();
-          if((random_rand()%10) < drop_tenths) {
-            dropped++;
-            LOG_INFO("DROP id=%u a=%u\n", node_id, (unsigned)drop_tenths);
-          } else {
-            pkt.seq = generated + 1;
-            pkt.ts_ticks = clock_time();
-            simple_udp_sendto(&udp_data, &pkt, sizeof(pkt), &dest);
-            sent_ok++;
-            LOG_INFO("SEND id=%u seq=%lu a=%u etx=%.2f qlr=%.3f ecr=%.3f alpha=%.3f\n",
-                     node_id, (unsigned long)pkt.seq, (unsigned)drop_tenths,
-                     etx, qlr_smoothed, ecr, icpla_get_alpha_milli()/1000.0f);
-          }
-          generated++;
-        } else {
-          LOG_INFO("NO_ROUTE id=%u\n", node_id);
-        }
-      }
-    }
-
-    /* Root: handle SerialSocket commands and multicast α */
-    if(ev == serial_line_event_message && node_id == 1) {
-      const char *s = (const char *)data;
-      if(strncmp(s, "ALPHA=", 6) == 0) {
-        float aval = (float)atof(s+6);
+    if(ev == serial_line_event_message && data != NULL && node_id == 1) {
+      char *line = (char *)data;
+      /* Expected: ALPHA=0.350 */
+      float aval = 0.0f;
+      if(sscanf(line, "ALPHA=%f", &aval) == 1) {
         if(aval < 0.0f) aval = 0.0f; if(aval > 1.0f) aval = 1.0f;
         uint16_t a_milli = (uint16_t)(aval * 1000.0f + 0.5f);
-
-        /* Apply locally and broadcast */
         icpla_set_alpha_milli(a_milli);
+        alpha_ready = 1;
 
+        /* Broadcast to all nodes */
         ctrl_alpha_t m = { .type='A', .alpha_milli=a_milli };
+        uip_ipaddr_t dest;
         uip_create_linklocal_allnodes_mcast(&dest);
         simple_udp_sendto(&udp_ctrl, &m, sizeof(m), &dest);
 
         LOG_INFO("ICPLA_ALPHA_BCAST id=1 alpha=%.3f\n", aval);
       }
     }
-  }
+
+    if(etimer_expired(&periodic)) {
+      etimer_reset(&periodic);
+
+      if(dead) {
+        continue;
+      }
+
+      /* Optionally hold until alpha is received or warmup elapsed */
+      if(!alpha_ready) {
+        if(clock_time() < warmup_deadline) {
+          LOG_INFO("APP HOLD id=%u waiting-for-RL\n", node_id);
+          continue;
+        } else {
+          LOG_WARN("APP WARMUP timeout; proceeding without RL\n");
+          alpha_ready = 1;
+        }
+      }
+
+      /* Wait for route */
+      if(!NETSTACK_ROUTING.node_is_root() &&
+         !NETSTACK_ROUTING.node_is_reachable()) {
+        LOG_INFO("APP HOLD id=%u waiting-for-route\n", node_id);
+        continue;
+      }
+
+      /* App-level shedding: drop with probability act/10 (0..0.5) */
+      uint8_t drop_tenths = icpla_get_drop_prob_tenths();
+      uint16_t r = random_rand() % 10;
+      if(r < drop_tenths) {
+        dropped_app++;
+        /* count as queued then dropped -> QLR increases */
+      } else {
+        /* Send a packet if not root */
+        if(!NETSTACK_ROUTING.node_is_root()) {
+          payload_hdr_t ph;
+          ph.seq = ++seqno;
+          ph.ts_ticks = clock_time();
+
+          uip_ipaddr_t dest = root_addr;
+          simple_udp_sendto(&udp_data, &ph, sizeof(ph), &dest);
+          sent_ok++;
+          LOG_INFO("SEND id=%u seq=%"PRIu32"\n", node_id, seqno);
+        }
+      }
+
+      /* Energy accounting */
+      energest_update_and_check();
+    }
+
+    if(etimer_expired(&metric_timer)) {
+      etimer_reset(&metric_timer);
+
+      /* Local QLR and PRR_LOCAL */
+      uint32_t gen = sent_ok + dropped_app;
+      float qlr = gen ? ((float)dropped_app / (float)gen) : 0.0f;
+      float prr_local = gen ? (1.0f - qlr) : 0.0f;
+
+      LOG_INFO("METRIC QLR node=%u qlr=%.3f sent=%"PRIu32" dropped=%"PRIu32"\n",
+               node_id, qlr, sent_ok, dropped_app);
+      LOG_INFO("METRIC PRR_LOCAL node=%u prr=%.3f\n", node_id, prr_local);
+
+      if(NETSTACK_ROUTING.node_is_root()) {
+        /* Compute PRR at sink: mean over sources */
+        uint32_t sum_src = 0;
+        float prr_sum = 0.0f;
+        for(int i=0;i<MAX_NODES;i++) {
+          prr_entry_t *e = &prr_tbl[i];
+          if(e->seen) {
+            uint32_t sent_est = (e->last_seq - e->first_seq + 1);
+            if(sent_est > 0) {
+              float prr = (float)e->rx_count / (float)sent_est;
+              prr_sum += prr;
+              sum_src++;
+            }
+          }
+        }
+        float prr_root = (sum_src>0) ? (prr_sum / sum_src) : 0.0f;
+        LOG_INFO("METRIC PRR_ROOT prr=%.3f sources=%"PRIu32"\n", prr_root, sum_src);
+      }
+    }
+
+  } /* while */
 
   PROCESS_END();
 }
