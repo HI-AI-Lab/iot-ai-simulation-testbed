@@ -75,7 +75,7 @@
     </plugin_config>
   </plugin>
   <plugin>
-    org.contikios.cooja.plugins.SerialSocketServer
+    org.contikios.cooja.serialsocket.SerialSocketServer
     <plugin_config>
       <port>60001</port>
       <mote>1</mote>
