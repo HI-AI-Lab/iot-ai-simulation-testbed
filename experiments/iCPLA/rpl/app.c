@@ -3,6 +3,7 @@
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6-nbr.h"
 #include "net/ipv6/uip.h"
+#include "net/ipv6/uip-ds6.h"
 #include "net/link-stats.h"
 #include "sys/energest.h"
 #include "sys/log.h"
@@ -232,7 +233,7 @@ PROCESS_THREAD(app_process, ev, data)
       /* Expected: ALPHA=0.350 */
       float aval = 0.0f;
       if(sscanf(line, "ALPHA=%f", &aval) == 1) {
-        if(aval < 0.0f) aval = 0.0f; if(aval > 1.0f) aval = 1.0f;
+        aval = (aval < 0.0f) ? 0.0f : (aval > 1.0f ? 1.0f : aval);
         uint16_t a_milli = (uint16_t)(aval * 1000.0f + 0.5f);
         icpla_set_alpha_milli(a_milli);
         alpha_ready = 1;
