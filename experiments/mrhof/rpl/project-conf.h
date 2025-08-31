@@ -8,7 +8,7 @@
 #undef RPL_CONF_OF
 #define RPL_CONF_OF rpl_mrhof
 
-/* Optional MRHOF knobs for reproducibility (defaults are fine) */
+/* Optional MRHOF knobs (defaults OK) */
 /* #define RPL_CONF_DEFAULT_LINK_METRIC   RPL_DAG_MC_ETX */
 /* #define RPL_MRHOF_CONF_MAX_LINK_METRIC 1024 */
 /* #define RPL_MRHOF_CONF_ETX_DIVISOR     128 */

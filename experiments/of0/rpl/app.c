@@ -95,10 +95,11 @@ static inline uint32_t now_ms(void) {
 
 static float energest_period_mJ(void) {
   energest_flush();
-  uint32_t cpu = ENERGEST_GET_TOTAL(ENERGEST_TYPE_CPU);
-  uint32_t lpm = ENERGEST_GET_TOTAL(ENERGEST_TYPE_LPM);
-  uint32_t tx  = ENERGEST_GET_TOTAL(ENERGEST_TYPE_TRANSMIT);
-  uint32_t rx  = ENERGEST_GET_TOTAL(ENERGEST_TYPE_LISTEN);
+
+  uint32_t cpu = energest_type_time(ENERGEST_TYPE_CPU);
+  uint32_t lpm = energest_type_time(ENERGEST_TYPE_LPM);
+  uint32_t tx  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
+  uint32_t rx  = energest_type_time(ENERGEST_TYPE_LISTEN);
 
   uint32_t d_cpu = cpu - last_cpu;
   uint32_t d_lpm = lpm - last_lpm;
