@@ -1,24 +1,23 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
-/* RPL Lite (default) */
-#undef NETSTACK_CONF_ROUTING
-#define NETSTACK_CONF_ROUTING rpl_lite_driver
+/* Select RPL Objective Function 0 (OF0) */
+#define RPL_CONF_OF_OCP RPL_OCP_OF0
 
-/* Objective Function: OF0 */
-#undef RPL_CONF_OF
-#define RPL_CONF_OF rpl_of0
+/* Enable RPL Lite */
+#define UIP_CONF_ROUTER              1
+#define NETSTACK_CONF_ROUTING        rpl_classic
 
-/* Don’t send IPv6 Router Advertisements from motes */
-#undef UIP_CONF_ND6_SEND_RA
-#define UIP_CONF_ND6_SEND_RA 0
+/* Configure Queue Buffer / Energest for metrics */
+#define QUEUEBUF_CONF_NUM            16
+#define ENERGEST_CONF_ON             1
 
 /* Logging */
-#undef LOG_WITH_COMPACT_ADDR
-#define LOG_WITH_COMPACT_ADDR 0
-#define LOG_CONF_LEVEL_RPL    LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_IPV6   LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_TCPIP  LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_APP    LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_RPL           LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_IPV6          LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_TCPIP         LOG_LEVEL_WARN
+#define LOG_CONF_LEVEL_MAC           LOG_LEVEL_WARN
+#define LOG_CONF_LEVEL_FRAMER        LOG_LEVEL_WARN
+#define LOG_CONF_LEVEL_6LOWPAN       LOG_LEVEL_WARN
 
 #endif /* PROJECT_CONF_H_ */

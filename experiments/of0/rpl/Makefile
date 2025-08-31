@@ -7,7 +7,6 @@ PROJECT_SOURCEFILES += app.c
 CFLAGS           += -Wall -Wextra
 CFLAGS_app.o     += -Werror -Wno-error=implicit-fallthrough
 
-# Build the default app image for Cooja
 all: app.cooja
 
 include $(CONTIKI)/Makefile.include
