@@ -1,12 +1,5 @@
-CONTIKI ?= /workspace/contiki-ng
-TARGET  ?= cooja
+CONTIKI_PROJECT = app
+TARGET = cooja
 
-PROJECT_SOURCEFILES += app.c
-
-# Be strict on our app only; do not force -Werror on Contiki core.
-CFLAGS           += -Wall -Wextra
-CFLAGS_app.o     += -Werror -Wno-error=implicit-fallthrough
-
-all: app.cooja
-
+CONTIKI = /workspace/contiki-ng
 include $(CONTIKI)/Makefile.include
