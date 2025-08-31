@@ -28,7 +28,7 @@
 /* Energest */
 #define ENERGEST_CONF_ON 1
 
-/* Energy model (example numbers, consistent across baselines) */
+/* Energy model (example values; keep identical across baselines) */
 #define APP_VOLTAGE_V           (3.0f)
 #define APP_I_CPU_MA            (1.8f)
 #define APP_I_LPM_MA            (0.054f)
