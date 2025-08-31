@@ -1,10 +1,12 @@
-CONTIKI_PROJECT = app
-CONTIKI_NG ?= ../../../../contiki-ng
+CONTIKI ?= /workspace/contiki-ng
+TARGET  ?= cooja
 
-CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
-CFLAGS += -Wall -Wextra -Werror \
-          -Wno-error=unused-parameter \
-          -Wno-error=implicit-fallthrough \
-          -Wno-error=sign-compare
+PROJECT_SOURCEFILES += app.c
 
-include $(CONTIKI_NG)/Makefile.include
+# Be strict on our app only; do not force -Werror on Contiki core.
+CFLAGS           += -Wall -Wextra
+CFLAGS_app.o     += -Werror -Wno-error=implicit-fallthrough
+
+all: app.cooja
+
+include $(CONTIKI)/Makefile.include
