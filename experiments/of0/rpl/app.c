@@ -1,3 +1,4 @@
+/* same contents as OF0/app.c */
 #include "contiki.h"
 #include "net/routing/routing.h"
 #include "net/ipv6/simple-udp.h"
@@ -9,22 +10,18 @@
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-/* ----------------------- Config ----------------------- */
 #define UDP_PORT              8765
-#define SEND_INTERVAL_SEC     5          /* how often to attempt a send */
-#define PAYLOAD_SIZE          128        /* bytes */
-#define DROP_PROB_PER_TEN     2          /* 0..10 (e.g., 2 => ~20% drop) */
+#define SEND_INTERVAL_SEC     5
+#define PAYLOAD_SIZE          128
+#define DROP_PROB_PER_TEN     2
 
-/* Energy model (replace with platform-accurate numbers) */
 #define V_SUPPLY_V            3.0f
 #define I_CPU_mA              1.8f
 #define I_TX_mA               17.4f
 #define I_RX_mA               18.8f
 
-/* Energy budget: when exceeded, mote is considered dead */
-#define ENERGY_BUDGET_mJ      (120000.0f) /* example: 120 J => 120,000 mJ */
+#define ENERGY_BUDGET_mJ      (120000.0f)
 
-/* -------------------- State --------------------------- */
 static struct simple_udp_connection udp_conn;
 static struct etimer periodic_timer;
 
@@ -35,16 +32,13 @@ static uint32_t dropped   = 0;
 static float total_energy_mJ = 0.0f;
 static bool is_dead = false;
 
-/* Energest snapshots */
 static unsigned long last_cpu = 0;
 static unsigned long last_tx  = 0;
 static unsigned long last_rx  = 0;
 
-/* -------------- Utilities / Helpers ------------------- */
 static void
 update_energy_and_maybe_die(void)
 {
-  /* Flush latest accounting */
   energest_flush();
 
   unsigned long cpu_now = energest_type_time(ENERGEST_TYPE_CPU);
@@ -59,13 +53,11 @@ update_energy_and_maybe_die(void)
   last_tx  = tx_now;
   last_rx  = rx_now;
 
-  /* Convert ticks -> seconds */
   const float TICKS_PER_SEC = (float)ENERGEST_SECOND;
   float cpu_s = cpu_diff / TICKS_PER_SEC;
   float tx_s  = tx_diff  / TICKS_PER_SEC;
   float rx_s  = rx_diff  / TICKS_PER_SEC;
 
-  /* Energy (mJ) = V * I(A) * t(s) * 1000 */
   float energy_period_mJ = V_SUPPLY_V * (
     (I_CPU_mA/1000.0f) * cpu_s +
     (I_TX_mA /1000.0f) * tx_s  +
@@ -101,13 +93,11 @@ recv_cb(struct simple_udp_connection *c,
   (void)c; (void)sender_port; (void)receiver_port; (void)data; (void)datalen;
   (void)receiver_addr;
   received++;
-  /* Local PRR metric example */
   const float prr_local = (generated == 0) ? 0.0f : ((float)received / (float)generated);
   LOG_INFO("METRIC PRR_LOCAL node=%u prr=%.3f\n", node_id, prr_local);
 }
 
-/* -------------------- Process ------------------------- */
-PROCESS(app_process, "OF0: UDP sender/receiver with energy + QLR");
+PROCESS(app_process, "MRHOF: UDP sender/receiver with energy + QLR");
 AUTOSTART_PROCESSES(&app_process);
 
 PROCESS_THREAD(app_process, ev, data)
@@ -117,20 +107,17 @@ PROCESS_THREAD(app_process, ev, data)
 
   PROCESS_BEGIN();
 
-  /* Root setup on node 1 */
   if(node_id == 1) {
     NETSTACK_ROUTING.root_start();
     LOG_INFO("ROOT STARTED (node 1)\n");
   }
 
-  /* UDP init */
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, recv_cb);
 
   for(size_t i = 0; i < sizeof(payload); i++) {
     payload[i] = (uint8_t)(i & 0xFF);
   }
 
-  /* Initialize energetst baselines once */
   energest_flush();
   last_cpu = energest_type_time(ENERGEST_TYPE_CPU);
   last_tx  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
@@ -146,13 +133,13 @@ PROCESS_THREAD(app_process, ev, data)
 
     if(is_dead) {
       report_qlr();
-      continue; /* Dead mote does not send */
+      continue;
     }
 
     if(NETSTACK_ROUTING.node_is_reachable() &&
        NETSTACK_ROUTING.get_root_ipaddr(&dest)) {
 
-      int r = random_rand() % 10; /* 0..9 */
+      int r = random_rand() % 10;
       if(r < DROP_PROB_PER_TEN) {
         dropped++;
       } else {
