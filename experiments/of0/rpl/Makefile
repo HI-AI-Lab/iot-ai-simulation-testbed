@@ -1,5 +1,6 @@
 CONTIKI_PROJECT = app
-TARGET = cooja
+CONTIKI_NG ?= ../../../../contiki-ng
 
-CONTIKI = /workspace/contiki-ng
-include $(CONTIKI)/Makefile.include
+CFLAGS += -Werror -Wall -Wextra -DPROJECT_CONF_H=\"project-conf.h\"
+
+include $(CONTIKI_NG)/Makefile.include
