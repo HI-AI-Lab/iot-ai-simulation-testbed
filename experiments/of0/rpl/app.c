@@ -11,7 +11,6 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #define UDP_PORT              8765
-#define SEND_INTERVAL_SEC     5
 #define PAYLOAD_SIZE          128
 #define DROP_PROB_PER_TEN     2
 

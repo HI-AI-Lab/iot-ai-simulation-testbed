@@ -100,14 +100,20 @@ def main():
         if child.tag == "mote":
             motetype.remove(child)
 
-    # Generate motes using <pos x=".." y=".."/>
+    # Generate motes using <pos x=".." y=".."/>; fix sink (ID=1) at edge-center
     rnd = random.Random(args.seed)
+    SINK_X = args.width / 2.0
+    SINK_Y = 0.0
     for i in range(1, args.motes + 1):
         mote = ET.SubElement(motetype, "mote")
 
         pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
-        x = rnd.uniform(0.0, args.width)
-        y = rnd.uniform(0.0, args.height)
+        if i == 1:
+            # Fixed sink/root at edge-center
+            x, y = SINK_X, SINK_Y
+        else:
+            x = rnd.uniform(0.0, args.width)
+            y = rnd.uniform(0.0, args.height)
         pos = ET.SubElement(pos_ic, "pos")
         pos.set("x", f"{x:.8f}")
         pos.set("y", f"{y:.8f}")
