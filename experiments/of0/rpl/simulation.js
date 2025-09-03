@@ -1,7 +1,7 @@
 // Run simulation for exactly this many milliseconds of simulated time
-var run_duration_ms = 300000; // 5 minutes
+var run_duration_ms = 5000000; // 5 minutes
 
-TIMEOUT(300000, log.testOK()); // On timeout, exit with status 0
+TIMEOUT(run_duration_ms, log.testOK()); // On timeout, exit with status 0
 
 while (true) {
   YIELD();
