@@ -1,29 +1,38 @@
-#ifndef RPL_ICPLA_H_
-#define RPL_ICPLA_H_
+#ifndef RPL_ICPLA_H
+#define RPL_ICPLA_H
 
-#include <stdint.h>
+#include "net/routing/rpl-lite/rpl.h"
+#include "net/routing/rpl-lite/rpl-of.h"
+#include "net/ipv6/uip.h"
+#include "sys/ctimer.h"
 
-#ifdef __cplusplus
-extern "C" {
+/* Custom OCP for iCPLA (not conflicting with OF0/MRHOF). */
+#ifndef RPL_OCP_ICPLA
+#define RPL_OCP_ICPLA 0xFFFD
 #endif
 
-/* Init small RL controller */
-void icpla_init(uint16_t node_id);
-
-/* Feed observations once per period (optional hook) */
-void icpla_observe(float qlr, float etx, float ecr, float e2e_ms, uint32_t now_ms);
-
-/* RL-chosen shedding knob: 0..5 => 0..50% drop-in-tenths */
-uint8_t icpla_get_drop_prob_tenths(void);
-
-/* ---- Runtime α control (milli-units: 350 => 0.350) ---- */
-void     icpla_set_alpha_milli(uint16_t a_milli);
-uint16_t icpla_get_alpha_milli(void);
-
-/* Optional bias if you later map to parent selection */
-float icpla_get_rank_bias(void);
-
-#ifdef __cplusplus
-}
+/* Q-learning knobs (paper §3.4, §4.2) */
+#ifndef ICPLA_ALPHA
+#define ICPLA_ALPHA  0.3f   /* learning rate α */
 #endif
-#endif /* RPL_ICPLA_H_ */
+#ifndef ICPLA_GAMMA
+#define ICPLA_GAMMA  0.7f   /* discount β */
+#endif
+#ifndef ICPLA_EPSILON
+#define ICPLA_EPSILON 0.2f  /* ε-greedy exploration */
+#endif
+
+/* Keep a small Q-table per candidate parent */
+#define ICPLA_MAX_PARENTS 16
+
+/* Sliding window for mean collision prob (Eq.8) */
+#define ICPLA_COLL_WINDOW 5
+
+/* Public OF symbol */
+extern rpl_of_t rpl_icpla_of;
+
+/* Expose helpers so app (or platform) can poke if needed */
+void icpla_notify_tx_collision(void);
+void icpla_notify_tx_success(void);
+
+#endif /* RPL_ICPLA_H */
