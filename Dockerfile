@@ -16,11 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfann-dev \
     python3 python3-pip python3-venv python3-setuptools python3-wheel \
     python3-numpy python3-pandas python3-scipy python3-networkx python3-serial \
+    python3-matplotlib \
     && rm -rf /var/lib/apt/lists/*
-
-# Headless plotting
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir matplotlib
 
 # MSP430 toolchain (optional; keep if you use it)
 COPY msp430-gcc-9.3.1.11_linux64.tar.bz2 /opt/
