@@ -151,7 +151,7 @@ recv_cb(struct simple_udp_connection *c,
   /* ----------------------------------------------------------------------------- */
 }
 
-PROCESS(app_process, "OF0: UDP sender/receiver with energy + QLR + PRR/E2E")
+PROCESS(app_process, "OF0: UDP sender/receiver with energy + QLR + PRR/E2E");
 AUTOSTART_PROCESSES(&app_process);
 
 PROCESS_THREAD(app_process, ev, data)
