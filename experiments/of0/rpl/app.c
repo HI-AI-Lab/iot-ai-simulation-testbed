@@ -110,6 +110,8 @@ recv_cb(struct simple_udp_connection *c,
 {
   (void)c; (void)sender_port; (void)receiver_port; (void)receiver_addr;
 
+  LOG_INFO("DEBUG RECV: node=%u datalen=%d\n", node_id, datalen);
+
   received++;
   const float prr_local = (generated == 0) ? 0.0f : ((float)received / (float)generated);
   LOG_INFO("METRIC PRR_LOCAL node=%u prr=%.3f\n", node_id, prr_local);
