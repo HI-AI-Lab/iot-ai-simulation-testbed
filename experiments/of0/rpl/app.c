@@ -196,27 +196,27 @@ PROCESS_THREAD(app_process, ev, data)
       continue;
     }
 
-    if(NETSTACK_ROUTING.node_is_reachable() &&
-       NETSTACK_ROUTING.get_root_ipaddr(&dest)) {
+	if(NETSTACK_ROUTING.get_root_ipaddr(&dest)) {
+	  int r = random_rand() % 10;
+	  if(r < DROP_PROB_PER_TEN) {
+		dropped++;
+	  } else {
+		/* -------------- Added: write header then send -------------- */
+		static uint32_t seq_counter = 0;
+		pkt_hdr_t hdr;
+		hdr.src_id = (uint16_t)node_id;
+		hdr.seq    = seq_counter++;
+		hdr.t_ms   = (uint32_t)(clock_time() * (1000UL / CLOCK_SECOND)); /* ms */
 
-      int r = random_rand() % 10;
-      if(r < DROP_PROB_PER_TEN) {
-        dropped++;
-      } else {
-        /* -------------- Added: write header then send -------------- */
-        static uint32_t seq_counter = 0;
-        pkt_hdr_t hdr;
-        hdr.src_id = (uint16_t)node_id;
-        hdr.seq    = seq_counter++;
-        hdr.t_ms   = (uint32_t)(clock_time() * (1000UL / CLOCK_SECOND)); /* ms */
+		memcpy(payload, &hdr, sizeof(hdr));
+		/* ----------------------------------------------------------- */
 
-        memcpy(payload, &hdr, sizeof(hdr));
-        /* ----------------------------------------------------------- */
+		LOG_INFO("DEBUG SEND: node=%u -> root\n", node_id);
 
-        simple_udp_sendto(&udp_conn, payload, sizeof(payload), &dest);
-        generated++;
-      }
-    }
+		simple_udp_sendto(&udp_conn, payload, sizeof(payload), &dest);
+		generated++;
+	  }
+	}
 
     report_qlr();
   }
