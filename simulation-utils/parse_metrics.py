@@ -12,10 +12,11 @@ e2e_pattern   = re.compile(r"METRIC E2E avg_ms=([\d\.]+) samples=(\d+)")
 
 rows = []
 for fname in files:
-    # parse filename COOJA-nodes{N}-ppm{P}.testlog
+    # parse filename COOJA-ppm{P}-nodes{N}.testlog
     parts = fname.split("-")
-    nodes = int(parts[1].replace("nodes",""))
-    ppm   = int(parts[2].replace("ppm","").split(".")[0])
+    ppm   = int(parts[1].replace("ppm",""))
+    nodes = int(parts[2].replace("nodes","").split(".")[0])
+
 
     with open(fname) as f:
         for line in f:
