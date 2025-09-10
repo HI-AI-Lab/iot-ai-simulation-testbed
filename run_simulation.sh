@@ -41,8 +41,8 @@ do
         
         # Move the log file from the current directory to the correct subdirectory and rename it.
         mv COOJA.testlog "${DEST_DIR}/${LOG_FILE}"
-	rm COOJA.testlog
-    
+		rm COOJA.testlog
+
         echo "Moved ${LOG_FILE} to ${DEST_DIR}/."
     else
         echo "Error: The COOJA.testlog file was not created. Skipping file move."
