@@ -24,8 +24,8 @@
  * 100 ppm -> 0.60 sec
  * 120 ppm -> 0.50 sec
  */
-// #define SEND_INTERVAL_SEC 0.75   /* ~80 packets/min */
-#define SEND_INTERVAL_SEC 0.60   /* ~100 packets/min */
+#define SEND_INTERVAL_SEC 0.75   /* ~80 packets/min */
+// #define SEND_INTERVAL_SEC 0.60   /* ~100 packets/min */
 // #define SEND_INTERVAL_SEC 0.50   /* ~120 packets/min */
 
 /* Logging */
