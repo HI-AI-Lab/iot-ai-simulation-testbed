@@ -7,6 +7,8 @@ files = glob.glob("COOJA-*.testlog")
 nlt_pattern = re.compile(r"METRIC NLT DEAD node=(\d+) t_ms=(\d+) energy_mJ=([\d\.]+)")
 qlr_pattern = re.compile(r"METRIC QLR node=(\d+) qlr=([\d\.]+) sent=(\d+) dropped=(\d+)")
 prr_pattern = re.compile(r"METRIC PRR_LOCAL node=(\d+) prr=([\d\.]+)")
+prr_g_pattern = re.compile(r"METRIC PRR_GLOBAL prr=([\d\.]+) recv=(\d+) expected=(\d+)")
+e2e_pattern   = re.compile(r"METRIC E2E avg_ms=([\d\.]+) samples=(\d+)")
 
 rows = []
 for fname in files:
@@ -40,6 +42,22 @@ for fname in files:
                     rows.append({
                         "file": fname, "nodes": nodes, "ppm": ppm,
                         "metric": "PRR", "value": float(prr)
+                    })
+            elif "METRIC PRR_GLOBAL" in line:
+                m = prr_g_pattern.search(line)
+                if m:
+                    prr, recv, exp = m.groups()
+                    rows.append({
+                        "file": fname, "nodes": nodes, "ppm": ppm,
+                        "metric": "PRR_GLOBAL", "value": float(prr)
+                    })
+            elif "METRIC E2E" in line:
+                m = e2e_pattern.search(line)
+                if m:
+                    avg_ms, samples = m.groups()
+                    rows.append({
+                        "file": fname, "nodes": nodes, "ppm": ppm,
+                        "metric": "E2E", "value": float(avg_ms)
                     })
 
 df = pd.DataFrame(rows)
