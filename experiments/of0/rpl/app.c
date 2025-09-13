@@ -159,7 +159,7 @@ AUTOSTART_PROCESSES(&app_process);
 PROCESS_THREAD(app_process, ev, data)
 {
   static uint8_t payload[PAYLOAD_SIZE];
-#  static uip_ipaddr_t dest;
+//  static uip_ipaddr_t dest;
 
   PROCESS_BEGIN();
 
