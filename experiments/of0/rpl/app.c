@@ -3,7 +3,7 @@
 #include "net/routing/routing.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6.h"
-#include "net/rpl/rpl.h"
+#include "net/routing/rpl-lite/rpl.h"
 #include "sys/node-id.h"
 #include "sys/log.h"
 #include <string.h>
