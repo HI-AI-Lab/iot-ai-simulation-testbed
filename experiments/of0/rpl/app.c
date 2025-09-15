@@ -6,7 +6,7 @@
 #include "random.h"
 #include "sys/node-id.h"
 #include "project-conf.h"
-#include "net/routing/rpl-lite/rpl.h"   /* for rank access */
+#include "net/routing/rpl-lite/rpl.h"   /* for DIS output */
 #include <string.h>
 
 #define LOG_MODULE "APP"
@@ -14,7 +14,7 @@
 
 #define UDP_PORT              8765
 #define PAYLOAD_SIZE          128
-#define DROP_PROB_PER_TEN     2
+#define DROP_PROB_PER_TEN     2   /* 20% artificial drop */
 
 #define V_SUPPLY_V            3.0f
 #define I_CPU_mA              1.8f
@@ -37,7 +37,7 @@ static unsigned long last_cpu = 0;
 static unsigned long last_tx  = 0;
 static unsigned long last_rx  = 0;
 
-/* ------------------ Added: tiny header + sink-only accumulators ------------------ */
+/* ------------------ Packet header & sink accumulators ------------------ */
 #define MAX_NODES_TRACKED 256
 typedef struct __attribute__((packed)) {
   uint16_t src_id;
@@ -49,7 +49,7 @@ static uint32_t sink_recv_total = 0;
 static uint32_t sink_e2e_sum_ms = 0;
 static uint32_t sink_e2e_samples = 0;
 static uint32_t sink_max_seq[MAX_NODES_TRACKED];
-/* ------------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- */
 
 static void
 update_energy_and_maybe_die(void)
@@ -96,12 +96,11 @@ report_qlr(void)
            node_id, qlr, (unsigned long)generated, (unsigned long)dropped);
 }
 
+/* ------------------ Reachability debug ------------------ */
 static void
 health_log(void) {
   int reachable = NETSTACK_ROUTING.node_is_reachable();
-  uint16_t rank = rpl_get_my_rank();   /* use RPL-Lite API */
-
-  LOG_INFO("REACH=%d RANK=%u\n", reachable, rank);
+  LOG_INFO("REACH=%d\n", reachable);
 
   if(node_id != 1 && !reachable) {
     LOG_INFO("HINT: sending DIS\n");
@@ -109,6 +108,7 @@ health_log(void) {
   }
 }
 
+/* ------------------ Receiver callback ------------------ */
 static void
 recv_cb(struct simple_udp_connection *c,
         const uip_ipaddr_t *sender_addr,
@@ -156,6 +156,7 @@ recv_cb(struct simple_udp_connection *c,
   }
 }
 
+/* ------------------ Main process ------------------ */
 PROCESS(app_process, "OF0: UDP sender/receiver with energy + metrics");
 AUTOSTART_PROCESSES(&app_process);
 
