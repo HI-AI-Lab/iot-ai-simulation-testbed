@@ -97,16 +97,18 @@ report_qlr(void)
 }
 
 static void
-health_log(void)
-{
-  rpl_instance_t *default_instance = rpl_get_default_instance();
-  if(default_instance != NULL && default_instance->current_dag != NULL) {
-    uint16_t rank = default_instance->current_dag->rank;
-    LOG_INFO("HEALTH node=%u rank=%u\n", node_id, rank);
-  } else {
-    LOG_INFO("HEALTH node=%u rank=unknown\n", node_id);
+health_log(void) {
+  int reachable = NETSTACK_ROUTING.node_is_reachable();
+  uint16_t rank = NETSTACK_ROUTING.get_rank();
+
+  LOG_INFO("REACH=%d RANK=%u\n", reachable, rank);
+
+  if(node_id != 1 && !reachable) {
+    LOG_INFO("HINT: sending DIS\n");
+    rpl_icmp6_dis_output(NULL);
   }
 }
+
 
 static void
 recv_cb(struct simple_udp_connection *c,
