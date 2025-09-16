@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "net/netstack.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
