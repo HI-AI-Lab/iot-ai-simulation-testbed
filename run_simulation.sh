@@ -8,7 +8,8 @@
 echo "Starting the COOJA simulations..."
 
 # Define an array of node counts to simulate.
-declare -a nodes=("60" "80" "100")
+#declare -a nodes=("60" "80" "100")
+declare -a nodes=("60")
 
 # Define the ppm value as a global variable.
 PPM_VALUE="80"
