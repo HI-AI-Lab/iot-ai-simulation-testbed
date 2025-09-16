@@ -95,6 +95,10 @@ def main():
     sink_mt = motetypes[0]         # leave untouched
     node_mt = motetypes[1]         # generate motes here
 
+    for child in list(sink_mt):
+        if child.tag == "mote":
+            node_mt.remove(child)
+
     rnd = random.Random(args.seed)
     SINK_X = args.width / 2.0
     SINK_Y = 0.0
