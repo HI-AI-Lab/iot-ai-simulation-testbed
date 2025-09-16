@@ -168,12 +168,20 @@ PROCESS_THREAD(app_process, ev, data)
   PROCESS_BEGIN();
 
   if(node_id == 1) {
-    NETSTACK_ROUTING.root_start();
-    LOG_INFO("ROOT STARTED (node 1)\n");
-    memset(sink_max_seq, 0, sizeof(sink_max_seq));
-    sink_recv_total = 0;
-    sink_e2e_sum_ms = 0;
-    sink_e2e_samples = 0;
+	  uip_ipaddr_t ip;
+	  uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // global /64
+	  uip_ds6_set_addr_iid(&ip, &uip_lladdr);
+	  uip_ds6_addr_add(&ip, 0, ADDR_AUTOCONF);
+
+	  LOG_INFO("ROOT GLOBAL "); LOG_INFO_6ADDR(&ip); LOG_INFO_("\n");
+
+	  NETSTACK_ROUTING.root_start();
+	  LOG_INFO("ROOT STARTED (node 1)\n");
+
+	  memset(sink_max_seq, 0, sizeof(sink_max_seq));
+	  sink_recv_total = 0;
+	  sink_e2e_sum_ms = 0;
+	  sink_e2e_samples = 0;
   }
 
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, recv_cb);
