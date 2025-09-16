@@ -99,8 +99,26 @@ report_qlr(void)
 /* ------------------ Reachability debug ------------------ */
 static void
 health_log(void) {
+  static int last_reach = -1;
   int reachable = NETSTACK_ROUTING.node_is_reachable();
-  LOG_INFO("REACH=%d\n", reachable);
+
+  if(reachable != last_reach) {
+    last_reach = reachable;
+    if(reachable) {
+      uip_ipaddr_t root_ip;
+      if(NETSTACK_ROUTING.get_root_ipaddr(&root_ip)) {
+        LOG_INFO("REACH TRANSITION 0->1, ROOT=");
+        LOG_INFO_6ADDR(&root_ip);
+        LOG_INFO_("\n");
+      } else {
+        LOG_INFO("REACH TRANSITION 0->1, but root_ip not available yet\n");
+      }
+    } else {
+      LOG_INFO("REACH TRANSITION 1->0 (lost DAG)\n");
+    }
+  } else {
+    LOG_INFO("REACH=%d\n", reachable);
+  }
 
   if(node_id != 1 && !reachable) {
     LOG_INFO("HINT: sending DIS\n");
@@ -166,6 +184,14 @@ PROCESS_THREAD(app_process, ev, data)
   static uip_ipaddr_t dest;
 
   PROCESS_BEGIN();
+  
+	if(node_id == 1) {
+	  // (your existing global prefix + root_start)
+	  LOG_INFO("ROOT DODAG created, waiting for joiners...\n");
+	} else {
+	  LOG_INFO("JOINER node=%u started, waiting for DAG\n", node_id);
+	}
+
 
   if(node_id == 1) {
 	  uip_ipaddr_t ip;
