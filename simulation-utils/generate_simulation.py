@@ -69,9 +69,6 @@ def main():
     simulation = root.find("simulation")
     if simulation is None:
         raise SystemExit("Template error: <simulation> not found")
-    motetype = simulation.find("motetype")
-    if motetype is None:
-        raise SystemExit("Template error: <motetype> must be inside <simulation>")
 
     # Update simple fields
     t = simulation.find("title")
@@ -90,13 +87,16 @@ def main():
     ir = rm.find("interference_range")
     if ir is not None:
         ir.text = str(args.int_range)
+        
+    motetypes = simulation.findall("motetype")
+    if len(motetypes) < 2:
+        raise SystemExit("Template error: Need at least two <motetype> (sink + node)")
 
-    desc = motetype.find("description")
-    if desc is not None:
-        desc.text = args.motetype_desc
+    sink_mt = motetypes[0]         # leave untouched
+    node_mt = motetypes[1]         # generate motes here
 
     # Remove any existing <mote> entries (replace the template placeholder)
-    for child in list(motetype):
+    for child in list(node_mt):
         if child.tag == "mote":
             motetype.remove(child)
 
