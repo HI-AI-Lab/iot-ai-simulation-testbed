@@ -98,14 +98,14 @@ def main():
     # Remove any existing <mote> entries (replace the template placeholder)
     for child in list(node_mt):
         if child.tag == "mote":
-            motetype.remove(child)
+            node_mt.remove(child)
 
     # Generate motes using <pos x=".." y=".."/>; fix sink (ID=1) at edge-center
     rnd = random.Random(args.seed)
     SINK_X = args.width / 2.0
     SINK_Y = 0.0
     for i in range(1, args.motes + 1):
-        mote = ET.SubElement(motetype, "mote")
+        mote = ET.SubElement(node_mt, "mote")
 
         pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
         if i == 1:
