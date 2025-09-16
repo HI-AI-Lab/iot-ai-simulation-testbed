@@ -1,259 +1,68 @@
 #include "contiki.h"
-#include "net/routing/routing.h"
+#include "net/routing/rpl-lite/rpl.h"
 #include "net/ipv6/simple-udp.h"
-#include "sys/energest.h"
 #include "sys/log.h"
-#include "random.h"
-#include "sys/node-id.h"
-#include "project-conf.h"
-#include "net/routing/rpl-lite/rpl.h"   /* for DIS output */
-#include <string.h>
+#include "sys/energest.h"
+#include "net/packetbuf.h"
+#include "lib/random.h"
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-#define UDP_PORT              8765
-#define PAYLOAD_SIZE          128
-#define DROP_PROB_PER_TEN     2   /* 20% artificial drop */
-
-#define V_SUPPLY_V            3.0f
-#define I_CPU_mA              1.8f
-#define I_TX_mA               17.4f
-#define I_RX_mA               18.8f
-
-#define ENERGY_BUDGET_mJ      (120000.0f)
+#define UDP_PORT 1234
+#define SEND_INTERVAL (CLOCK_SECOND * 10)   /* adjust traffic rate */
 
 static struct simple_udp_connection udp_conn;
 static struct etimer periodic_timer;
+static unsigned seqno = 0;
 
-static uint32_t generated = 0;
-static uint32_t received  = 0;
-static uint32_t dropped   = 0;
+/* Counters for QLR */
+static unsigned sent_pkts = 0;
+static unsigned dropped_pkts = 0;
 
-static float total_energy_mJ = 0.0f;
-static bool is_dead = false;
-
-static unsigned long last_cpu = 0;
-static unsigned long last_tx  = 0;
-static unsigned long last_rx  = 0;
-
-/* ------------------ Packet header & sink accumulators ------------------ */
-#define MAX_NODES_TRACKED 256
-typedef struct __attribute__((packed)) {
-  uint16_t src_id;
-  uint32_t seq;
-  uint32_t t_ms;
-} pkt_hdr_t;
-
-static uint32_t sink_recv_total = 0;
-static uint32_t sink_e2e_sum_ms = 0;
-static uint32_t sink_e2e_samples = 0;
-static uint32_t sink_max_seq[MAX_NODES_TRACKED];
-/* ----------------------------------------------------------------------- */
-
-static void
-update_energy_and_maybe_die(void)
+/*---------------------------------------------------------------------------*/
+PROCESS(node_process, "RPL Node Process");
+AUTOSTART_PROCESSES(&node_process);
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(node_process, ev, data)
 {
-  energest_flush();
-
-  unsigned long cpu_now = energest_type_time(ENERGEST_TYPE_CPU);
-  unsigned long tx_now  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
-  unsigned long rx_now  = energest_type_time(ENERGEST_TYPE_LISTEN);
-
-  unsigned long cpu_diff = cpu_now - last_cpu;
-  unsigned long tx_diff  = tx_now  - last_tx;
-  unsigned long rx_diff  = rx_now  - last_rx;
-
-  last_cpu = cpu_now;
-  last_tx  = tx_now;
-  last_rx  = rx_now;
-
-  const float TICKS_PER_SEC = (float)ENERGEST_SECOND;
-  float cpu_s = cpu_diff / TICKS_PER_SEC;
-  float tx_s  = tx_diff  / TICKS_PER_SEC;
-  float rx_s  = rx_diff  / TICKS_PER_SEC;
-
-  float energy_period_mJ = V_SUPPLY_V * (
-    (I_CPU_mA/1000.0f) * cpu_s +
-    (I_TX_mA /1000.0f) * tx_s  +
-    (I_RX_mA /1000.0f) * rx_s
-  ) * 1000.0f;
-
-  total_energy_mJ += energy_period_mJ;
-
-  if(!is_dead && total_energy_mJ >= ENERGY_BUDGET_mJ) {
-    is_dead = true;
-    LOG_INFO("METRIC NLT DEAD node=%u t_ms=%lu energy_mJ=%.1f\n",
-             node_id, (unsigned long)(clock_time() * (1000UL / CLOCK_SECOND)), total_energy_mJ);
-  }
-}
-
-static void
-report_qlr(void)
-{
-  const float qlr = (generated == 0) ? 0.0f : ((float)dropped / (float)generated);
-  LOG_INFO("METRIC QLR node=%u qlr=%.3f sent=%lu dropped=%lu\n",
-           node_id, qlr, (unsigned long)generated, (unsigned long)dropped);
-}
-
-/* ------------------ Reachability debug ------------------ */
-static void
-health_log(void) {
-  static int last_reach = -1;
-  int reachable = NETSTACK_ROUTING.node_is_reachable();
-
-  if(reachable != last_reach) {
-    last_reach = reachable;
-    if(reachable) {
-      uip_ipaddr_t root_ip;
-      if(NETSTACK_ROUTING.get_root_ipaddr(&root_ip)) {
-        LOG_INFO("REACH TRANSITION 0->1, ROOT=");
-        LOG_INFO_6ADDR(&root_ip);
-        LOG_INFO_("\n");
-      } else {
-        LOG_INFO("REACH TRANSITION 0->1, but root_ip not available yet\n");
-      }
-    } else {
-      LOG_INFO("REACH TRANSITION 1->0 (lost DAG)\n");
-    }
-  } else {
-    LOG_INFO("REACH=%d\n", reachable);
-  }
-
-  if(node_id != 1 && !reachable) {
-    LOG_INFO("HINT: sending DIS\n");
-    rpl_icmp6_dis_output(NULL);
-  }
-}
-
-/* ------------------ Receiver callback ------------------ */
-static void
-recv_cb(struct simple_udp_connection *c,
-        const uip_ipaddr_t *sender_addr,
-        uint16_t sender_port,
-        const uip_ipaddr_t *receiver_addr,
-        uint16_t receiver_port,
-        const uint8_t *data,
-        uint16_t datalen)
-{
-  (void)c; (void)sender_port; (void)receiver_addr; (void)receiver_port;
-
-  received++;
-  const float prr_local = (generated == 0) ? 0.0f : ((float)received / (float)generated);
-  LOG_INFO("METRIC PRR_LOCAL node=%u prr=%.3f\n", node_id, prr_local);
-
-  if(node_id == 1 && data != NULL && datalen >= (int)sizeof(pkt_hdr_t)) {
-    pkt_hdr_t hdr;
-    memcpy(&hdr, data, sizeof(hdr));
-
-    if(hdr.src_id < MAX_NODES_TRACKED) {
-      uint32_t now_ms = (uint32_t)(clock_time() * (1000UL / CLOCK_SECOND));
-      uint32_t e2e_ms = now_ms - hdr.t_ms;
-      sink_e2e_sum_ms += e2e_ms;
-      sink_e2e_samples++;
-
-      sink_recv_total++;
-      if(hdr.seq > sink_max_seq[hdr.src_id]) {
-        sink_max_seq[hdr.src_id] = hdr.seq;
-      }
-
-      uint32_t expected_total = 0;
-      for(uint16_t i = 0; i < MAX_NODES_TRACKED; i++) {
-        if(sink_max_seq[i] > 0 || (i == hdr.src_id)) {
-          expected_total += (sink_max_seq[i] + 1);
-        }
-      }
-      float prr_global = (expected_total > 0) ? ((float)sink_recv_total / (float)expected_total) : 0.0f;
-      float e2e_avg_ms = (sink_e2e_samples > 0) ? ((float)sink_e2e_sum_ms / (float)sink_e2e_samples) : 0.0f;
-
-      LOG_INFO("METRIC PRR_GLOBAL prr=%.3f recv=%lu expected=%lu\n",
-               prr_global, (unsigned long)sink_recv_total, (unsigned long)expected_total);
-      LOG_INFO("METRIC E2E avg_ms=%.2f samples=%lu\n",
-               e2e_avg_ms, (unsigned long)sink_e2e_samples);
-    }
-  }
-}
-
-/* ------------------ Main process ------------------ */
-PROCESS(app_process, "OF0: UDP sender/receiver with energy + metrics");
-AUTOSTART_PROCESSES(&app_process);
-
-PROCESS_THREAD(app_process, ev, data)
-{
-  static uint8_t payload[PAYLOAD_SIZE];
-  static uip_ipaddr_t dest;
+  static uip_ipaddr_t dest_addr;
 
   PROCESS_BEGIN();
-  
-	if(node_id == 1) {
-	  // (your existing global prefix + root_start)
-	  LOG_INFO("ROOT DODAG created, waiting for joiners...\n");
-	} else {
-	  LOG_INFO("JOINER node=%u started, waiting for DAG\n", node_id);
-	}
 
+  simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, NULL);
 
-  if(node_id == 1) {
-	  uip_ipaddr_t ip;
-	  uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // global /64
-	  uip_ds6_set_addr_iid(&ip, &uip_lladdr);
-	  uip_ds6_addr_add(&ip, 0, ADDR_AUTOCONF);
+  etimer_set(&periodic_timer, SEND_INTERVAL);
 
-	  LOG_INFO("ROOT GLOBAL "); LOG_INFO_6ADDR(&ip); LOG_INFO_("\n");
-
-	  NETSTACK_ROUTING.root_start();
-	  LOG_INFO("ROOT STARTED (node 1)\n");
-
-	  memset(sink_max_seq, 0, sizeof(sink_max_seq));
-	  sink_recv_total = 0;
-	  sink_e2e_sum_ms = 0;
-	  sink_e2e_samples = 0;
-  }
-
-  simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, recv_cb);
-
-  memset(payload, 0, sizeof(payload));
-
-  energest_flush();
-  last_cpu = energest_type_time(ENERGEST_TYPE_CPU);
-  last_tx  = energest_type_time(ENERGEST_TYPE_TRANSMIT);
-  last_rx  = energest_type_time(ENERGEST_TYPE_LISTEN);
-
-  etimer_set(&periodic_timer, CLOCK_SECOND * SEND_INTERVAL_SEC);
+  LOG_INFO("JOINER node=%u started\n", linkaddr_node_addr.u8[7]);
 
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
     etimer_reset(&periodic_timer);
 
-    update_energy_and_maybe_die();
-
-    if(is_dead) {
-      report_qlr();
-      continue;
-    }
-
     if(NETSTACK_ROUTING.node_is_reachable() &&
-       NETSTACK_ROUTING.get_root_ipaddr(&dest)) {
+       NETSTACK_ROUTING.get_root_ipaddr(&dest_addr)) {
+      char buf[64];
+      clock_time_t now = clock_time();
+      snprintf(buf, sizeof(buf), "SEQ:%u TS:%lu", seqno, (unsigned long)now);
 
-      int r = random_rand() % 10;
-      if(r < DROP_PROB_PER_TEN) {
-        dropped++;
+      sent_pkts++;
+      int ret = simple_udp_sendto(&udp_conn, buf, strlen(buf), &dest_addr);
+
+      if(ret) {
+        LOG_INFO("DEBUG SEND node=%u seq=%u\n",
+                 linkaddr_node_addr.u8[7], seqno);
       } else {
-        static uint32_t seq_counter = 0;
-        pkt_hdr_t hdr;
-        hdr.src_id = (uint16_t)node_id;
-        hdr.seq    = seq_counter++;
-        hdr.t_ms   = (uint32_t)(clock_time() * (1000UL / CLOCK_SECOND));
-
-        memcpy(payload, &hdr, sizeof(hdr));
-
-        simple_udp_sendto(&udp_conn, payload, sizeof(payload), &dest);
-        generated++;
+        dropped_pkts++;
       }
-    }
 
-    report_qlr();
-    health_log();
+      double qlr = (sent_pkts == 0) ? 0.0 :
+                   (double)dropped_pkts / (double)sent_pkts;
+      LOG_INFO("METRIC QLR node=%u qlr=%.3f sent=%u dropped=%u\n",
+               linkaddr_node_addr.u8[7], qlr, sent_pkts, dropped_pkts);
+
+      seqno++;
+    }
   }
 
   PROCESS_END();
