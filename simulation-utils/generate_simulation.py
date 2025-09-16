@@ -97,7 +97,7 @@ def main():
 
     for child in list(sink_mt):
         if child.tag == "mote":
-            node_mt.remove(child)
+            sink_mt.remove(child)
 
     rnd = random.Random(args.seed)
     SINK_X = args.width / 2.0
