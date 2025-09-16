@@ -13,8 +13,8 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Sink Mote</description>
-      <source>[CONFIG_DIR]/app.c</source>
-      <commands>$(MAKE) -j$(CPUS) app.cooja TARGET=cooja</commands>
+      <source>[CONFIG_DIR]/sink.c</source>
+      <commands>$(MAKE) -j$(CPUS) sink.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>
@@ -45,8 +45,8 @@
     <motetype>
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Node Mote</description>
-      <source>[CONFIG_DIR]/app.c</source>
-      <commands>$(MAKE) -j$(CPUS) app.cooja TARGET=cooja</commands>
+      <source>[CONFIG_DIR]/node.c</source>
+      <commands>$(MAKE) -j$(CPUS) node.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>

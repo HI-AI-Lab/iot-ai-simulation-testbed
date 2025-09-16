@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = app
+CONTIKI_PROJECT = sink node
 TARGET = cooja
 
 CONTIKI = /workspace/contiki-ng
