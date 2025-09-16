@@ -95,6 +95,20 @@ def main():
     sink_mt = motetypes[0]         # leave untouched
     node_mt = motetypes[1]         # generate motes here
 
+    rnd = random.Random(args.seed)
+    SINK_X = args.width / 2.0
+    SINK_Y = 0.0
+    
+    mote = ET.SubElement(sink_mt, "mote")
+    pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
+    x, y = SINK_X, SINK_Y
+    pos = ET.SubElement(pos_ic, "pos")
+    pos.set("x", f"{x:.1f}")
+    pos.set("y", f"{y:.1f}")
+    
+    id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
+    ET.SubElement(id_ic, "id").text = str(i)
+
     # Remove any existing <mote> entries (replace the template placeholder)
     for child in list(node_mt):
         if child.tag == "mote":
@@ -104,19 +118,15 @@ def main():
     rnd = random.Random(args.seed)
     SINK_X = args.width / 2.0
     SINK_Y = 0.0
-    for i in range(1, args.motes + 1):
+    for i in range(1, args.motes):
         mote = ET.SubElement(node_mt, "mote")
 
         pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
-        if i == 1:
-            # Fixed sink/root at edge-center
-            x, y = SINK_X, SINK_Y
-        else:
-            x = rnd.uniform(0.0, args.width)
-            y = rnd.uniform(0.0, args.height)
+        x = rnd.uniform(0.0, args.width)
+        y = rnd.uniform(0.0, args.height)
         pos = ET.SubElement(pos_ic, "pos")
-        pos.set("x", f"{x:.8f}")
-        pos.set("y", f"{y:.8f}")
+        pos.set("x", f"{x:.1f}")
+        pos.set("y", f"{y:.1f}")
 
         id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
         ET.SubElement(id_ic, "id").text = str(i)
