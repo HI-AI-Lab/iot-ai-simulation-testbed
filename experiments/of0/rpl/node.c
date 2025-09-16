@@ -1,17 +1,16 @@
 #include "contiki.h"
 #include "net/netstack.h"
-#include "net/routing/rpl-lite/rpl.h"
+#include "net/routing/routing.h"       /* <-- needed for NETSTACK_ROUTING API */
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
 #include "sys/energest.h"
-#include "net/packetbuf.h"
 #include "lib/random.h"
 
 #define LOG_MODULE "APP"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #define UDP_PORT 1234
-#define SEND_INTERVAL (CLOCK_SECOND * 10)   /* adjust traffic rate */
+#define SEND_INTERVAL (CLOCK_SECOND * 10)
 
 static struct simple_udp_connection udp_conn;
 static struct etimer periodic_timer;
@@ -32,7 +31,6 @@ PROCESS_THREAD(node_process, ev, data)
   PROCESS_BEGIN();
 
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, NULL);
-
   etimer_set(&periodic_timer, SEND_INTERVAL);
 
   LOG_INFO("JOINER node=%u started\n", linkaddr_node_addr.u8[7]);
