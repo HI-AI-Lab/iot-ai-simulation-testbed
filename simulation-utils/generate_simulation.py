@@ -107,7 +107,7 @@ def main():
     pos.set("y", f"{y:.1f}")
     
     id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
-    ET.SubElement(id_ic, "id").text = str(i)
+    ET.SubElement(id_ic, "id").text = str(1)
 
     # Remove any existing <mote> entries (replace the template placeholder)
     for child in list(node_mt):
@@ -118,7 +118,7 @@ def main():
     rnd = random.Random(args.seed)
     SINK_X = args.width / 2.0
     SINK_Y = 0.0
-    for i in range(1, args.motes):
+    for i in range(2, args.motes+1):
         mote = ET.SubElement(node_mt, "mote")
 
         pos_ic = _make_interface_config(mote, "org.contikios.cooja.interfaces.Position")
