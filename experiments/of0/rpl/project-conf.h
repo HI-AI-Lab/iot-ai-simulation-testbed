@@ -5,7 +5,7 @@
 /* RPL + Routing Configuration                                                */
 /* -------------------------------------------------------------------------- */
 
-/* Use RPL-Lite as routing driver */
+/* Force RPL-Lite driver */
 #undef NETSTACK_CONF_ROUTING
 #define NETSTACK_CONF_ROUTING rpl_lite_driver
 
@@ -16,6 +16,13 @@
 #undef RPL_CONF_OF_OCP
 #define RPL_CONF_OF_OCP RPL_OCP_OF0
 
+/* Force default instance and enable DAO (downward routes if needed) */
+#undef RPL_CONF_DEFAULT_INSTANCE
+#define RPL_CONF_DEFAULT_INSTANCE 0
+
+#undef RPL_CONF_WITH_DAO
+#define RPL_CONF_WITH_DAO 1
+
 /* Enable router functionality */
 #undef UIP_CONF_ROUTER
 #define UIP_CONF_ROUTER 1
@@ -23,11 +30,6 @@
 /* -------------------------------------------------------------------------- */
 /* Application Traffic                                                        */
 /* -------------------------------------------------------------------------- */
-/* Choose one packet-per-minute (ppm) rate:
- * 80 ppm  -> 0.75 s interval
- * 100 ppm -> 0.60 s interval
- * 120 ppm -> 0.50 s interval
- */
 #define SEND_INTERVAL_SEC 0.75   /* ~80 packets/min */
 // #define SEND_INTERVAL_SEC 0.60   /* ~100 packets/min */
 // #define SEND_INTERVAL_SEC 0.50   /* ~120 packets/min */
@@ -41,7 +43,7 @@
 /* -------------------------------------------------------------------------- */
 /* Logging Verbosity                                                          */
 /* -------------------------------------------------------------------------- */
-#define LOG_CONF_LEVEL_RPL       LOG_LEVEL_DBG   /* DIO/DAG events */
+#define LOG_CONF_LEVEL_RPL       LOG_LEVEL_DBG   /* See DIO/DAG events */
 #define LOG_CONF_LEVEL_IPV6      LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_TCPIP     LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_6LOWPAN   LOG_LEVEL_WARN
