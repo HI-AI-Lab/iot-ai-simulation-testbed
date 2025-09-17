@@ -1,70 +1,57 @@
-#include <inttypes.h>
 #include "contiki.h"
+#include "net/routing/routing.h"
+#include "random.h"
 #include "net/netstack.h"
-#include "net/routing/routing.h"       /* <-- needed for NETSTACK_ROUTING API */
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
-#include "sys/energest.h"
-#include "lib/random.h"
+#include "sys/node-id.h"
+#include <stdio.h>
+#include <string.h>
 
-#define LOG_MODULE "APP"
+#define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-#define UDP_PORT 1234
-#define SEND_INTERVAL (CLOCK_SECOND * 10)
+/* Default = 80 PPM (0.75 s) */
+#ifndef SEND_INTERVAL_SEC
+#define SEND_INTERVAL_SEC 0.75
+#endif
+
+#define UDP_CLIENT_PORT 8765
+#define UDP_SERVER_PORT 5678
 
 static struct simple_udp_connection udp_conn;
 static struct etimer periodic_timer;
-static unsigned seqno = 0;
+static unsigned long seqno = 0;
 
-/* Counters for QLR */
-static unsigned sent_pkts = 0;
-static unsigned dropped_pkts = 0;
+PROCESS(udp_client_process, "UDP client");
+AUTOSTART_PROCESSES(&udp_client_process);
 
-/*---------------------------------------------------------------------------*/
-PROCESS(node_process, "RPL Node Process");
-AUTOSTART_PROCESSES(&node_process);
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(node_process, ev, data)
+PROCESS_THREAD(udp_client_process, ev, data)
 {
-  static uip_ipaddr_t dest_addr;
-
+  uip_ipaddr_t root_ipaddr;
   PROCESS_BEGIN();
 
-  simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, NULL);
-  etimer_set(&periodic_timer, SEND_INTERVAL);
+  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
 
-  LOG_INFO("JOINER node=%u started\n", linkaddr_node_addr.u8[7]);
+  /* Random startup delay */
+  etimer_set(&periodic_timer, random_rand() % (3 * CLOCK_SECOND));
 
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-    etimer_reset(&periodic_timer);
 
     if(NETSTACK_ROUTING.node_is_reachable() &&
-       NETSTACK_ROUTING.get_root_ipaddr(&dest_addr)) {
-      char buf[64];
+       NETSTACK_ROUTING.get_root_ipaddr(&root_ipaddr)) {
 
-      /* Use global time for accurate E2E */
-      uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-      snprintf(buf, sizeof(buf), "SEQ:%u TS:%" PRIu32, seqno, now_ms);
+      char buf[32];
+      snprintf(buf, sizeof(buf), "node=%u;seq=%lu", node_id, seqno);
 
-      sent_pkts++;
-      int ret = simple_udp_sendto(&udp_conn, buf, strlen(buf), &dest_addr);
+      LOG_INFO("TX\tnode=%u\tseq=%lu\n", node_id, seqno);
 
-      if(ret) {
-        LOG_INFO("DEBUG SEND node=%u seq=%u\n",
-                 linkaddr_node_addr.u8[7], seqno);
-      } else {
-        dropped_pkts++;
-      }
-
-      double qlr = (sent_pkts == 0) ? 0.0 :
-                   (double)dropped_pkts / (double)sent_pkts;
-      LOG_INFO("METRIC QLR node=%u qlr=%.3f sent=%u dropped=%u\n",
-               linkaddr_node_addr.u8[7], qlr, sent_pkts, dropped_pkts);
-
+      simple_udp_sendto(&udp_conn, buf, strlen(buf), &root_ipaddr);
       seqno++;
     }
+
+    etimer_set(&periodic_timer, (clock_time_t)(SEND_INTERVAL_SEC * CLOCK_SECOND));
   }
 
   PROCESS_END();
