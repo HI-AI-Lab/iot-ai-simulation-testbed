@@ -25,6 +25,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 {
   uip_ipaddr_t root_ipaddr;
   PROCESS_BEGIN();
+  
+  LOG_INFO("App starting on node=%u\n", node_id);
 
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
 
