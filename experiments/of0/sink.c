@@ -45,7 +45,9 @@ AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
+
   NETSTACK_ROUTING.root_start();
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
+
   PROCESS_END();
 }
