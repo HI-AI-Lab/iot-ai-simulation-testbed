@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "contiki.h"
 #include "net/netstack.h"
 #include "net/routing/routing.h"       /* <-- needed for NETSTACK_ROUTING API */
@@ -42,8 +43,10 @@ PROCESS_THREAD(node_process, ev, data)
     if(NETSTACK_ROUTING.node_is_reachable() &&
        NETSTACK_ROUTING.get_root_ipaddr(&dest_addr)) {
       char buf[64];
-      clock_time_t now = clock_time();
-      snprintf(buf, sizeof(buf), "SEQ:%u TS:%lu", seqno, (unsigned long)now);
+
+      /* Use global time for accurate E2E */
+      uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+      snprintf(buf, sizeof(buf), "SEQ:%u TS:%" PRIu32, seqno, now_ms);
 
       sent_pkts++;
       int ret = simple_udp_sendto(&udp_conn, buf, strlen(buf), &dest_addr);
