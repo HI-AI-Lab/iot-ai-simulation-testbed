@@ -27,12 +27,23 @@ udp_rx_callback(struct simple_udp_connection *c,
   LOG_INFO_6ADDR(sender_addr);
   LOG_INFO_(" len=%u\n", datalen);
 
-  /* Example: log PRR/E2E metrics */
+  /* --- PRR counter --- */
   static uint32_t recv_count = 0;
   recv_count++;
   LOG_INFO("METRIC PRR_GLOBAL recv=%lu\n", (unsigned long)recv_count);
 
-  LOG_INFO("METRIC E2E latency=TODOms (stub)\n");
+  /* --- Extract timestamp from payload and compute E2E latency --- */
+  unsigned seq = 0;
+  unsigned long sent_ts = 0;
+  if(sscanf((const char *)data, "SEQ:%u TS:%lu", &seq, &sent_ts) == 2) {
+    clock_time_t now = clock_time();
+    long latency_ticks = (long)now - (long)sent_ts;
+    long latency_ms = (latency_ticks * 1000) / CLOCK_SECOND;
+
+    LOG_INFO("METRIC E2E seq=%u latency=%ldms\n", seq, latency_ms);
+  } else {
+    LOG_WARN("Could not parse payload for latency\n");
+  }
 }
 /*---------------------------------------------------------------------------*/
 PROCESS(sink_process, "Sink (RPL Root)");
