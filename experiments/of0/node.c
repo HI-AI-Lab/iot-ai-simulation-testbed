@@ -11,11 +11,6 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-/* Default = 80 PPM (0.75 s) */
-#ifndef SEND_INTERVAL_SEC
-#define SEND_INTERVAL_SEC 0.75
-#endif
-
 #define UDP_CLIENT_PORT 8765
 #define UDP_SERVER_PORT 5678
 
