@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "contiki.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/netstack.h"
@@ -34,14 +35,14 @@ udp_rx_callback(struct simple_udp_connection *c,
 
   /* --- Extract timestamp from payload and compute E2E latency --- */
   unsigned seq = 0;
-  unsigned long sent_ts = 0;
-  if(sscanf((const char *)data, "SEQ:%u TS:%lu", &seq, &sent_ts) == 2) {
-    clock_time_t now = clock_time();
-    long latency_ticks = (long)now - (long)sent_ts;
-    long latency_ms = (latency_ticks * 1000) / CLOCK_SECOND;
+  uint32_t sent_ts = 0;
+  if(sscanf((const char *)data, "SEQ:%u TS:%" SCNu32, &seq, &sent_ts) == 2) {
+    uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+    int32_t latency_ms = (int32_t)(now_ms - sent_ts);
 
-    LOG_INFO("METRIC E2E seq=%u latency=%ldms\n", seq, latency_ms);
-  } else {
+    LOG_INFO("METRIC E2E seq=%u latency=%" PRId32 "ms\n", seq, latency_ms);
+  }
+ else {
     LOG_WARN("Could not parse payload for latency\n");
   }
 }
