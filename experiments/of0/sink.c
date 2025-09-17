@@ -46,7 +46,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
-  LOG_INFO("App starting on node=%u\n", node_id);
+  LOG_INFO("App starting (sink)\n");
 
   NETSTACK_ROUTING.root_start();
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
