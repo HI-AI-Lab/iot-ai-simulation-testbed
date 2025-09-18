@@ -49,24 +49,21 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
-  LOG_INFO("Routing driver active: %s\n", NETSTACK_ROUTING.name);
-  
   /* Configure prefix for the root */
   uip_ipaddr_t prefix;
   uip_ip6addr(&prefix, 0xfd00,0,0,0,0,0,0,0);  /* fd00::/64 */
   uip_ds6_set_addr_iid(&prefix, &uip_lladdr);
   uip_ds6_addr_add(&prefix, 0, ADDR_AUTOCONF);
 
-  /* Start as RPL root */
-  rpl_dag_root_start();
-
+  /* Explicitly start the RPL DAG with this prefix */
+  rpl_dag_root_start(&prefix, NULL);
   LOG_INFO("Sink started as RPL root with prefix fd00::/64\n");
-  
+
+  /* Optional: verify DAG really exists */
   rpl_instance_t *inst = rpl_get_default_instance();
-  if(inst != NULL && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
+  if(inst && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
     LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
-             inst->instance_id,
-             inst->dag.rank);
+             inst->instance_id, inst->dag.rank);
   } else {
     LOG_WARN("No active DODAG after root_start()\n");
   }
