@@ -74,10 +74,10 @@ PROCESS_THREAD(udp_server_process, ev, data)
   rpl_instance_t *inst = rpl_get_default_instance();
   if(inst) {
     rpl_prefix_t *p = &inst->dag.prefix_info;
-    uip_ip6addr_copy(&p->prefix, &a->ipaddr);  // copy IPv6 prefix
-    p->length = 64;                            // prefix length
-    p->inuse = 1;                              // mark as in use
-    rpl_set_prefix(p);                         // activate it
+    uip_ip6addr_copy(&p->prefix, &a->ipaddr);  // copy IPv6 address
+    p->length = 64;                            // prefix length in bits
+
+    rpl_set_prefix(p);                         // install it into the DAG
 
     LOG_INFO("DODAG prefix set to "); LOG_INFO_6ADDR(&a->ipaddr); LOG_INFO_("\n");
     LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
