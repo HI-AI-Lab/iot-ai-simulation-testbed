@@ -51,23 +51,23 @@ PROCESS_THREAD(udp_server_process, ev, data)
   
   NETSTACK_ROUTING.root_start();
   
-	rpl_instance_t *inst = rpl_get_default_instance();
-	if(inst != NULL && inst->dag.dag_id != NULL) {
-	  LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
-			   inst->instance_id,
-			   inst->dag.rank);
-	} else {
-	  LOG_WARN("No active DODAG after root_start()\n");
-	}
+rpl_instance_t *inst = rpl_get_default_instance();
+if(inst != NULL && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
+  LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
+           inst->instance_id,
+           inst->dag.rank);
+} else {
+  LOG_WARN("No active DODAG after root_start()\n");
+}
   
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
   
-	uip_ds6_addr_t *root_addr = uip_ds6_get_global(ADDR_PREFERRED);
-	if(root_addr != NULL) {
-	  LOG_INFO("Root global IPv6 address: ");
-	  LOG_INFO_6ADDR(&root_addr->ipaddr);
-	  LOG_INFO_("\n");
-	}
+uip_ds6_addr_t *root_addr = uip_ds6_get_global(ADDR_PREFERRED);
+if(root_addr != NULL) {
+  LOG_INFO("Root global IPv6 address: ");
+  LOG_INFO_6ADDR(&root_addr->ipaddr);
+  LOG_INFO_("\n");
+}
 
   PROCESS_END();
 }
