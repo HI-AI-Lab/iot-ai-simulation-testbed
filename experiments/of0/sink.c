@@ -49,17 +49,26 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
+  /* Configure prefix for the root */
   uip_ipaddr_t ip;
-  uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // or fd00::/64
+  uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // global /64
   uip_ds6_set_addr_iid(&ip, &uip_lladdr);
   uip_ds6_addr_add(&ip, 0, ADDR_AUTOCONF);
 
   LOG_INFO("ROOT GLOBAL "); LOG_INFO_6ADDR(&ip); LOG_INFO_("\n");
 
+  /* Wait until a preferred global address is available */
+  uip_ds6_addr_t *a = NULL;
+  do {
+    PROCESS_PAUSE();
+    a = uip_ds6_get_global(ADDR_PREFERRED);
+  } while(a == NULL);
+
+  /* Now start as RPL root */
   NETSTACK_ROUTING.root_start();
   LOG_INFO("ROOT STARTED (node 1)\n");
 
-  /* Optional: verify DAG really exists */
+  /* Check if DODAG was created */
   rpl_instance_t *inst = rpl_get_default_instance();
   if(inst && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
     LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
