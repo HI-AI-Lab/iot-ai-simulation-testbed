@@ -66,17 +66,19 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   LOG_INFO("Preferred global? yes\n");
 
-  /* Now start as RPL root */
+  /* Start as RPL root */
   NETSTACK_ROUTING.root_start();
   LOG_INFO("ROOT STARTED (node 1)\n");
 
-  /* Check if DODAG was created */
+  /* Explicitly set DAG prefix */
   rpl_instance_t *inst = rpl_get_default_instance();
-  if(inst && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
+  if(inst) {
+    rpl_set_prefix(&inst->dag, &a->ipaddr, 64);
+    LOG_INFO("DODAG prefix set to "); LOG_INFO_6ADDR(&a->ipaddr); LOG_INFO_("\n");
     LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
              inst->instance_id, inst->dag.rank);
   } else {
-    LOG_WARN("No active DODAG after root_start()\n");
+    LOG_WARN("No active RPL instance after root_start()\n");
   }
 
   /* Register UDP server */
