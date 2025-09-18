@@ -64,6 +64,9 @@ PROCESS_THREAD(udp_server_process, ev, data)
     a = uip_ds6_get_global(ADDR_PREFERRED);
   } while(a == NULL);
 
+  uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
+  LOG_INFO("Preferred global? %s\n", a ? "yes" : "no");
+
   /* Now start as RPL root */
   NETSTACK_ROUTING.root_start();
   LOG_INFO("ROOT STARTED (node 1)\n");
