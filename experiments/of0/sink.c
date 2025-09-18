@@ -1,5 +1,6 @@
 #include "contiki.h"
 #include "net/routing/routing.h"
+#include "net/routing/rpl-lite/rpl.h"
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
@@ -48,8 +49,23 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PROCESS_BEGIN();
   
   NETSTACK_ROUTING.root_start();
+  rpl_instance_t *inst = rpl_get_default_instance();
+  if(inst != NULL && inst->current_dag != NULL) {
+    LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
+           inst->instance_id,
+           inst->current_dag->rank);
+  } else {
+    LOG_WARN("No active DODAG after root_start()\n");
+  }
+  
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
-  LOG_INFO("Sink started as RPL root (DODAG created)\n");
+  
+  uip_ipaddr_t prefix;
+	if(uip_ds6_get_global(ADDR_PREFERRED, &prefix) != NULL) {
+	  LOG_INFO("Root global IPv6 address: ");
+	  LOG_INFO_6ADDR(&prefix);
+	  LOG_INFO_("\n");
+	}
 
   PROCESS_END();
 }
