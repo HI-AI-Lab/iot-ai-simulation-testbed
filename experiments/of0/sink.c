@@ -49,25 +49,34 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
-  NETSTACK_ROUTING.root_start();
+  /* Configure prefix for the root */
+  uip_ipaddr_t prefix;
+  uip_ip6addr(&prefix, 0xfd00,0,0,0,0,0,0,0);  /* fd00::/64 */
+  uip_ds6_set_addr_iid(&prefix, &uip_lladdr);
+  uip_ds6_addr_add(&prefix, 0, ADDR_AUTOCONF);
+
+  /* Start as RPL root */
+  rpl_dag_root_start();
+
+  LOG_INFO("Sink started as RPL root with prefix fd00::/64\n");
   
-rpl_instance_t *inst = rpl_get_default_instance();
-if(inst != NULL && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
-  LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
-           inst->instance_id,
-           inst->dag.rank);
-} else {
-  LOG_WARN("No active DODAG after root_start()\n");
-}
+  rpl_instance_t *inst = rpl_get_default_instance();
+  if(inst != NULL && !uip_is_addr_unspecified(&inst->dag.dag_id)) {
+    LOG_INFO("DODAG confirmed: instance_id=%u, rank=%u\n",
+             inst->instance_id,
+             inst->dag.rank);
+  } else {
+    LOG_WARN("No active DODAG after root_start()\n");
+  }
   
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
   
-uip_ds6_addr_t *root_addr = uip_ds6_get_global(ADDR_PREFERRED);
-if(root_addr != NULL) {
-  LOG_INFO("Root global IPv6 address: ");
-  LOG_INFO_6ADDR(&root_addr->ipaddr);
-  LOG_INFO_("\n");
-}
+  uip_ds6_addr_t *root_addr = uip_ds6_get_global(ADDR_PREFERRED);
+  if(root_addr != NULL) {
+    LOG_INFO("Root global IPv6 address: ");
+    LOG_INFO_6ADDR(&root_addr->ipaddr);
+    LOG_INFO_("\n");
+  }
 
   PROCESS_END();
 }
