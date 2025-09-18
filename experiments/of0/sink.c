@@ -48,7 +48,7 @@ AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
-  
+
   /* Configure prefix for the root */
   uip_ipaddr_t ip;
   uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // global /64
@@ -64,8 +64,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
     a = uip_ds6_get_global(ADDR_PREFERRED);
   } while(a == NULL);
 
-  uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
-  LOG_INFO("Preferred global? %s\n", a ? "yes" : "no");
+  LOG_INFO("Preferred global? yes\n");
 
   /* Now start as RPL root */
   NETSTACK_ROUTING.root_start();
@@ -79,13 +78,15 @@ PROCESS_THREAD(udp_server_process, ev, data)
   } else {
     LOG_WARN("No active DODAG after root_start()\n");
   }
-  
-  simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
-  
-  uip_ds6_addr_t *root_addr = uip_ds6_get_global(ADDR_PREFERRED);
-  if(root_addr != NULL) {
+
+  /* Register UDP server */
+  simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
+                      UDP_CLIENT_PORT, udp_rx_callback);
+
+  /* Print root global IPv6 address */
+  if(a != NULL) {
     LOG_INFO("Root global IPv6 address: ");
-    LOG_INFO_6ADDR(&root_addr->ipaddr);
+    LOG_INFO_6ADDR(&a->ipaddr);
     LOG_INFO_("\n");
   }
 
