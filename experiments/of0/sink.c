@@ -49,15 +49,15 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
-  /* Configure prefix for the root */
-  uip_ipaddr_t prefix;
-  uip_ip6addr(&prefix, 0xfd00,0,0,0,0,0,0,0);  /* fd00::/64 */
-  uip_ds6_set_addr_iid(&prefix, &uip_lladdr);
-  uip_ds6_addr_add(&prefix, 0, ADDR_AUTOCONF);
+  uip_ipaddr_t ip;
+  uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // or fd00::/64
+  uip_ds6_set_addr_iid(&ip, &uip_lladdr);
+  uip_ds6_addr_add(&ip, 0, ADDR_AUTOCONF);
 
-  /* Explicitly start the RPL DAG with this prefix */
-  rpl_dag_root_start(&prefix, NULL);
-  LOG_INFO("Sink started as RPL root with prefix fd00::/64\n");
+  LOG_INFO("ROOT GLOBAL "); LOG_INFO_6ADDR(&ip); LOG_INFO_("\n");
+
+  NETSTACK_ROUTING.root_start();
+  LOG_INFO("ROOT STARTED (node 1)\n");
 
   /* Optional: verify DAG really exists */
   rpl_instance_t *inst = rpl_get_default_instance();
