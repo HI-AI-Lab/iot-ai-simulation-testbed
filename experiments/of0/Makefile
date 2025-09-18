@@ -6,6 +6,8 @@ CONTIKI = /workspace/contiki-ng
 CFLAGS  += -DNETSTACK_CONF_ROUTING=rpl_lite_driver \
            -DRPL_CONF_OF=rpl_of0 \
            -DRPL_CONF_OF_OCP=RPL_OCP_OF0 \
+           -DRPL_CONF_DEFAULT_INSTANCE=0 \
+           -DRPL_CONF_WITH_DAO=1 \
            -DUIP_CONF_ROUTER=1
 
 MODULES += os/net/routing/rpl-lite/rpl-of0
