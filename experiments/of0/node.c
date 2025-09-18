@@ -26,7 +26,10 @@ PROCESS_THREAD(udp_client_process, ev, data)
   uip_ipaddr_t root_ipaddr;
   PROCESS_BEGIN();
   
-  LOG_INFO("App starting on node=%u\n", node_id);
+  LOG_INFO("App starting on node=%u, interval=%lu ticks (%.2f sec)\n",
+         node_id,
+         (unsigned long)(SEND_INTERVAL_SEC * CLOCK_SECOND),
+         (double)SEND_INTERVAL_SEC);
 
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
 
