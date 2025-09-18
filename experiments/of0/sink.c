@@ -47,14 +47,9 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
   
-  LOG_INFO("App starting on node=%u, interval=%lu ticks (%.2f sec)\n",
-         node_id,
-         (unsigned long)(SEND_INTERVAL_SEC * CLOCK_SECOND),
-         (double)SEND_INTERVAL_SEC);
-
-
   NETSTACK_ROUTING.root_start();
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL, UDP_CLIENT_PORT, udp_rx_callback);
+  LOG_INFO("Sink started as RPL root (DODAG created)\n");
 
   PROCESS_END();
 }
