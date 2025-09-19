@@ -28,7 +28,7 @@ do
     echo "Running simulation with ${node_count} nodes..."
 
     # Construct the full path to the .csc file for the current simulation.
-    CSC_PATH="/workspace/testbed/experiments/of0/rpl/simulation_gen_${node_count}.csc"
+    CSC_PATH="/workspace/testbed/experiments/mrhof/simulation_gen_${node_count}.csc"
 
     # Construct the desired output log file name using the variable.
     LOG_FILE="COOJA-ppm${PPM_VALUE}-nodes${node_count}.testlog"
