@@ -66,11 +66,18 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   LOG_INFO("Preferred global? yes\n");
 
+  rpl_instance_t *inst = NULL;
+  do {
+    PROCESS_PAUSE();
+    inst = rpl_get_default_instance();
+  } while(inst == NULL);
+
   /* Start as RPL root */
   NETSTACK_ROUTING.root_start();
   LOG_INFO("ROOT STARTED (node 1)\n");
 
-  /* Explicitly set DAG prefix */
+/*
+  // Explicitly set DAG prefix 
   rpl_instance_t *inst = rpl_get_default_instance();
   if(inst) {
     rpl_prefix_t *p = &inst->dag.prefix_info;
@@ -85,6 +92,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   } else {
     LOG_WARN("No active RPL instance after root_start()\n");
   }
+*/
 
   /* Register UDP server */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
