@@ -49,6 +49,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   PROCESS_BEGIN();
 
+  LOG_INFO("Routing driver active: %s\n", NETSTACK_ROUTING.name);
+
   /* Configure prefix for the root */
   uip_ipaddr_t ip;
   uip_ip6addr(&ip, 0x2001,0xdb8,0,0,0,0,0,0);  // global /64
