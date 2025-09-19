@@ -66,14 +66,15 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   LOG_INFO("Preferred global? yes\n");
 
+  /* Start as RPL root */
+  NETSTACK_ROUTING.root_start();
+
   rpl_instance_t *inst = NULL;
   do {
     PROCESS_PAUSE();
     inst = rpl_get_default_instance();
   } while(inst == NULL);
 
-  /* Start as RPL root */
-  NETSTACK_ROUTING.root_start();
   LOG_INFO("ROOT STARTED (node 1)\n");
 
 /*
