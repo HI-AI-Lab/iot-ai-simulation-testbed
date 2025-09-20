@@ -78,18 +78,6 @@ udp_rx_callback(struct simple_udp_connection *c,
       LOG_WARN_("\n");
   }
 }
-
-static void
-wait_until_end(void) {
-  uint32_t ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;
-  while(ticks_left > 0) {
-    clock_time_t step = ticks_left > 60000 ? 60000 : ticks_left; // max safe
-    struct etimer t;
-    etimer_set(&t, step);
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-    ticks_left -= step;
-  }
-}
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
@@ -102,7 +90,14 @@ PROCESS_THREAD(udp_server_process, ev, data)
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
 
-  wait_until_end();
+  ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;  // convert ms to ticks
+
+  while(ticks_left > 0) {
+    step = ticks_left > 60000 ? 60000 : ticks_left; // safe max
+    etimer_set(&t, step);
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+    ticks_left -= step;
+  }
   
   LOG_INFO("WRAPUP sink: dumping final metrics at end of sim\n");
 
