@@ -39,8 +39,7 @@
 #define UDP_CLIENT_PORT	8765
 #define UDP_SERVER_PORT	5678
 
-#define SIM_END_MS       5020000UL   // total runtime in ms (e.g. 5000s = ~83 min)
-#define WRAPUP_MARGIN_MS 10000UL     // stop 20s before end
+#define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
 typedef struct {
   uint32_t t_sent;       // send timestamp (ms, from clock_time)
@@ -93,7 +92,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
                       UDP_CLIENT_PORT, udp_rx_callback);
 
   /* before loop: schedule first send with Poisson gap */
-  etimer_set(&wrapup_timer, SIM_END_MS-WRAPUP_MARGIN_MS);
+  etimer_set(&wrapup_timer, SIM_END_MS);
   
   while(1) {
 	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wrapup_timer));
