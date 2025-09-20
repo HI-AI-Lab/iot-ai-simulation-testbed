@@ -8,6 +8,9 @@
 
 echo "Starting the COOJA multi-simulations..."
 
+# Record the start time of the entire script.
+start_time=$(date +%s)
+
 # Define arrays for the different simulation parameters.
 declare -a nodes=("60" "80" "100")
 declare -a ppm_values=("80" "100" "120")
@@ -95,6 +98,19 @@ do
 		fi
     done
 done
+# Record the end time of the entire script.
+end_time=$(date +%s)
+
+# Calculate and format the duration into years, months, days, hours, minutes, and seconds.
+years=$((duration / 31536000))
+months=$(( (duration % 31536000) / 2592000 ))
+days=$(( (duration % 2592000) / 86400 ))
+hours=$(( (duration % 86400) / 3600 ))
+minutes=$(( (duration % 3600) / 60 ))
+seconds=$((duration % 60))
+
+# Print the final output.
 echo "--------------------------------------------------------"
 echo "All 9 simulations are complete. The log files have been generated and moved to ${LOGS_BASE_DIR}."
+echo "Total script execution time: ${years} years, ${months} months, ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds."
 echo "Cleanup complete."
