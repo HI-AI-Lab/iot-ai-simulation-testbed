@@ -91,8 +91,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
 
-  /* before loop: schedule first send with Poisson gap */
-  etimer_set(&wrapup_timer, SIM_END_MS);
+  etimer_set(&wrapup_timer, SIM_END_MS * CLOCK_SECOND / 1000);
   
   while(1) {
 	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wrapup_timer));
