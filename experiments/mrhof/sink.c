@@ -67,7 +67,7 @@ udp_rx_callback(struct simple_udp_connection *c,
 
       uint32_t t_recv = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
       int32_t latency = (int32_t)(t_recv - pkt.t_sent);
-	  if(latency_ticks < 0) latency_ticks = 0;
+	  if(latency < 0) latency = 0;
 
       LOG_INFO("RX from ");
       LOG_INFO_6ADDR(sender_addr);
