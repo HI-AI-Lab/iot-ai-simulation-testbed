@@ -15,10 +15,11 @@
 #define UDP_SERVER_PORT	5678
 
 /* Default if not provided from Makefile */
+/*
 #ifndef SEND_INTERVAL_MS
-#define SEND_INTERVAL_MS 750  /* ~80 PPM */
+#define SEND_INTERVAL_MS 750  // ~80 PPM
 #endif
-
+*/
 static struct simple_udp_connection udp_conn;
 static uint32_t rx_count = 0;
 
