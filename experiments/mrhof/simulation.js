@@ -1,6 +1,6 @@
 // Run simulation for exactly this many milliseconds of simulated time
 
-TIMEOUT(5000000, log.testOK()); // On timeout, exit with status 0
+TIMEOUT(5020000, log.testOK()); // On timeout, exit with status 0
 
 while (true) {
   YIELD();

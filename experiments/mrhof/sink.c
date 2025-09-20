@@ -39,6 +39,9 @@
 #define UDP_CLIENT_PORT	8765
 #define UDP_SERVER_PORT	5678
 
+#define SIM_END_MS       5020000UL   // total runtime in ms (e.g. 5000s = ~83 min)
+#define WRAPUP_MARGIN_MS 10000UL     // stop 20s before end
+
 typedef struct {
   uint32_t t_sent;       // send timestamp (ms, from clock_time)
   uint8_t  padding[124]; // filler to make total size = 128 bytes
@@ -64,6 +67,7 @@ udp_rx_callback(struct simple_udp_connection *c,
 
       uint32_t t_recv = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
       int32_t latency = (int32_t)(t_recv - pkt.t_sent);
+	  if(latency_ticks < 0) latency_ticks = 0;
 
       LOG_INFO("RX from ");
       LOG_INFO_6ADDR(sender_addr);
@@ -78,6 +82,7 @@ udp_rx_callback(struct simple_udp_connection *c,
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
+  static struct etimer wrapup_timer;
   PROCESS_BEGIN();
 
   /* Initialize DAG root */
@@ -86,6 +91,15 @@ PROCESS_THREAD(udp_server_process, ev, data)
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
+
+  /* before loop: schedule first send with Poisson gap */
+  etimer_set(&wrapup_timer, SIM_END_MS-WRAPUP_MARGIN_MS);
+  
+  while(1) {
+	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wrapup_timer));
+	LOG_INFO("WRAPUP by the Sink");
+    PROCESS_EXIT();
+  }
 
   PROCESS_END();
 }
