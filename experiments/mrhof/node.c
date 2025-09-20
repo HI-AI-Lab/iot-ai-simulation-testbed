@@ -78,6 +78,13 @@ PROCESS_THREAD(udp_client_process, ev, data)
   
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+	
+    uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+    if(now_ms > (SIM_END_MS)) {
+      LOG_INFO("WRAPUP node: Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32"\n",
+           tx_count, rx_count, missed_tx_count);
+      PROCESS_EXIT();  // stop sending
+    }
 
     if(NETSTACK_ROUTING.node_is_reachable() &&
         NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
@@ -86,13 +93,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
       if(tx_count % 100 == 0) {
         LOG_INFO("Tx/Rx/MissedTx: %" PRIu32 "/%" PRIu32 "/%" PRIu32 "\n",
                  tx_count, rx_count, missed_tx_count);
-      }
-
-	  uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-      if(now_ms > (SIM_END_MS)) {
-        LOG_INFO("WRAPUP node: Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32"\n",
-             tx_count, rx_count, missed_tx_count);
-        PROCESS_EXIT();  // stop sending
       }
 
       /* Send to DAG root */
