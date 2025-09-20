@@ -25,26 +25,25 @@ fi
 # Loop through each node count.
 for node_count in "${nodes[@]}"
 do
-    echo "--------------------------------------------------------"
-    echo "Running simulation with ${node_count} nodes..."
-    # -------------------------------------------------------------
+		# Loop through each PPM value.
+		for ppm_value in "${ppm_values[@]}"
+		do
+			echo "--------------------------------------------------------"
+		echo "Running simulation with ${node_count} nodes..."
+		# -------------------------------------------------------------
 
-    # --- Create a generic simulation file for this node count ---
-    # We copy the specific node count file to a generic name.
-    echo "Creating a generic simulation.csc file from simulation-nodes${node_count}.csc..."
-    cp "/workspace/${MRHOF_DIR}/simulation-nodes${node_count}.csc" "/workspace/${MRHOF_DIR}/simulation.csc"
-    # -------------------------------------------------------------
+		# --- Create a generic simulation file for this node count ---
+		# We copy the specific node count file to a generic name.
+		echo "Creating a generic simulation.csc file from simulation-nodes${node_count}.csc..."
+		cp "/workspace/${MRHOF_DIR}/simulation-nodes${node_count}.csc" "/workspace/${MRHOF_DIR}/simulation.csc"
+		# -------------------------------------------------------------
 
-    # --- Copy correct positions header for this node count ---
-    echo "Copying positions header for ${node_count} nodes..."
-    cp "/workspace/${MRHOF_DIR}/positions-simulation-nodes$nodes{node_count}.h" \
-       "/workspace/${MRHOF_DIR}/positions-simulation.h"
-    # ----------------------------------------------------------
-
-    # Loop through each PPM value.
-    for ppm_value in "${ppm_values[@]}"
-    do
-        # --- Clean build directories before starting simulation ---
+		# --- Copy correct positions header for this node count ---
+		echo "Copying positions header for ${node_count} nodes..."
+		cp "/workspace/${MRHOF_DIR}/positions-simulation-nodes${node_count}.h" \
+		   "/workspace/${MRHOF_DIR}/positions-simulation.h"
+		# ----------------------------------------------------------
+		# --- Clean build directories before starting simulation ---
         # This ensures a fresh compilation and prevents issues from previous runs.
         echo "Cleaning build and rpl directories for fresh compilation..."
         rm -rf "${MRHOF_DIR}/rpl"
@@ -78,24 +77,24 @@ do
         else
             echo "Error: The COOJA.testlog file was not created. Skipping file move."
         fi
+		# --- Cleanup temporary files ---
+		if [ -f "${MRHOF_DIR}/Makefile" ]; then
+			rm "${MRHOF_DIR}/Makefile"
+		fi
+		if [ -f "${MRHOF_DIR}/simulation.csc" ]; then
+			rm "${MRHOF_DIR}/simulation.csc"
+		fi
+		if [ -f "${MRHOF_DIR}/positions-simulation.h" ]; then
+			rm "${MRHOF_DIR}/positions-simulation.h"
+		fi
+		if [ -d "${MRHOF_DIR}/rpl" ]; then
+			rm -rf "${MRHOF_DIR}/rpl"
+		fi
+		if [ -d "${MRHOF_DIR}/build" ]; then
+			rm -rf "${MRHOF_DIR}/build"
+		fi
     done
 done
-
 echo "--------------------------------------------------------"
 echo "All 9 simulations are complete. The log files have been generated and moved to ${LOGS_BASE_DIR}."
-
-# --- Cleanup temporary files ---
-echo "Cleaning up temporary files..."
-if [ -f "COOJA.testlog" ]; then
-    rm "COOJA.testlog"
-fi
-if [ -f "${MRHOF_DIR}/Makefile" ]; then
-    rm "${MRHOF_DIR}/Makefile"
-fi
-if [ -f "${MRHOF_DIR}/simulation.csc" ]; then
-    rm "${MRHOF_DIR}/simulation.csc"
-fi
-if [ -f "${MRHOF_DIR}/positions-simulation.h" ]; then
-    rm "${MRHOF_DIR}/positions-simulation.h"
-fi
 echo "Cleanup complete."
