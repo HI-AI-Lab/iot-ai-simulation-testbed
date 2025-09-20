@@ -41,6 +41,12 @@ do
     cp "/workspace/${MRHOF_DIR}/simulation-nodes${node_count}.csc" "/workspace/${MRHOF_DIR}/simulation.csc"
     # -------------------------------------------------------------
 
+    # --- Copy correct positions header for this node count ---
+    echo "Copying positions header for ${node_count} nodes..."
+    cp "/workspace/${MRHOF_DIR}/positions-simulation_${node_count}nodes.h" \
+       "/workspace/${MRHOF_DIR}/positions-simulation.h"
+    # ----------------------------------------------------------
+
     # Loop through each PPM value.
     for ppm_value in "${ppm_values[@]}"
     do
