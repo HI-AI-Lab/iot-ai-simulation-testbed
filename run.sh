@@ -43,7 +43,7 @@ do
 
     # --- Copy correct positions header for this node count ---
     echo "Copying positions header for ${node_count} nodes..."
-    cp "/workspace/${MRHOF_DIR}/positions-simulation-${node_count}nodes.h" \
+    cp "/workspace/${MRHOF_DIR}/positions-simulation-$nodes{node_count}.h" \
        "/workspace/${MRHOF_DIR}/positions-simulation.h"
     # ----------------------------------------------------------
 
