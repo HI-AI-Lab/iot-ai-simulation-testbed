@@ -4,6 +4,7 @@
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
+#include "lib/cooja-mote.h"
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
@@ -72,6 +73,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                       UDP_SERVER_PORT, NULL);
+
+  LOG_INFO("My coordinates are: x=%.2f, y=%.2f\n", x_coord, y_coord);
 
   /* before loop: schedule first send with Poisson gap */
   etimer_set(&periodic_timer, poisson_next_delay_ticks());

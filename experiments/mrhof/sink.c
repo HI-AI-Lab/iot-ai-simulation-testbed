@@ -31,8 +31,9 @@
 #include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
-
 #include "sys/log.h"
+#include "lib/cooja-mote.h"
+
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
@@ -92,6 +93,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
+
+  LOG_INFO("My coordinates are: x=%.2f, y=%.2f\n", x_coord, y_coord);
 
   ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;  // convert ms to ticks
 
