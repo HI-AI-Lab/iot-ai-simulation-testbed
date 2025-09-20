@@ -42,6 +42,15 @@
 
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
+/*
+#ifndef MY_X
+#define MY_X -1.0
+#endif
+#ifndef MY_Y
+#define MY_Y -1.0
+#endif
+*/
+
 typedef struct {
   uint32_t t_sent;       // send timestamp (ms, from clock_time)
   uint8_t  padding[124]; // filler to make total size = 128 bytes
@@ -94,7 +103,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
 
-  LOG_INFO("My coordinates are: x=%.2f, y=%.2f\n", x_coord, y_coord);
+  LOG_INFO("My coordinates are: x=%.2f, y=%.2f\n", MY_X, MY_Y);
 
   ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;  // convert ms to ticks
 
