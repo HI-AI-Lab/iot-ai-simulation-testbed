@@ -27,12 +27,6 @@ for node_count in "${nodes[@]}"
 do
     echo "--------------------------------------------------------"
     echo "Running simulation with ${node_count} nodes..."
-    
-    # --- Clean build directories before starting simulation ---
-    # This ensures a fresh compilation and prevents issues from previous runs.
-    echo "Cleaning build and rpl directories for fresh compilation..."
-    rm -rf "${MRHOF_DIR}/rpl"
-    rm -rf "${MRHOF_DIR}/build"
     # -------------------------------------------------------------
 
     # --- Create a generic simulation file for this node count ---
@@ -50,7 +44,12 @@ do
     # Loop through each PPM value.
     for ppm_value in "${ppm_values[@]}"
     do
-        echo "Running simulation for ${node_count} nodes and ${ppm_value} ppm..."
+        # --- Clean build directories before starting simulation ---
+        # This ensures a fresh compilation and prevents issues from previous runs.
+        echo "Cleaning build and rpl directories for fresh compilation..."
+        rm -rf "${MRHOF_DIR}/rpl"
+        rm -rf "${MRHOF_DIR}/build"
+		echo "Running simulation for ${node_count} nodes and ${ppm_value} ppm..."
 
         # --- NEW: Copy the appropriate Makefile for the current PPM value ---
         echo "Copying Makefile for ppm ${ppm_value}..."
