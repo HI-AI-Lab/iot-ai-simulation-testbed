@@ -1,7 +1,11 @@
 CONTIKI_PROJECT = RARL
+
 TARGET = cooja
+
 CONTIKI = /workspace/contiki-ng
 
 CFLAGS += -DSEND_INTERVAL_SEC=0.75   # 80 PPM (default)
+
+LDLIBS += -lm
 
 include $(CONTIKI)/Makefile.include
