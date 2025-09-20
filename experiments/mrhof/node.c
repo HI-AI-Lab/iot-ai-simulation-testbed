@@ -21,12 +21,6 @@
 #ifndef SEND_INTERVAL_MS
 #define SEND_INTERVAL_MS 750  // ~80 PPM
 #endif
-#ifndef MY_X
-#define MY_X -1.0
-#endif
-#ifndef MY_Y
-#define MY_Y -1.0
-#endif
 */
 
 
