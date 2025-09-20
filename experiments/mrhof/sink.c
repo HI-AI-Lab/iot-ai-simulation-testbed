@@ -39,6 +39,11 @@
 #define UDP_CLIENT_PORT	8765
 #define UDP_SERVER_PORT	5678
 
+typedef struct {
+  uint32_t t_sent;       // send timestamp (ms, from clock_time)
+  uint8_t  padding[124]; // filler to make total size = 128 bytes
+} __attribute__((packed)) app_packet_t;
+
 static struct simple_udp_connection udp_conn;
 
 PROCESS(udp_server_process, "SINK");
@@ -53,9 +58,22 @@ udp_rx_callback(struct simple_udp_connection *c,
          const uint8_t *data,
          uint16_t datalen)
 {
-  LOG_INFO("Received request '%.*s' from ", datalen, (char *) data);
-  LOG_INFO_6ADDR(sender_addr);
-  LOG_INFO_("\n");
+  if(datalen == sizeof(app_packet_t)) {
+      app_packet_t pkt;
+      memcpy(&pkt, data, sizeof(pkt));
+
+      uint32_t t_recv = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+      int32_t latency = (int32_t)(t_recv - pkt.t_sent);
+
+      LOG_INFO("RX from ");
+      LOG_INFO_6ADDR(sender_addr);
+      LOG_INFO_(" t_sent=%"PRIu32" t_recv=%"PRIu32" latency=%"PRId32"ms size=%uB\n",
+               pkt.t_sent, t_recv, latency, datalen);
+  } else {
+      LOG_WARN("RX wrong size=%u from ", datalen);
+      LOG_WARN_6ADDR(sender_addr);
+      LOG_WARN_("\n");
+  }
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)

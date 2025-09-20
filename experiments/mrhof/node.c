@@ -23,6 +23,11 @@
 static struct simple_udp_connection udp_conn;
 static uint32_t rx_count = 0;
 
+typedef struct {
+  uint32_t t_sent;       // send timestamp (ms, from clock_time)
+  uint8_t  padding[124]; // filler to make total size = 128 bytes
+} __attribute__((packed)) app_packet_t;
+
 /* Return an exponential( mean = SEND_INTERVAL_MS ) delay in Contiki ticks */
 static clock_time_t
 poisson_next_delay_ticks(void)
@@ -76,18 +81,17 @@ PROCESS_THREAD(udp_client_process, ev, data)
     if(NETSTACK_ROUTING.node_is_reachable() &&
         NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
 
-      /* Print statistics every 10th TX */
-      if(tx_count % 10 == 0) {
+      /* Print statistics every 100th TX */
+      if(tx_count % 100 == 0) {
         LOG_INFO("Tx/Rx/MissedTx: %" PRIu32 "/%" PRIu32 "/%" PRIu32 "\n",
                  tx_count, rx_count, missed_tx_count);
       }
 
       /* Send to DAG root */
-      LOG_INFO("Sending request %"PRIu32" to ", tx_count);
-      LOG_INFO_6ADDR(&dest_ipaddr);
-      LOG_INFO_("\n");
-      snprintf(str, sizeof(str), "hello %" PRIu32 "", tx_count);
-      simple_udp_sendto(&udp_conn, str, strlen(str), &dest_ipaddr);
+      app_packet_t pkt;
+      pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+      memset(pkt.padding, 0, sizeof(pkt.padding));
+      simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
       tx_count++;
     } else {
       LOG_INFO("Not reachable yet\n");
