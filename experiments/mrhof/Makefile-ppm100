@@ -4,7 +4,7 @@ TARGET = cooja
 
 CONTIKI = /workspace/contiki-ng
 
-CFLAGS += -DSEND_INTERVAL_SEC=0.6  # 100 PPM
+CFLAGS += -DSEND_INTERVAL_MS=600  # 100 PPM
 
 LDLIBS += -lm
 
