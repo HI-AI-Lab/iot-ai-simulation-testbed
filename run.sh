@@ -96,4 +96,7 @@ fi
 if [ -f "${MRHOF_DIR}/simulation.csc" ]; then
     rm "${MRHOF_DIR}/simulation.csc"
 fi
+if [ -f "${MRHOF_DIR}/positions-simulation.h" ]; then
+    rm "${MRHOF_DIR}/positions-simulation.h"
+fi
 echo "Cleanup complete."
