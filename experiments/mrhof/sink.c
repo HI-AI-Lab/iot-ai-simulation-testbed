@@ -32,6 +32,8 @@
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "sys/log.h"
+#include "node-id.h"
+#include "positions-simulation.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -40,15 +42,6 @@
 #define UDP_SERVER_PORT	5678
 
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
-
-/*
-#ifndef MY_X
-#define MY_X -1.0
-#endif
-#ifndef MY_Y
-#define MY_Y -1.0
-#endif
-*/
 
 typedef struct {
   uint32_t t_sent;       // send timestamp (ms, from clock_time)
@@ -102,7 +95,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
 
-  LOG_INFO("My coordinates are: x=%.2f, y=%.2f\n", MY_X, MY_Y);
+  /* Log sink position */
+  LOG_INFO("POSITION at x=%.2f y=%.2f\n", node_pos_x[node_id], node_pos_y[node_id]);
 
   ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;  // convert ms to ticks
 
