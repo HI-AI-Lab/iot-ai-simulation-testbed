@@ -13,7 +13,7 @@ declare -a nodes=("60" "80" "100")
 declare -a ppm_values=("80" "100" "120")
 
 # Define the base directory for all simulation logs.
-LOGS_BASE_DIR="testbed/simulation-logs"
+LOGS_BASE_DIR="testbed/logs"
 MRHOF_DIR="testbed/experiments/mrhof"
 
 # Check if the base log directory exists, and create it if it doesn't.
