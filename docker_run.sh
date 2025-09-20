@@ -13,6 +13,25 @@
 IMAGE_NAME="cooja-headless-rl:latest"
 CONTAINER_NAME="cooja-rl"
 WORKSPACE_DIR="$HOME/Documents/IOT-AI"
+SESSION_NAME="IOT-session"
+
+# Check if a tmux session with the specified name already exists.
+# The 'tmux has-session' command returns 0 if the session exists, and 1 if it doesn't.
+tmux has-session -t "$SESSION_NAME" 2>/dev/null
+
+if [ $? != 0 ]; then
+    echo "Session '$SESSION_NAME' not found. Creating a new one..."
+    # Start a new session with the given name and execute the commands inside it.
+    tmux new-session -s "$SESSION_NAME" "bash -c 'echo \"New session started. You are now inside tmux.\"; exec bash'"
+    # You can also use `tmux new-session -s "$SESSION_NAME"` and then run commands.
+    
+    # If you want to attach to it after creation, you can add this line:
+    # tmux attach-session -t "$SESSION_NAME"  
+else
+    echo "Session '$SESSION_NAME' already exists. Attaching to it..."
+    # Attach to the existing session.
+    tmux attach-session -t "$SESSION_NAME"
+fi
 
 # Check if a container with the specified name is already running
 RUNNING_CONTAINER=$(docker ps -q -f name="$CONTAINER_NAME")
