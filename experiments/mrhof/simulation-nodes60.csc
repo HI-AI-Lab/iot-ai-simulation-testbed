@@ -14,7 +14,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Sink Mote</description>
       <source>[CONFIG_DIR]/sink.c</source>
-      <commands>$(MAKE) -j$(CPUS) DEFINES=\'MY_X=150.0 MY_Y=0.0\' sink.cooja TARGET=cooja</commands>
+      <commands>$(MAKE) -j$(CPUS) DEFINES='MY_X=150.0 MY_Y=0.0' sink.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>
