@@ -14,6 +14,10 @@
 #define UDP_CLIENT_PORT	8765
 #define UDP_SERVER_PORT	5678
 
+#define SIM_END_MS       5020000UL   // total runtime in ms (e.g. 5000s = ~83 min)
+#define WRAPUP_MARGIN_MS 20000UL     // stop 20s before end
+
+
 /* Default if not provided from Makefile */
 /*
 #ifndef SEND_INTERVAL_MS
@@ -84,6 +88,13 @@ PROCESS_THREAD(udp_client_process, ev, data)
       if(tx_count % 100 == 0) {
         LOG_INFO("Tx/Rx/MissedTx: %" PRIu32 "/%" PRIu32 "/%" PRIu32 "\n",
                  tx_count, rx_count, missed_tx_count);
+      }
+
+	  uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+      if(now_ms > (SIM_END_MS - WRAPUP_MARGIN_MS)) {
+        LOG_INFO("WRAPUP node: Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32"\n",
+             tx_count, rx_count, missed_tx_count);
+        PROCESS_EXIT();  // stop sending
       }
 
       /* Send to DAG root */
