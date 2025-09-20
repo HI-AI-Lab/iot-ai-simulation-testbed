@@ -1,13 +1,13 @@
 #include "contiki.h"
-#include "net/routing/routing.h"
 #include "random.h"
+#include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
+#include "sys/log.h"
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
 
-#include "sys/log.h"
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
@@ -60,8 +60,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PROCESS_BEGIN();
   
   unsigned long ppm = (SEND_INTERVAL_MS > 0) ? 60000UL / (unsigned long)SEND_INTERVAL_MS : 0;
-  LOG_INFO("Node init: node=%u mean_interval_ms=%lu (~PPM=%lu) [Poisson]\n",
-           node_id, (unsigned long)SEND_INTERVAL_MS, ppm);
+  LOG_INFO("mean_interval_ms=%lu (~PPM=%lu) [Poisson]\n",(unsigned long)SEND_INTERVAL_MS, ppm);
 
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
