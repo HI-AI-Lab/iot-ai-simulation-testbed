@@ -93,7 +93,6 @@ wait_until_end(void) {
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
-  static struct etimer wrapup_timer;
   PROCESS_BEGIN();
 
   /* Initialize DAG root */
@@ -104,6 +103,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
                       UDP_CLIENT_PORT, udp_rx_callback);
 
   wait_until_end();
+  
   LOG_INFO("WRAPUP sink: dumping final metrics at end of sim\n");
 
   PROCESS_END();
