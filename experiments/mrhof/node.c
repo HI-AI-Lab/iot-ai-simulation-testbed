@@ -223,30 +223,25 @@ is_energy_depleted(void) {
 static void
 send_a_packet(void) {
   uip_ipaddr_t dest_ipaddr;
-
-  if(state.q_len == 0) {
-    /* nothing to send */
-    return;
+  if(!NETSTACK_ROUTING.node_is_reachable() ||
+     !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
+    return; /* not reachable, skip this round */
   }
-  if(NETSTACK_ROUTING.node_is_reachable() &&
-     NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
-
-    /* dequeue one packet */
-    app_packet_t pkt;
-    pkt = state.queue[state.q_head];
-    state.q_head = (state.q_head + 1) % QUEUE_SIZE;
-    state.q_len--;
-	if(pkt.origin_id != node_id) {
-		state.forwarded_count++;
-	}
-    /* transmit it */
-    simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-    state.tx_count++;
-    /* account TX energy against preferred parent */
-    unsigned parent_id = get_parent_id();
-    double d = distance_nodes(node_id, parent_id);
-    state.residual_energy -= tx_energy(d);
+  app_packet_t pkt;
+  if(!dequeue_packet(&pkt)) {
+    return; /* queue empty */
   }
+  /* if this packet wasn’t generated locally, count as forwarded */
+  if(pkt.origin_id != node_id) {
+    state.forwarded_count++;
+  }
+  /* transmit it */
+  simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
+  state.tx_count++;
+  /* account TX energy against preferred parent */
+  unsigned parent_id = get_parent_id();
+  double d = distance_nodes(node_id, parent_id);
+  state.residual_energy -= tx_energy(d);
 }
 
 static void
@@ -301,15 +296,12 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 PROCESS_THREAD(queue_handler_process, ev, data)
 {
   static struct etimer tx_timer;
-  uip_ipaddr_t dest_ipaddr;
   PROCESS_BEGIN();
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                       UDP_SERVER_PORT, udp_rx_callback);
   etimer_set(&tx_timer, CLOCK_SECOND / 10); /* push hard: 100ms slot */
-
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&tx_timer));
-
     if(is_energy_depleted() || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
