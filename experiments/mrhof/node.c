@@ -34,7 +34,7 @@
 #define EPS_MP          10e-12     // 10 pJ/bit/m^4
 #define PKT_BITS        (128*8)    // 128 B = 1024 bits
 
-static double residual_energy = INIT_ENERGY_J;
+//static double residual_energy = INIT_ENERGY_J;
 
 /* Distance between two nodes by ID */
 static inline double distance_nodes(unsigned id1, unsigned id2) {
