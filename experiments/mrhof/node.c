@@ -104,19 +104,21 @@ distance_nodes(unsigned id1, unsigned id2) {
 
 /* TX energy (Joules) for one 128B packet to distance d (m) */
 static inline double
-tx_energy(double d) {
+tx_energy(double d, uint32_t bits) {
   double dth = sqrt(EPS_FS / EPS_MP);
   if(d <= dth) {
-    return PKT_BITS * (E_ELEC + EPS_FS * d * d);
+    // Free space model for short distances
+    return (double)bits * (E_ELEC + EPS_FS * d * d);
   } else {
-    return PKT_BITS * (E_ELEC + EPS_MP * d * d * d * d);
+    // Multi-path fading model for longer distances
+    return (double)bits * (E_ELEC + EPS_MP * d * d * d * d);
   }
 }
 
 /* RX energy (Joules) for one 128B packet — (we’ll use this in the next step for forwarding) */
 static inline double
-rx_energy(void) {
-  return PKT_BITS * E_ELEC;
+rx_energy(uint32_t bits) {
+  return (double)bits * E_ELEC;
 }
 
 /* Return an exponential delay in Contiki ticks */
@@ -206,15 +208,22 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
 }
 
 static void sniff_input(void) {
-  // Do nothing – forwarding/mine will be caught at output
+  uint16_t len = packetbuf_datalen();
+  state.residual_energy -= rx_energy(len);
 }
 
 static void sniff_output(int mac_status) {
-  // Count every MAC transmission attempt (mine + forwarded)
-  state.fwd_count++;
-
   if(mac_status == MAC_TX_QUEUE_FULL) {
     state.q_loss_count++;
+  } else {
+    unsigned parent_id = get_parent_id();
+    if(parent_id != (unsigned)-1) {
+	  state.fwd_count++;
+      double d = distance_nodes(node_id, parent_id);
+      uint16_t len = packetbuf_datalen();
+      state.residual_energy -= tx_energy(len, d);
+	  state.last_parent_id = parent_id;
+    }
   }
 }
 
