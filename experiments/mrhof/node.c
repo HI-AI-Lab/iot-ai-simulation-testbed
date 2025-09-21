@@ -20,6 +20,8 @@
 
 #define SIM_END_MS       5000000UL   // total runtime in ms (e.g. 5000s = ~83 min)
 
+#define QUEUE_SIZE 8
+
 /* === Energy Model (Lei & Liu 2024) === */
 #define INIT_ENERGY_J   10.0
 #define E_ELEC          50e-9      /* 50 nJ/bit */
@@ -36,24 +38,67 @@ typedef enum {
 } end_reason_t;
 
 typedef struct {
+  uint32_t t_sent;
+  uint16_t origin_id;
+  char     padding[118];
+} app_packet_t;
+
+typedef struct {
   uint32_t tx_count;
   uint32_t rx_count;
-  uint32_t missed_tx_count;
+  uint32_t generated_count;
+  uint32_t forwarded_count;
+  uint32_t queue_loss_count;
   double   residual_energy;
   end_reason_t end_reason;
-  unsigned long end_time_ms;
+  uint32_t end_time_ms;
   uint32_t ppm;
+
+  /* queue state */
+  app_packet_t queue[QUEUE_SIZE];
+  int q_head;
+  int q_tail;
+  int q_len;
 } mote_state_t;
 
 static mote_state_t state = {
   .tx_count = 0,
   .rx_count = 0,
-  .missed_tx_count = 0,
+  .generated_count = 0,
+  .forwarded_count = 0,
+  .queue_loss_count = 0,
   .residual_energy = INIT_ENERGY_J,
   .end_reason = END_NONE,
   .end_time_ms = 0,
-  .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0
+  .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
+  .q_head = 0,
+  .q_tail = 0,
+  .q_len  = 0
 };
+
+static int
+enqueue_packet(app_packet_t *pkt) {
+  if(state.q_len < QUEUE_SIZE) {
+    state.queue[state.q_tail] = *pkt;
+    state.q_tail = (state.q_tail + 1) % QUEUE_SIZE;
+    state.q_len++;
+    return 1; /* success */
+  } else {
+    return 0; /* full */
+  }
+}
+
+static int
+dequeue_packet(app_packet_t *pkt) {
+  if(state.q_len > 0) {
+    *pkt = state.queue[state.q_head];
+    state.q_head = (state.q_head + 1) % QUEUE_SIZE;
+    state.q_len--;
+    return 1; /* success */
+  } else {
+    return 0; /* empty */
+  }
+}
 
 static const char *
 end_reason_str(end_reason_t r) {
@@ -67,26 +112,34 @@ end_reason_str(end_reason_t r) {
 static void
 wrapup(void) {
   LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
-         "Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32" residual=%.6fJ ppm=%"PRIu32"\n",
-         node_id,
-         end_reason_str(state.end_reason),
-         state.end_time_ms,
-         state.tx_count, state.rx_count, state.missed_tx_count,
-         state.residual_energy,
-         state.ppm);
+           "Tx=%"PRIu32" Rx=%"PRIu32" Gen=%"PRIu32" Fwd=%"PRIu32" "
+           "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32"\n",
+           node_id,
+           end_reason_str(state.end_reason),
+           (unsigned long)state.end_time_ms,
+           state.tx_count,
+           state.rx_count,
+           state.generated_count,
+           state.forwarded_count,
+           state.queue_loss_count,
+           state.residual_energy,
+           state.ppm);
 }
+
 /*MOTE STATE*/
 
 /* === Energy Model (Lei & Liu 2024) === */
 /* Distance between two nodes by ID, using generated positions header */
-static inline double distance_nodes(unsigned id1, unsigned id2) {
+static inline double
+distance_nodes(unsigned id1, unsigned id2) {
   double dx = (double)node_pos_x[id1] - (double)node_pos_x[id2];
   double dy = (double)node_pos_y[id1] - (double)node_pos_y[id2];
   return sqrt(dx*dx + dy*dy);
 }
 
 /* TX energy (Joules) for one 128B packet to distance d (m) */
-static inline double tx_energy(double d) {
+static inline double
+tx_energy(double d) {
   double dth = sqrt(EPS_FS / EPS_MP);
   if(d <= dth) {
     return PKT_BITS * (E_ELEC + EPS_FS * d * d);
@@ -96,18 +149,11 @@ static inline double tx_energy(double d) {
 }
 
 /* RX energy (Joules) for one 128B packet — (we’ll use this in the next step for forwarding) */
-static inline double rx_energy(void) {
+static inline double
+rx_energy(void) {
   return PKT_BITS * E_ELEC;
 }
-
 /* === Energy Model (Lei & Liu 2024) === */
-
-static struct simple_udp_connection udp_conn;
-
-typedef struct {
-  uint32_t t_sent;       // send timestamp (ms, from clock_time)
-  uint8_t  padding[124]; // filler to make total size = 128 bytes
-} __attribute__((packed)) app_packet_t;
 
 /* Return an exponential delay in Contiki ticks */
 static clock_time_t
@@ -132,12 +178,14 @@ poisson_next_delay_ticks(void)
 }
 
 /* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
-static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
+static unsigned
+ip_to_nodeid(const uip_ipaddr_t *ip) {
   return (unsigned)UIP_HTONS(ip->u16[7]);
 }
 
 /* Get our current preferred parent node_id, fallback = root (1) */
-static unsigned get_parent_id(void) {
+static unsigned
+get_parent_id(void) {
   rpl_instance_t *inst = rpl_get_default_instance();
   rpl_dag_t *dag = rpl_get_any_dag();
   if(inst && dag && dag->preferred_parent) {
@@ -151,7 +199,8 @@ static unsigned get_parent_id(void) {
 static int
 is_simulation_time_over(void) {
   uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-  if(now_ms > SIM_END_MS) {
+
+  if(now_ms >= SIM_END_MS) {
     state.end_reason = END_TIME;
     state.end_time_ms = now_ms;
     return 1;
@@ -160,9 +209,10 @@ is_simulation_time_over(void) {
 }
 
 /* Return 1 if energy is depleted; also update state */
-static int is_energy_depleted(void) {
+static int
+is_energy_depleted(void) {
   if(state.residual_energy <= 0) {
-    state.residual_energy = 0;   /* clamp */
+    state.residual_energy = 0;
     state.end_reason = END_ENERGY;
     state.end_time_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
     return 1;
@@ -170,62 +220,102 @@ static int is_energy_depleted(void) {
   return 0;
 }
 
-/* Prepare, send, update counters and energy */
 static void
-send_app_packet(void) {
+send_a_packet(void) {
   uip_ipaddr_t dest_ipaddr;
 
+  if(state.q_len == 0) {
+    /* nothing to send */
+    return;
+  }
   if(NETSTACK_ROUTING.node_is_reachable() &&
      NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
 
-    /* build packet */
+    /* dequeue one packet */
     app_packet_t pkt;
-    pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-    memset(pkt.padding, 0, sizeof(pkt.padding));
-
-    /* send to DAG root (RPL handles forwarding via parent) */
+    pkt = state.queue[state.q_head];
+    state.q_head = (state.q_head + 1) % QUEUE_SIZE;
+    state.q_len--;
+	if(pkt.origin_id != node_id) {
+		state.forwarded_count++;
+	}
+    /* transmit it */
     simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-
-    /* update TX counter */
     state.tx_count++;
-
     /* account TX energy against preferred parent */
     unsigned parent_id = get_parent_id();
     double d = distance_nodes(node_id, parent_id);
     state.residual_energy -= tx_energy(d);
-
-  } else {
-    /* not yet reachable: after first send, count these as misses */
-    if(state.tx_count > 0) {
-      state.missed_tx_count++;
-    }
   }
 }
 
+static void
+udp_rx_callback(struct simple_udp_connection *c,
+                const uip_ipaddr_t *sender_addr,
+                uint16_t sender_port,
+                const uip_ipaddr_t *receiver_addr,
+                uint16_t receiver_port,
+                const uint8_t *data,
+                uint16_t datalen) {
+  app_packet_t pkt;
+  memcpy(&pkt, data, sizeof(app_packet_t));
+  /* account reception */
+  state.rx_count++;
+  state.residual_energy -= rx_energy();  /* RX energy cost is always paid */
+  /* attempt to enqueue for later forwarding */
+  if(!enqueue_packet(&pkt)) {
+    state.queue_loss_count++;
+  }
+}
+
+static struct simple_udp_connection udp_conn;
+
 /*---------------------------------------------------------------------------*/
-PROCESS(udp_client_process, "NODE");
-AUTOSTART_PROCESSES(&udp_client_process);
+/* Two Processes one for packet generation and one is for queue              */ 
 /*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(udp_client_process, ev, data)
+PROCESS(packet_generator_process, "Packet Generator");
+PROCESS(queue_handler_process, "Queue Handler");
+AUTOSTART_PROCESSES(&packet_generator_process, &queue_handler_process);
+
+PROCESS_THREAD(packet_generator_process, ev, data)
 {
-  static struct etimer periodic_timer;
+  static struct etimer gen_timer;
   PROCESS_BEGIN();
-  /* Initialize UDP connection */
-  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
-                      UDP_SERVER_PORT, NULL);
-  /* before loop: schedule first send with Poisson gap */
-  etimer_set(&periodic_timer, poisson_next_delay_ticks());
+  etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-    send_app_packet();
-	if(is_energy_depleted() || is_simulation_time_over()) {
-        wrapup();
-		PROCESS_EXIT();
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
+    /* build and enqueue packet */
+    app_packet_t pkt;
+    pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+	pkt.origin_id = node_id;
+    memset(pkt.padding, 0, sizeof(pkt.padding));
+    state.generated_count++;
+    if(!enqueue_packet(&pkt)) {
+      state.queue_loss_count++;
     }
-    /* inside the loop after you handle a send attempt */
-    etimer_set(&periodic_timer, poisson_next_delay_ticks());
+    etimer_set(&gen_timer, poisson_next_delay_ticks());
   }
   PROCESS_END();
 }
-/*---------------------------------------------------------------------------*/
+
+PROCESS_THREAD(queue_handler_process, ev, data)
+{
+  static struct etimer tx_timer;
+  uip_ipaddr_t dest_ipaddr;
+  PROCESS_BEGIN();
+  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
+                      UDP_SERVER_PORT, udp_rx_callback);
+  etimer_set(&tx_timer, CLOCK_SECOND / 10); /* push hard: 100ms slot */
+
+  while(1) {
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&tx_timer));
+
+    if(is_energy_depleted() || is_simulation_time_over()) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+    send_a_packet();
+    etimer_reset(&tx_timer);
+  }
+  PROCESS_END();
+}
