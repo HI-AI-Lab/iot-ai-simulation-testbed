@@ -3,10 +3,14 @@
 #include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
+#include "net/ipv6/uip-ds6.h"
 #include "sys/log.h"
+#include "node-id.h"
+#include "positions-simulation.h"
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
+
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -23,7 +27,38 @@
 #endif
 */
 
+/* === Energy Model (Lei & Liu 2024) === */
+#define INIT_ENERGY_J   10.0
+#define E_ELEC          50e-9      // 50 nJ/bit
+#define EPS_FS          10e-12     // 10 pJ/bit/m^2
+#define EPS_MP          10e-12     // 10 pJ/bit/m^4
+#define PKT_BITS        (128*8)    // 128 B = 1024 bits
 
+static double residual_energy = INIT_ENERGY_J;
+
+/* Distance between two nodes by ID */
+static inline double distance_nodes(unsigned id1, unsigned id2) {
+  double dx = node_pos_x[id1] - node_pos_x[id2];
+  double dy = node_pos_y[id1] - node_pos_y[id2];
+  return sqrt(dx*dx + dy*dy);
+}
+
+/* TX energy consumption (J) */
+static inline double tx_energy(double d) {
+  double dth = sqrt(EPS_FS / EPS_MP);
+  if(d <= dth) {
+    return PKT_BITS * (E_ELEC + EPS_FS * d*d);
+  } else {
+    return PKT_BITS * (E_ELEC + EPS_MP * d*d*d*d);
+  }
+}
+
+/* RX energy consumption (J) */
+static inline double rx_energy(void) {
+  return PKT_BITS * E_ELEC;
+}
+
+/* === Energy Model (Lei & Liu 2024) === */
 
 static struct simple_udp_connection udp_conn;
 static uint32_t rx_count = 0;
@@ -75,6 +110,17 @@ PROCESS_THREAD(udp_client_process, ev, data)
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                       UDP_SERVER_PORT, NULL);
+
+  /*Testing IP to ID*/
+  
+  const uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
+  if(a) {
+    LOG_INFO("IP2ID: node_id=%u, IPv6=%02x%02x::...:%04x\n",
+             node_id, a->ipaddr.u8[0], a->ipaddr.u8[1],
+             UIP_HTONS(a->ipaddr.u16[7]));
+  }
+  
+  /*Testing IP to ID*/
 
   /* before loop: schedule first send with Poisson gap */
   etimer_set(&periodic_timer, poisson_next_delay_ticks());
