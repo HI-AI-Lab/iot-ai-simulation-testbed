@@ -147,10 +147,16 @@ static unsigned get_parent_id(void) {
   return 1; // fallback to root
 }
 
-/* Return 1 if simulation time has passed, else 0 */
-static int is_simulation_time_over(void) {
+/* Return 1 if simulation time is over; also update state */
+static int
+is_simulation_time_over(void) {
   uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-  return now_ms > SIM_END_MS;
+  if(now_ms > SIM_END_MS) {
+    state.end_reason = END_TIME;
+    state.end_time_ms = now_ms;
+    return 1;
+  }
+  return 0;
 }
 
 /* Return 1 if energy is depleted; also update state */
