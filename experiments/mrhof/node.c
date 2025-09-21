@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
+#include "net/packetbuf.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -209,7 +210,7 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
 
 static void sniff_input(void) {
   uint16_t len = packetbuf_datalen();
-  state.residual_energy -= rx_energy(len);
+  state.residual_energy -= rx_energy(len*8);
 }
 
 static void sniff_output(int mac_status) {
@@ -221,7 +222,7 @@ static void sniff_output(int mac_status) {
 	  state.fwd_count++;
       double d = distance_nodes(node_id, parent_id);
       uint16_t len = packetbuf_datalen();
-      state.residual_energy -= tx_energy(len, d);
+      state.residual_energy -= tx_energy(len*8, d);
 	  state.last_parent_id = parent_id;
     }
   }
