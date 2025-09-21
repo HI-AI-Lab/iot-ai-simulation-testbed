@@ -20,8 +20,6 @@
 
 #define SIM_END_MS       5000000UL   // total runtime in ms (e.g. 5000s = ~83 min)
 
-#define QUEUE_SIZE 8
-
 /* === Energy Model (Lei & Liu 2024) === */
 #define INIT_ENERGY_J   10.0
 #define E_ELEC          50e-9      /* 50 nJ/bit */
@@ -44,6 +42,7 @@ typedef struct {
 } app_packet_t;
 
 typedef struct {
+  uint32_t qsize;
   uint32_t tx_count;
   uint32_t rx_count;
   uint32_t generated_count;
@@ -56,13 +55,14 @@ typedef struct {
   unsigned last_parent_id;
 
   /* queue state */
-  app_packet_t queue[QUEUE_SIZE];
+  app_packet_t queue[QUEUEBUF_CONF_NUM];
   int q_head;
   int q_tail;
   int q_len;
 } mote_state_t;
 
 static mote_state_t state = {
+  .qsize = QUEUEBUF_CONF_NUM,
   .tx_count = 0,
   .rx_count = 0,
   .generated_count = 0,
@@ -80,9 +80,9 @@ static mote_state_t state = {
 
 static int
 enqueue_packet(app_packet_t *pkt) {
-  if(state.q_len < QUEUE_SIZE) {
+  if(state.q_len < QUEUEBUF_CONF_NUM) {
     state.queue[state.q_tail] = *pkt;
-    state.q_tail = (state.q_tail + 1) % QUEUE_SIZE;
+    state.q_tail = (state.q_tail + 1) % QUEUEBUF_CONF_NUM;
     state.q_len++;
     return 1; /* success */
   } else {
@@ -94,7 +94,7 @@ static int
 dequeue_packet(app_packet_t *pkt) {
   if(state.q_len > 0) {
     *pkt = state.queue[state.q_head];
-    state.q_head = (state.q_head + 1) % QUEUE_SIZE;
+    state.q_head = (state.q_head + 1) % QUEUEBUF_CONF_NUM;
     state.q_len--;
     return 1; /* success */
   } else {
@@ -115,7 +115,7 @@ static void
 wrapup(void) {
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
 			 "Tx=%"PRIu32" Rx=%"PRIu32" Gen=%"PRIu32" Fwd=%"PRIu32" "
-			 "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32" parent=%u\n",
+			 "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32" parent=%u qsize=%"PRIu32"\n",
 			 node_id,
 			 end_reason_str(state.end_reason),
 			 (unsigned long)state.end_time_ms,
@@ -126,7 +126,8 @@ wrapup(void) {
 			 state.queue_loss_count,
 			 state.residual_energy,
 			 state.ppm,
-			 state.last_parent_id);
+			 state.last_parent_id,
+			 state.qsize);
 }
 
 /*MOTE STATE*/
