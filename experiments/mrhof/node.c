@@ -77,24 +77,21 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-	uint32_t attempts = state.fwd_count;
-    double qlr = (attempts > 0) ? (double)state.q_loss_count / (double)attempts : 0.0;
-
-    LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
-             "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" QLR=%.3f "
-             "residual=%.6fJ ppm=%"PRIu32" parent=%u qsize=%"PRIu32"\n",
-             node_id,
+    LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
+             "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
+             "residual=%.6fJ ppm=%" PRIu32 " parent=%u\n",
+             (unsigned int)node_id,
              end_reason_str(state.end_reason),
-             (unsigned long)state.end_time_ms,
+             state.end_time_ms,
              state.gen_count,
              state.fwd_count,
              state.q_loss_count,
-             qlr,
+             state.qsize,
              state.residual_energy,
              state.ppm,
-             state.last_parent_id,
-             state.qsize);
+             (unsigned int)state.last_parent_id);
 }
+
 /*MOTE STATE*/
 
 /* Distance between two nodes by ID, using generated positions header */
