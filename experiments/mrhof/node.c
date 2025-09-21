@@ -44,11 +44,9 @@ typedef struct {
 
 typedef struct {
   uint32_t qsize;
-  uint32_t tx_count;
-  uint32_t rx_count;
-  uint32_t generated_count;
-  uint32_t forwarded_count;
-  uint32_t queue_loss_count;
+  uint32_t gen_count;
+  uint32_t fwd_count;
+  uint32_t q_loss_count;
   double   residual_energy;
   end_reason_t end_reason;
   uint32_t end_time_ms;
@@ -58,11 +56,9 @@ typedef struct {
 
 static mote_state_t state = {
   .qsize = QUEUEBUF_CONF_NUM,
-  .tx_count = 0,
-  .rx_count = 0,
-  .generated_count = 0,
-  .forwarded_count = 0,
-  .queue_loss_count = 0,
+  .gen_count = 0,
+  .fwd_count = 0,
+  .q_loss_count = 0,
   .residual_energy = INIT_ENERGY_J,
   .end_reason = END_NONE,
   .end_time_ms = 0,
@@ -81,23 +77,24 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
-			 "Tx=%"PRIu32" Rx=%"PRIu32" Gen=%"PRIu32" Fwd=%"PRIu32" "
-			 "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32" parent=%u qsize=%"PRIu32"\n",
-			 node_id,
-			 end_reason_str(state.end_reason),
-			 (unsigned long)state.end_time_ms,
-			 state.tx_count,
-			 state.rx_count,
-			 state.generated_count,
-			 state.forwarded_count,
-			 state.queue_loss_count,
-			 state.residual_energy,
-			 state.ppm,
-			 state.last_parent_id,
-			 state.qsize);
-}
+	uint32_t attempts = state.gen_count + state.fwd_count;
+    double qlr = (attempts > 0) ? (double)state.q_loss_count / (double)attempts : 0.0;
 
+    LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
+             "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" QLR=%.3f "
+             "residual=%.6fJ ppm=%"PRIu32" parent=%u qsize=%"PRIu32"\n",
+             node_id,
+             end_reason_str(state.end_reason),
+             (unsigned long)state.end_time_ms,
+             state.gen_count,
+             state.fwd_count,
+             state.q_loss_count,
+             qlr,
+             state.residual_energy,
+             state.ppm,
+             state.last_parent_id,
+             state.qsize);
+}
 /*MOTE STATE*/
 
 /* Distance between two nodes by ID, using generated positions header */
@@ -200,15 +197,9 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
   pkt.origin_id = node_id;
   memset(pkt.padding, 0, sizeof(pkt.padding));
-  state.generated_count++;
   /* transmit it */
   simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-  state.tx_count++;
-  /* if this packet wasn’t generated locally, count as forwarded */
-  if(pkt.origin_id != node_id) {
-    state.forwarded_count++;
-  }
-  /* account TX energy against preferred parent */
+  state.gen_count++;
   unsigned parent_id = get_parent_id();
   if(parent_id!=-1){
     double d = distance_nodes(node_id, parent_id);
@@ -217,22 +208,17 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   state.last_parent_id = parent_id;
 }
 
-static mac_send_t real_mac_send;
-typedef void (*mac_send_t)(mac_callback_t sent, void *ptr);
-
-static void my_mac_send(mac_callback_t sent, void *ptr) {
-  real_mac_send(
-    // wrap the callback
-    (mac_callback_t) (^(void *ptr2, int status, int num_tx) {
-      if(status == MAC_TX_QUEUE_FULL) {
-        state.queue_loss_count++;
-      }
-      // call original callback if any
-      if(sent) sent(ptr2, status, num_tx);
-    }),
-    ptr
-  );
+static void sniff_input(void) {
+  state.fwd_count++; // every RX packet is intended for forwarding
 }
+
+static void sniff_output(int mac_status) {
+  if(mac_status == MAC_TX_QUEUE_FULL) {
+    state.q_loss_count++;
+  }
+}
+
+NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 
 static struct simple_udp_connection udp_conn;
 
@@ -246,8 +232,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
-  real_mac_send = NETSTACK_MAC.send;
-  NETSTACK_MAC.send = my_mac_send;
+  netstack_sniffer_add(&my_sniffer);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
