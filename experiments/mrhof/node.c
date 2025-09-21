@@ -221,7 +221,7 @@ is_energy_depleted(void) {
 }
 
 static void
-send_a_packet(void) {
+send_a_packet(struct simple_udp_connection udp_conn) {
   uip_ipaddr_t dest_ipaddr;
   if(!NETSTACK_ROUTING.node_is_reachable() ||
      !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
@@ -306,7 +306,7 @@ PROCESS_THREAD(queue_handler_process, ev, data)
       wrapup();
       PROCESS_EXIT();
     }
-    send_a_packet();
+    send_a_packet(udp_conn);
     etimer_reset(&tx_timer);
   }
   PROCESS_END();
