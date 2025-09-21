@@ -53,12 +53,6 @@ typedef struct {
   uint32_t end_time_ms;
   uint32_t ppm;
   unsigned last_parent_id;
-
-  /* queue state */
-  app_packet_t queue[QUEUEBUF_CONF_NUM];
-  int q_head;
-  int q_tail;
-  int q_len;
 } mote_state_t;
 
 static mote_state_t state = {
@@ -73,34 +67,7 @@ static mote_state_t state = {
   .end_time_ms = 0,
   .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
   .last_parent_id = 0,
-  .q_head = 0,
-  .q_tail = 0,
-  .q_len  = 0
 };
-
-static int
-enqueue_packet(app_packet_t *pkt) {
-  if(state.q_len < QUEUEBUF_CONF_NUM) {
-    state.queue[state.q_tail] = *pkt;
-    state.q_tail = (state.q_tail + 1) % QUEUEBUF_CONF_NUM;
-    state.q_len++;
-    return 1; /* success */
-  } else {
-    return 0; /* full */
-  }
-}
-
-static int
-dequeue_packet(app_packet_t *pkt) {
-  if(state.q_len > 0) {
-    *pkt = state.queue[state.q_head];
-    state.q_head = (state.q_head + 1) % QUEUEBUF_CONF_NUM;
-    state.q_len--;
-    return 1; /* success */
-  } else {
-    return 0; /* empty */
-  }
-}
 
 static const char *
 end_reason_str(end_reason_t r) {
@@ -132,7 +99,6 @@ wrapup(void) {
 
 /*MOTE STATE*/
 
-/* === Energy Model (Lei & Liu 2024) === */
 /* Distance between two nodes by ID, using generated positions header */
 static inline double
 distance_nodes(unsigned id1, unsigned id2) {
@@ -157,7 +123,6 @@ static inline double
 rx_energy(void) {
   return PKT_BITS * E_ELEC;
 }
-/* === Energy Model (Lei & Liu 2024) === */
 
 /* Return an exponential delay in Contiki ticks */
 static clock_time_t
@@ -198,7 +163,6 @@ get_parent_id(void) {
   return -1; // no parent
 }
 
-
 /* Return 1 if simulation time is over; also update state */
 static int
 is_simulation_time_over(void) {
@@ -232,9 +196,10 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
     return; /* not reachable, skip this round */
   }
   app_packet_t pkt;
-  if(!dequeue_packet(&pkt)) {
-    return; /* queue empty */
-  }
+  pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+  pkt.origin_id = node_id;
+  memset(pkt.padding, 0, sizeof(pkt.padding));
+  state.generated_count++;
   /* transmit it */
   simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
   state.tx_count++;
@@ -251,70 +216,30 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   state.last_parent_id = parent_id;
 }
 
-static void
-udp_rx_callback(struct simple_udp_connection *c,
-                const uip_ipaddr_t *sender_addr,
-                uint16_t sender_port,
-                const uip_ipaddr_t *receiver_addr,
-                uint16_t receiver_port,
-                const uint8_t *data,
-                uint16_t datalen) {
-  app_packet_t pkt;
-  memcpy(&pkt, data, sizeof(app_packet_t));
-  /* account reception */
-  state.rx_count++;
-  state.residual_energy -= rx_energy();  /* RX energy cost is always paid */
-  /* attempt to enqueue for later forwarding */
-  if(!enqueue_packet(&pkt)) {
-    state.queue_loss_count++;
-  }
-}
-
 static struct simple_udp_connection udp_conn;
 
 /*---------------------------------------------------------------------------*/
 /* Two Processes one for packet generation and one is for queue              */ 
 /*---------------------------------------------------------------------------*/
 PROCESS(packet_generator_process, "Packet Generator");
-PROCESS(queue_handler_process, "Queue Handler");
-AUTOSTART_PROCESSES(&packet_generator_process, &queue_handler_process);
+AUTOSTART_PROCESSES(&packet_generator_process);
 
 PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
+  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
+                    UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
     /* build and enqueue packet */
-    app_packet_t pkt;
-    pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-	pkt.origin_id = node_id;
-    memset(pkt.padding, 0, sizeof(pkt.padding));
-    state.generated_count++;
-    if(!enqueue_packet(&pkt)) {
-      state.queue_loss_count++;
-    }
-    etimer_set(&gen_timer, poisson_next_delay_ticks());
-  }
-  PROCESS_END();
-}
-
-PROCESS_THREAD(queue_handler_process, ev, data)
-{
-  static struct etimer tx_timer;
-  PROCESS_BEGIN();
-  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
-                      UDP_SERVER_PORT, udp_rx_callback);
-  etimer_set(&tx_timer, CLOCK_SECOND / 10); /* push hard: 100ms slot */
-  while(1) {
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&tx_timer));
-    if(is_energy_depleted() || is_simulation_time_over()) {
+	if(is_energy_depleted() || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
     }
-    send_a_packet(&udp_conn);
-    etimer_reset(&tx_timer);
+	send_a_packet(&udp_conn);
+    etimer_set(&gen_timer, poisson_next_delay_ticks());
   }
   PROCESS_END();
 }
