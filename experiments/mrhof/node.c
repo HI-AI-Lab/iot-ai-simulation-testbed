@@ -72,7 +72,7 @@ static mote_state_t state = {
   .end_reason = END_NONE,
   .end_time_ms = 0,
   .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
-  .last_parent_id = 0;
+  .last_parent_id = 0,
   .q_head = 0,
   .q_tail = 0,
   .q_len  = 0
@@ -189,14 +189,14 @@ ip_to_nodeid(const uip_ipaddr_t *ip) {
 /* Get our current preferred parent node_id, fallback = 0 (none) */
 static unsigned
 get_parent_id(void) {
-  rpl_instance_t *inst = rpl_get_default_instance();
-  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip =
-      rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(dag && dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
     return ip_to_nodeid(p_ip);
   }
   return -1; // no parent
 }
+
 
 /* Return 1 if simulation time is over; also update state */
 static int
@@ -224,7 +224,7 @@ is_energy_depleted(void) {
 }
 
 static void
-send_a_packet(struct simple_udp_connection udp_conn) {
+send_a_packet(struct simple_udp_connection *udp_conn) {
   uip_ipaddr_t dest_ipaddr;
   if(!NETSTACK_ROUTING.node_is_reachable() ||
      !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
@@ -235,7 +235,7 @@ send_a_packet(struct simple_udp_connection udp_conn) {
     return; /* queue empty */
   }
   /* transmit it */
-  simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
+  simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
   state.tx_count++;
   /* if this packet wasn’t generated locally, count as forwarded */
   if(pkt.origin_id != node_id) {
@@ -312,7 +312,7 @@ PROCESS_THREAD(queue_handler_process, ev, data)
       wrapup();
       PROCESS_EXIT();
     }
-    send_a_packet(udp_conn);
+    send_a_packet(&udp_conn);
     etimer_reset(&tx_timer);
   }
   PROCESS_END();
