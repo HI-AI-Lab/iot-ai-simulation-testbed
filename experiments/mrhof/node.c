@@ -90,10 +90,9 @@ poisson_next_delay_ticks(void)
   return ticks;
 }
 
-static void wrapup_and_exit(void) {
+static void wrapup(uint32_t tx_count, uint32_t missed_tx_count) {
   LOG_INFO("WRAPUP node_id=%u Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32" residual=%.6fJ\n",
            node_id, tx_count, rx_count, missed_tx_count, residual_energy);
-  PROCESS_EXIT();
 }
 
 /* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
@@ -104,8 +103,9 @@ static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
 /* Get our current preferred parent node_id, fallback = root (1) */
 static unsigned get_parent_id(void) {
   rpl_instance_t *inst = rpl_get_default_instance();
-  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(inst && dag && dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
     return ip_to_nodeid(p_ip);
   }
   return 1; // fallback to root
@@ -140,7 +140,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 	
     uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
     if(now_ms > (SIM_END_MS)) {
-        wrapup_and_exit();
+        wrapup(tx_count,missed_tx_count);
+		PROCESS_EXIT();
     }
 
     if(NETSTACK_ROUTING.node_is_reachable() &&
@@ -157,7 +158,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
       residual_energy -= tx_energy(d);
       if(residual_energy <= 0) {
           residual_energy = 0;
-          wrapup_and_exit();
+          wrapup(tx_count,missed_tx_count);
+		  PROCESS_EXIT();
       }
     } else {
       LOG_INFO("Not reachable yet\n");
