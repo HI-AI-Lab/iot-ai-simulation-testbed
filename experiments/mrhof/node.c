@@ -36,21 +36,6 @@
 
 static double residual_energy = INIT_ENERGY_J;
 
-/* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
-static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
-  return (unsigned)UIP_HTONS(ip->u16[7]);
-}
-
-/* Ask RPL-Lite for our current preferred parent; fallback to root (ID=1) if unknown */
-static unsigned get_parent_id(void) {
-  rpl_instance_t *inst = rpl_get_default_instance();
-  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
-    return ip_to_nodeid(p_ip);
-  }
-  return 1; /* fallback: root ID (sink) */
-}
-
 /* Distance between two nodes by ID, using generated positions header */
 static inline double distance_nodes(unsigned id1, unsigned id2) {
   double dx = (double)node_pos_x[id1] - (double)node_pos_x[id2];
@@ -125,7 +110,6 @@ static unsigned get_parent_id(void) {
   }
   return 1; // fallback to root
 }
-
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "NODE");
