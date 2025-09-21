@@ -5,9 +5,6 @@
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6.h"
-#include "net/ipv6/uip.h"
-#include "net/ipv6/tcpip.h"
-#include "net/linkaddr.h"
 #include "sys/log.h"
 #include "node-id.h"
 #include "positions-simulation.h"
@@ -219,17 +216,6 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   state.last_parent_id = parent_id;
 }
 
-/* Custom output wrapper */
-int my_tcpip_output(uip_lladdr_t *lladdr) {
-  int ret = tcpip_output_default(lladdr);
-  if(ret == UIP_FW_QUEUE_FULL) {
-    state.queue_loss_count++;
-  }else{
-	state.forwarded_count++;
-  }
-  return ret;
-}
-
 static struct simple_udp_connection udp_conn;
 
 /*---------------------------------------------------------------------------*/
@@ -242,7 +228,6 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
-  tcpip_set_outputfunc(my_tcpip_output);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
