@@ -1,16 +1,18 @@
 #include "contiki.h"
-#include "random.h"
-#include "net/routing/routing.h"
-#include "net/routing/rpl-lite/rpl.h"  /* preferred parent API */
-#include "net/netstack.h"
-#include "net/mac/mac.h"
 #include "net/ipv6/simple-udp.h"
+#include "net/ipv6/uip.h"
 #include "net/ipv6/uip-ds6.h"
-#include "sys/log.h"
+#include "net/mac/mac.h"
+#include "net/netstack.h"
+#include "net/packetbuf.h"
+#include "net/routing/rpl-lite/rpl.h"
+#include "net/routing/routing.h"
 #include "node-id.h"
 #include "positions-simulation.h"
-#include <stdint.h>
+#include "random.h"
+#include "sys/log.h"
 #include <inttypes.h>
+#include <stdint.h>
 #include <math.h>
 
 #define LOG_MODULE "App"
@@ -104,19 +106,21 @@ distance_nodes(unsigned id1, unsigned id2) {
 
 /* TX energy (Joules) for one 128B packet to distance d (m) */
 static inline double
-tx_energy(double d) {
+tx_energy(uint16_t bytes, double d) {
+  uint32_t bits = bytes * 8;
   double dth = sqrt(EPS_FS / EPS_MP);
+
   if(d <= dth) {
-    return PKT_BITS * (E_ELEC + EPS_FS * d * d);
+    return bits * (E_ELEC + EPS_FS * d * d);
   } else {
-    return PKT_BITS * (E_ELEC + EPS_MP * d * d * d * d);
+    return bits * (E_ELEC + EPS_MP * d * d * d * d);
   }
 }
 
 /* RX energy (Joules) for one 128B packet — (we’ll use this in the next step for forwarding) */
 static inline double
-rx_energy(void) {
-  return PKT_BITS * E_ELEC;
+rx_energy(uint16_t bytes) {
+  return (bytes * 8) * E_ELEC;  // bits × J/bit
 }
 
 /* Return an exponential delay in Contiki ticks */
@@ -197,28 +201,40 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   /* transmit it */
   simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
   state.gen_count++;
-  unsigned parent_id = get_parent_id();
-  if(parent_id!=-1){
-    double d = distance_nodes(node_id, parent_id);
-    state.residual_energy -= tx_energy(d);
-  }
   state.last_parent_id = parent_id;
 }
 
-static void sniff_input(void) {
-  // Do nothing – forwarding/mine will be caught at output
+/* Input callback: every received packet costs RX energy */
+static void
+sniffer_input(const struct mac_driver *drv)
+{
+  uint16_t len = packetbuf_datalen();
+  state.residual_energy -= rx_energy(len);
 }
 
-static void sniff_output(int mac_status) {
-  // Count every MAC transmission attempt (mine + forwarded)
+/* Output callback: every transmitted packet costs TX energy (unless queue full) */
+static void
+sniffer_output(const struct mac_driver *drv, int status, int transmissions)
+{
   state.fwd_count++;
 
-  if(mac_status == MAC_TX_QUEUE_FULL) {
+  if(status == MAC_TX_QUEUE_FULL) {
     state.q_loss_count++;
+  } else {
+    unsigned parent_id = get_parent_id();   // just lookup, no state update
+    if(parent_id != (unsigned)-1) {
+      double d = distance_nodes(node_id, parent_id);
+      uint16_t len = packetbuf_datalen();
+      state.residual_energy -= tx_energy(len, d);
+    }
   }
 }
 
-NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
+/* Register sniffer */
+static const struct mac_sniffer my_sniffer = {
+  .input_callback  = sniffer_input,
+  .output_callback = sniffer_output
+};
 
 static struct simple_udp_connection udp_conn;
 
@@ -232,7 +248,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
-  netstack_sniffer_add(&my_sniffer);
+  NETSTACK_MAC.sniffer_add(&my_sniffer);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
