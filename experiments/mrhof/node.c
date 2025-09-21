@@ -33,9 +33,26 @@
 #define EPS_FS          10e-12     /* 10 pJ/bit/m^2 */
 #define EPS_MP          10e-12     /* 10 pJ/bit/m^4  (adjust if your paper uses a different value) */
 #define PKT_BITS        (128*8)    /* 128 B = 1024 bits */
+/* === Energy Model (Lei & Liu 2024) === */
 
-static double residual_energy = INIT_ENERGY_J;
+/*MOTE STATE*/
+typedef struct {
+  uint32_t tx_count;
+  uint32_t rx_count;
+  uint32_t missed_tx_count;
+  double   residual_energy;
+} mote_state_t;
 
+/* One global static state per mote */
+static mote_state_t state = {
+  .tx_count = 0,
+  .rx_count = 0,
+  .missed_tx_count = 0,
+  .residual_energy = INIT_ENERGY_J
+};
+/*MOTE STATE*/
+
+/* === Energy Model (Lei & Liu 2024) === */
 /* Distance between two nodes by ID, using generated positions header */
 static inline double distance_nodes(unsigned id1, unsigned id2) {
   double dx = (double)node_pos_x[id1] - (double)node_pos_x[id2];
@@ -61,7 +78,6 @@ static inline double rx_energy(void) {
 /* === Energy Model (Lei & Liu 2024) === */
 
 static struct simple_udp_connection udp_conn;
-static uint32_t rx_count = 0;
 
 typedef struct {
   uint32_t t_sent;       // send timestamp (ms, from clock_time)
@@ -90,9 +106,9 @@ poisson_next_delay_ticks(void)
   return ticks;
 }
 
-static void wrapup(uint32_t tx_count, uint32_t missed_tx_count) {
-  LOG_INFO("WRAPUP node_id=%u Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32" residual=%.6fJ\n",
-           node_id, tx_count, rx_count, missed_tx_count, residual_energy);
+static void wrapup() {
+  LOG_INFO("WRAPUP Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32" residual=%.6fJ\n",
+            state.tx_count, state.rx_count, state.missed_tx_count, state.residual_energy);
 }
 
 /* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
@@ -120,8 +136,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
 {
   static struct etimer periodic_timer;
   uip_ipaddr_t dest_ipaddr;
-  static uint32_t tx_count;
-  static uint32_t missed_tx_count;
 
   PROCESS_BEGIN();
   
@@ -140,7 +154,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
 	
     uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
     if(now_ms > (SIM_END_MS)) {
-        wrapup(tx_count,missed_tx_count);
+        wrapup();
 		PROCESS_EXIT();
     }
 
@@ -151,20 +165,20 @@ PROCESS_THREAD(udp_client_process, ev, data)
       pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
       memset(pkt.padding, 0, sizeof(pkt.padding));
       simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-      tx_count++;
+      state.tx_count++;
 	  
       unsigned parent_id = get_parent_id();
       double d = distance_nodes(node_id, parent_id);
-      residual_energy -= tx_energy(d);
-      if(residual_energy <= 0) {
-          residual_energy = 0;
-          wrapup(tx_count,missed_tx_count);
+      state.residual_energy -= tx_energy(d);
+      if(state.residual_energy <= 0) {
+          state.residual_energy = 0;
+          wrapup();
 		  PROCESS_EXIT();
       }
     } else {
       LOG_INFO("Not reachable yet\n");
-      if(tx_count > 0) {
-        missed_tx_count++;
+      if(state.tx_count > 0) {
+        state.missed_tx_count++;
       }
     }
 
