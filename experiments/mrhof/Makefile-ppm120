@@ -5,6 +5,7 @@ TARGET = cooja
 CONTIKI = /workspace/contiki-ng
 
 CFLAGS += -DSEND_INTERVAL_MS=500  # 120 PPM
+CFLAGS += -DQUEUEBUF_CONF_NUM=8
 
 LDLIBS += -lm
 
