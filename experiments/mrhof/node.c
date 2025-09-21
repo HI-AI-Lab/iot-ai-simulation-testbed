@@ -209,12 +209,20 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
 }
 
 static void sniff_input(void) {
-  state.fwd_count++; // every RX packet is intended for forwarding
+  // Only UDP packets
+  if(UIP_IP_BUF->proto == UIP_PROTO_UDP) {
+    // Whether it was generated here or came from a peer, if it enters the IP layer
+    // and goes out, we treat it as a forward event
+    state.fwd_count++;
+  }
 }
 
 static void sniff_output(int mac_status) {
-  if(mac_status == MAC_TX_QUEUE_FULL) {
-    state.q_loss_count++;
+  // Only UDP data packets
+  if(UIP_IP_BUF->proto == UIP_PROTO_UDP) {
+    if(mac_status == MAC_TX_QUEUE_FULL) {
+      state.q_loss_count++;
+    }
   }
 }
 
