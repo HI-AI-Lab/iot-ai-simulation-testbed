@@ -217,14 +217,22 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   state.last_parent_id = parent_id;
 }
 
-static int (*original_output)(const linkaddr_t *dest);
+static mac_send_t real_mac_send;
+typedef void (*mac_send_t)(mac_callback_t sent, void *ptr);
 
-static int my_output(const linkaddr_t *dest) {
-  int ret = original_output(dest);
-  if(ret == MAC_TX_QUEUE_FULL) state.queue_loss_count++;
-  return ret;
+static void my_mac_send(mac_callback_t sent, void *ptr) {
+  real_mac_send(
+    // wrap the callback
+    (mac_callback_t) (^(void *ptr2, int status, int num_tx) {
+      if(status == MAC_TX_QUEUE_FULL) {
+        state.queue_loss_count++;
+      }
+      // call original callback if any
+      if(sent) sent(ptr2, status, num_tx);
+    }),
+    ptr
+  );
 }
-
 
 static struct simple_udp_connection udp_conn;
 
@@ -238,8 +246,8 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
-  original_output = NETSTACK_NETWORK.output;
-  NETSTACK_NETWORK.output = my_output;
+  real_mac_send = NETSTACK_MAC.send;
+  NETSTACK_MAC.send = my_mac_send;
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
