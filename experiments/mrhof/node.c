@@ -3,6 +3,7 @@
 #include "net/routing/routing.h"
 #include "net/routing/rpl-lite/rpl.h"  /* preferred parent API */
 #include "net/netstack.h"
+#include "net/mac/mac.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6.h"
 #include "sys/log.h"
@@ -216,6 +217,15 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   state.last_parent_id = parent_id;
 }
 
+static int (*original_output)(const linkaddr_t *dest);
+
+static int my_output(const linkaddr_t *dest) {
+  int ret = original_output(dest);
+  if(ret == MAC_TX_QUEUE_FULL) state.queue_loss_count++;
+  return ret;
+}
+
+
 static struct simple_udp_connection udp_conn;
 
 /*---------------------------------------------------------------------------*/
@@ -228,6 +238,8 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
+  original_output = NETSTACK_NETWORK.output;
+  NETSTACK_NETWORK.output = my_output;
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
