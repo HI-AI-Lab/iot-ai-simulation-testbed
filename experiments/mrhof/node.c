@@ -216,7 +216,7 @@ static void sniff_output(int mac_status) {
 	  state.fwd_count++;
       double d = distance_nodes(node_id, parent_id);
       uint16_t len = packetbuf_datalen();
-      state.residual_energy -= tx_energy(len*8, d);
+      state.residual_energy -= tx_energy(d, len*8);
 	  state.last_parent_id = parent_id;
     }
   }
