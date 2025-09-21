@@ -53,6 +53,7 @@ typedef struct {
   end_reason_t end_reason;
   uint32_t end_time_ms;
   uint32_t ppm;
+  unsigned last_parent_id;
 
   /* queue state */
   app_packet_t queue[QUEUE_SIZE];
@@ -71,6 +72,7 @@ static mote_state_t state = {
   .end_reason = END_NONE,
   .end_time_ms = 0,
   .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
+  .last_parent_id = 0;
   .q_head = 0,
   .q_tail = 0,
   .q_len  = 0
@@ -111,19 +113,20 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-  LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
-           "Tx=%"PRIu32" Rx=%"PRIu32" Gen=%"PRIu32" Fwd=%"PRIu32" "
-           "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32"\n",
-           node_id,
-           end_reason_str(state.end_reason),
-           (unsigned long)state.end_time_ms,
-           state.tx_count,
-           state.rx_count,
-           state.generated_count,
-           state.forwarded_count,
-           state.queue_loss_count,
-           state.residual_energy,
-           state.ppm);
+	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
+			 "Tx=%"PRIu32" Rx=%"PRIu32" Gen=%"PRIu32" Fwd=%"PRIu32" "
+			 "QLoss=%"PRIu32" residual=%.6fJ ppm=%"PRIu32" parent=%u\n",
+			 node_id,
+			 end_reason_str(state.end_reason),
+			 (unsigned long)state.end_time_ms,
+			 state.tx_count,
+			 state.rx_count,
+			 state.generated_count,
+			 state.forwarded_count,
+			 state.queue_loss_count,
+			 state.residual_energy,
+			 state.ppm,
+			 state.last_parent_id);
 }
 
 /*MOTE STATE*/
@@ -183,16 +186,16 @@ ip_to_nodeid(const uip_ipaddr_t *ip) {
   return (unsigned)UIP_HTONS(ip->u16[7]);
 }
 
-/* Get our current preferred parent node_id, fallback = root (1) */
+/* Get our current preferred parent node_id, fallback = 0 (none) */
 static unsigned
 get_parent_id(void) {
   rpl_instance_t *inst = rpl_get_default_instance();
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(inst && dag && dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
+  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip =
+      rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
     return ip_to_nodeid(p_ip);
   }
-  return 1; // fallback to root
+  return -1; // no parent
 }
 
 /* Return 1 if simulation time is over; also update state */
@@ -231,17 +234,20 @@ send_a_packet(struct simple_udp_connection udp_conn) {
   if(!dequeue_packet(&pkt)) {
     return; /* queue empty */
   }
+  /* transmit it */
+  simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
+  state.tx_count++;
   /* if this packet wasn’t generated locally, count as forwarded */
   if(pkt.origin_id != node_id) {
     state.forwarded_count++;
   }
-  /* transmit it */
-  simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-  state.tx_count++;
   /* account TX energy against preferred parent */
   unsigned parent_id = get_parent_id();
-  double d = distance_nodes(node_id, parent_id);
-  state.residual_energy -= tx_energy(d);
+  if(parent_id!=-1){
+    double d = distance_nodes(node_id, parent_id);
+    state.residual_energy -= tx_energy(d);
+  }
+  state.last_parent_id = parent_id;
 }
 
 static void
