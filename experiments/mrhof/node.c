@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "random.h"
 #include "net/routing/routing.h"
+#include "net/routing/rpl-lite/rpl.h"  /* preferred parent API */
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6.h"
@@ -10,7 +11,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
-
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -29,31 +29,46 @@
 
 /* === Energy Model (Lei & Liu 2024) === */
 #define INIT_ENERGY_J   10.0
-#define E_ELEC          50e-9      // 50 nJ/bit
-#define EPS_FS          10e-12     // 10 pJ/bit/m^2
-#define EPS_MP          10e-12     // 10 pJ/bit/m^4
-#define PKT_BITS        (128*8)    // 128 B = 1024 bits
+#define E_ELEC          50e-9      /* 50 nJ/bit */
+#define EPS_FS          10e-12     /* 10 pJ/bit/m^2 */
+#define EPS_MP          10e-12     /* 10 pJ/bit/m^4  (adjust if your paper uses a different value) */
+#define PKT_BITS        (128*8)    /* 128 B = 1024 bits */
 
-//static double residual_energy = INIT_ENERGY_J;
+static double residual_energy = INIT_ENERGY_J;
 
-/* Distance between two nodes by ID */
+/* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
+static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
+  return (unsigned)UIP_HTONS(ip->u16[7]);
+}
+
+/* Ask RPL-Lite for our current preferred parent; fallback to root (ID=1) if unknown */
+static unsigned get_parent_id(void) {
+  rpl_instance_t *inst = rpl_get_default_instance();
+  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
+    return ip_to_nodeid(p_ip);
+  }
+  return 1; /* fallback: root ID (sink) */
+}
+
+/* Distance between two nodes by ID, using generated positions header */
 static inline double distance_nodes(unsigned id1, unsigned id2) {
-  double dx = node_pos_x[id1] - node_pos_x[id2];
-  double dy = node_pos_y[id1] - node_pos_y[id2];
+  double dx = (double)node_pos_x[id1] - (double)node_pos_x[id2];
+  double dy = (double)node_pos_y[id1] - (double)node_pos_y[id2];
   return sqrt(dx*dx + dy*dy);
 }
 
-/* TX energy consumption (J) */
+/* TX energy (Joules) for one 128B packet to distance d (m) */
 static inline double tx_energy(double d) {
   double dth = sqrt(EPS_FS / EPS_MP);
   if(d <= dth) {
-    return PKT_BITS * (E_ELEC + EPS_FS * d*d);
+    return PKT_BITS * (E_ELEC + EPS_FS * d * d);
   } else {
-    return PKT_BITS * (E_ELEC + EPS_MP * d*d*d*d);
+    return PKT_BITS * (E_ELEC + EPS_MP * d * d * d * d);
   }
 }
 
-/* RX energy consumption (J) */
+/* RX energy (Joules) for one 128B packet — (we’ll use this in the next step for forwarding) */
 static inline double rx_energy(void) {
   return PKT_BITS * E_ELEC;
 }
@@ -90,6 +105,28 @@ poisson_next_delay_ticks(void)
   return ticks;
 }
 
+static void wrapup_and_exit(void) {
+  LOG_INFO("WRAPUP node_id=%u Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32" residual=%.6fJ\n",
+           node_id, tx_count, rx_count, missed_tx_count, residual_energy);
+  PROCESS_EXIT();
+}
+
+/* Map IPv6 -> node_id (Cooja: last 16 bits = node_id, in hex) */
+static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
+  return (unsigned)UIP_HTONS(ip->u16[7]);
+}
+
+/* Get our current preferred parent node_id, fallback = root (1) */
+static unsigned get_parent_id(void) {
+  rpl_instance_t *inst = rpl_get_default_instance();
+  if(inst && inst->current_dag && inst->current_dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(inst->current_dag->preferred_parent);
+    return ip_to_nodeid(p_ip);
+  }
+  return 1; // fallback to root
+}
+
+
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "NODE");
 AUTOSTART_PROCESSES(&udp_client_process);
@@ -119,34 +156,25 @@ PROCESS_THREAD(udp_client_process, ev, data)
 	
     uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
     if(now_ms > (SIM_END_MS)) {
-	  /*Testing IP to ID*/
-      const uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
-      if(a) {
-        LOG_INFO("IP2ID: node_id=%u, IPv6=%02x%02x::...:%04x\n",
-                 node_id, a->ipaddr.u8[0], a->ipaddr.u8[1],
-                 UIP_HTONS(a->ipaddr.u16[7]));
-      }
-      /*Testing IP to ID*/
-      LOG_INFO("WRAPUP node: Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32"\n",
-           tx_count, rx_count, missed_tx_count);
-      PROCESS_EXIT();  // stop sending
+        wrapup_and_exit();
     }
 
     if(NETSTACK_ROUTING.node_is_reachable() &&
         NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
-
-      /* Print statistics every 100th TX */
-      if(tx_count % 100 == 0) {
-        LOG_INFO("Tx/Rx/MissedTx: %" PRIu32 "/%" PRIu32 "/%" PRIu32 "\n",
-                 tx_count, rx_count, missed_tx_count);
-      }
-
       /* Send to DAG root */
       app_packet_t pkt;
       pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
       memset(pkt.padding, 0, sizeof(pkt.padding));
       simple_udp_sendto(&udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
       tx_count++;
+	  
+      unsigned parent_id = get_parent_id();
+      double d = distance_nodes(node_id, parent_id);
+      residual_energy -= tx_energy(d);
+      if(residual_energy <= 0) {
+          residual_energy = 0;
+          wrapup_and_exit();
+      }
     } else {
       LOG_INFO("Not reachable yet\n");
       if(tx_count > 0) {
