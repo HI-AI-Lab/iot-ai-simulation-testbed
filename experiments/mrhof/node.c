@@ -77,7 +77,7 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-	uint32_t attempts = state.gen_count + state.fwd_count;
+	uint32_t attempts = state.fwd_count;
     double qlr = (attempts > 0) ? (double)state.q_loss_count / (double)attempts : 0.0;
 
     LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%lu "
