@@ -200,12 +200,6 @@ send_a_packet(struct simple_udp_connection *udp_conn) {
   /* transmit it */
   simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
   state.gen_count++;
-  unsigned parent_id = get_parent_id();
-  if(parent_id!=-1){
-    double d = distance_nodes(node_id, parent_id);
-    state.residual_energy -= tx_energy(d);
-  }
-  state.last_parent_id = parent_id;
 }
 
 static void sniff_input(void) {
