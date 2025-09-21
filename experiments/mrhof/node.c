@@ -111,17 +111,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                       UDP_SERVER_PORT, NULL);
 
-  /*Testing IP to ID*/
-  
-  const uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
-  if(a) {
-    LOG_INFO("IP2ID: node_id=%u, IPv6=%02x%02x::...:%04x\n",
-             node_id, a->ipaddr.u8[0], a->ipaddr.u8[1],
-             UIP_HTONS(a->ipaddr.u16[7]));
-  }
-  
-  /*Testing IP to ID*/
-
   /* before loop: schedule first send with Poisson gap */
   etimer_set(&periodic_timer, poisson_next_delay_ticks());
   
@@ -130,6 +119,14 @@ PROCESS_THREAD(udp_client_process, ev, data)
 	
     uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
     if(now_ms > (SIM_END_MS)) {
+	  /*Testing IP to ID*/
+      const uip_ds6_addr_t *a = uip_ds6_get_global(ADDR_PREFERRED);
+      if(a) {
+        LOG_INFO("IP2ID: node_id=%u, IPv6=%02x%02x::...:%04x\n",
+                 node_id, a->ipaddr.u8[0], a->ipaddr.u8[1],
+                 UIP_HTONS(a->ipaddr.u16[7]));
+      }
+      /*Testing IP to ID*/
       LOG_INFO("WRAPUP node: Tx=%"PRIu32" Rx=%"PRIu32" Missed=%"PRIu32"\n",
            tx_count, rx_count, missed_tx_count);
       PROCESS_EXIT();  // stop sending
