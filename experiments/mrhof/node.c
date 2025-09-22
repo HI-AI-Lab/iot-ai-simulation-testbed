@@ -223,9 +223,8 @@ static void
 on_parent_switch(rpl_parent_t *old, rpl_parent_t *new)
 {
   if(new != NULL) {
-    const linkaddr_t *lladdr = rpl_parent_get_addr(new);
-    unsigned parent_id = lladdr->u8[LINKADDR_SIZE - 1];
-
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(new);
+    unsigned parent_id = ip_to_nodeid(p_ip);  // you already have this helper
     state.last_parent_id = parent_id;
     state.parent_switches++;
   }
