@@ -643,7 +643,7 @@
       </plugin_config>
   </plugin>
   <plugin>
-    org.contikios.cooja.serialsocket.SerialSocketClient
+    org.contikios.cooja.serialsocket.SerialSocketClientABC
     <mote>1</mote>
     <host>127.0.0.1</host>
     <port>5000</port>
