@@ -23,7 +23,7 @@
 #define SIM_END_MS       5000000UL   // total runtime in ms (e.g. 5000s = ~83 min)
 
 /* === Energy Model (Lei & Liu 2024) === */
-#define INIT_ENERGY_J   10.0
+#define INIT_ENERGY_J   2000.0
 #define E_ELEC          50e-9      /* 50 nJ/bit */
 #define EPS_FS          10e-12     /* 10 pJ/bit/m^2 */
 #define EPS_MP          10e-12     /* 10 pJ/bit/m^4  (adjust if your paper uses a different value) */
