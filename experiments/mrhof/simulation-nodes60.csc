@@ -21,6 +21,7 @@
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRadio</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiClock</moteinterface>
+      <moteinterface>org.contikios.cooja.interfaces.SerialPort</moteinterface>
       <mote>
         <interface_config>
           org.contikios.cooja.interfaces.Position
