@@ -124,7 +124,9 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
   uint32_t ticks_left, step;
-  
+	
+  PROCESS_BEGIN();
+
   // Init stats
   for(int i = 0; i <= NUM_NODES; i++) {
     stats[i].recv_count = 0;
@@ -133,8 +135,6 @@ PROCESS_THREAD(udp_server_process, ev, data)
     stats[i].min_latency = INT32_MAX;
     stats[i].max_latency = 0;
   }
-	
-  PROCESS_BEGIN();
 
   /* Initialize DAG root */
   NETSTACK_ROUTING.root_start();
