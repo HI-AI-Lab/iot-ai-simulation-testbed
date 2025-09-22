@@ -13,6 +13,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include "net/packetbuf.h"
+#include "net/routing/rpl-lite/rpl-neighbor.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -53,6 +54,7 @@ typedef struct {
   uint32_t end_time_ms;
   uint32_t ppm;
   unsigned last_parent_id;
+  uint32_t parent_switches;
 } mote_state_t;
 
 static mote_state_t state = {
@@ -65,6 +67,7 @@ static mote_state_t state = {
   .end_time_ms = 0,
   .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
   .last_parent_id = 0,
+  .parent_switches = 0
 };
 
 static const char *
@@ -78,21 +81,21 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-    LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
-             "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
-             "residual=%.6fJ ppm=%" PRIu32 " parent=%u\n",
-             (unsigned int)node_id,
-             end_reason_str(state.end_reason),
-             state.end_time_ms,
-             state.gen_count,
-             state.fwd_count,
-             state.q_loss_count,
-             state.qsize,
-             state.residual_energy,
-             state.ppm,
-             (unsigned int)state.last_parent_id);
+	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
+			 "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
+			 "residual=%.6fJ ppm=%" PRIu32 " parent=%u switches=%" PRIu32 "\n",
+			 (unsigned int)node_id,
+			 end_reason_str(state.end_reason),
+			 state.end_time_ms,
+			 state.gen_count,
+			 state.fwd_count,
+			 state.q_loss_count,
+			 state.qsize,
+			 state.residual_energy,
+			 state.ppm,
+			 state.last_parent_id,
+			 state.parent_switches);
 }
-
 /*MOTE STATE*/
 
 /* Distance between two nodes by ID, using generated positions header */
@@ -153,12 +156,7 @@ ip_to_nodeid(const uip_ipaddr_t *ip) {
 /* Get our current preferred parent node_id, fallback = 0 (none) */
 static unsigned
 get_parent_id(void) {
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(dag && dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
-    return ip_to_nodeid(p_ip);
-  }
-  return -1; // no parent
+  return state.last_parent_id; // no parent
 }
 
 /* Return 1 if simulation time is over; also update state */
@@ -217,10 +215,23 @@ static void sniff_output(int mac_status) {
       double d = distance_nodes(node_id, parent_id);
       uint16_t len = packetbuf_datalen();
       state.residual_energy -= tx_energy(d, len*8);
-	  state.last_parent_id = parent_id;
     }
   }
 }
+
+static void
+on_parent_switch(rpl_parent_t *old, rpl_parent_t *new)
+{
+  if(new != NULL) {
+    const linkaddr_t *lladdr = rpl_parent_get_addr(new);
+    unsigned parent_id = lladdr->u8[LINKADDR_SIZE - 1];
+
+    state.last_parent_id = parent_id;
+    state.parent_switches++;
+  }
+}
+
+RPL_CALLBACKS(rpl_callbacks) = { .parent_switch = on_parent_switch };
 
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 
