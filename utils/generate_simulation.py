@@ -113,6 +113,9 @@ def main():
     id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
     ET.SubElement(id_ic, "id").text = str(1)
 
+    positions = []
+    positions.append((SINK_X, SINK_Y))   # index 0 unused, sink = ID 1
+
     # Remove any existing <mote> entries (replace the template placeholder)
     for child in list(node_mt):
         if child.tag == "mote":
@@ -131,6 +134,8 @@ def main():
         pos = ET.SubElement(pos_ic, "pos")
         pos.set("x", f"{x:.1f}")
         pos.set("y", f"{y:.1f}")
+        
+        positions.append((x, y))
 
         id_ic = _make_interface_config(mote, "org.contikios.cooja.contikimote.interfaces.ContikiMoteID")
         ET.SubElement(id_ic, "id").text = str(i)
@@ -140,6 +145,24 @@ def main():
     _indent(root)
     out_path.write_text(ET.tostring(root, encoding="unicode"), encoding="utf-8")
     print(f"Wrote {out_path} with {args.motes} motes in {args.width}x{args.height}, seed={args.seed}.")
+    
+    # Also write a header file with positions
+    header_path = out_path.with_name(f"positions-{out_path.stem}.h")
+    guard = "POSITIONS_" + out_path.stem.upper().replace("-", "_") + "_H"
+
+    with header_path.open("w") as hf:
+        hf.write(f"/* Auto-generated positions header for {out_path.name} */\n")
+        hf.write(f"#ifndef {guard}\n#define {guard}\n\n")
+        hf.write(f"#define NUM_NODES {args.motes}\n\n")
+
+        xs = ", ".join(["0.0f"] + [f"{p[0]:.2f}f" for p in positions])
+        ys = ", ".join(["0.0f"] + [f"{p[1]:.2f}f" for p in positions])
+        hf.write(f"static const float node_pos_x[NUM_NODES+1] = {{ {xs} }};\n")
+        hf.write(f"static const float node_pos_y[NUM_NODES+1] = {{ {ys} }};\n\n")
+
+        hf.write(f"#endif /* {guard} */\n")
+
+    print(f"Wrote {header_path}")
 
 if __name__ == "__main__":
     main()
