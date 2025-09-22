@@ -21,7 +21,6 @@
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRadio</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiClock</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.SerialPort</moteinterface>
       <mote>
         <interface_config>
           org.contikios.cooja.interfaces.Position
@@ -642,5 +641,11 @@
       <scriptfile>[CONFIG_DIR]/simulation.js</scriptfile>
       <active>true</active>
       </plugin_config>
-  </plugin>	
+  </plugin>
+  <plugin>
+    org.contikios.cooja.serialsocket.SerialSocketServer
+    <mote>1</mote>
+    <port>60000</port>
+    <bound>false</bound>
+  </plugin>
 </simconf>
