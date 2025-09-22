@@ -81,11 +81,12 @@ wrapup(void) {
   }
 }
 
+static int
+is_simulation_time_over(void) {
+  uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+  return (now_ms >= SIM_END_MS);
+}
 
-static struct simple_udp_connection udp_conn;
-
-PROCESS(udp_server_process, "SINK");
-AUTOSTART_PROCESSES(&udp_server_process);
 /*---------------------------------------------------------------------------*/
 static void
 udp_rx_callback(struct simple_udp_connection *c,
@@ -120,15 +121,16 @@ udp_rx_callback(struct simple_udp_connection *c,
   }
 }
 /*---------------------------------------------------------------------------*/
+
+static struct simple_udp_connection udp_conn;
+
+PROCESS(udp_server_process, "SINK");
+AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
-  uint32_t ticks_left, step;
-
-  PROCESS_EXITHANDLER(wrapup()); 
-	
+  uint32_t ticks_left, step; 
   PROCESS_BEGIN();
-
   // Init stats
   for(int i = 0; i <= NUM_NODES; i++) {
     stats[i].recv_count = 0;
@@ -137,22 +139,20 @@ PROCESS_THREAD(udp_server_process, ev, data)
     stats[i].min_latency = INT32_MAX;
     stats[i].max_latency = 0;
   }
-
   /* Initialize DAG root */
   NETSTACK_ROUTING.root_start();
-
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
-
-  ticks_left = (SIM_END_MS * CLOCK_SECOND) / 1000;  // convert ms to ticks
-
-  while(ticks_left > 0) {
-    step = ticks_left > 60000 ? 60000 : ticks_left; // safe max
+  step = 60000; // check every ~60s of sim time
+  while(1) {
     etimer_set(&t, step);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-    ticks_left -= step;
-  }
+    if(is_simulation_time_over()) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+}
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
