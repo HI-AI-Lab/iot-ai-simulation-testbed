@@ -230,7 +230,10 @@ on_parent_switch(rpl_parent_t *old, rpl_parent_t *new)
   }
 }
 
-RPL_CALLBACK(parent_switch, on_parent_switch);
+/* Declare callbacks struct */
+static const rpl_callbacks_t rpl_cbs = {
+  .parent_switch = on_parent_switch
+};
 
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 
@@ -247,6 +250,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   static struct etimer gen_timer;
   PROCESS_BEGIN();
   netstack_sniffer_add(&my_sniffer);
+  rpl_set_callbacks(&rpl_cbs);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
                     UDP_SERVER_PORT, NULL);
   etimer_set(&gen_timer, poisson_next_delay_ticks());
