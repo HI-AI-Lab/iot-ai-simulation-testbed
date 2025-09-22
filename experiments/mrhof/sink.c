@@ -129,7 +129,6 @@ AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
-  uint32_t ticks_left, step; 
   PROCESS_BEGIN();
   // Init stats
   for(int i = 0; i <= NUM_NODES; i++) {
@@ -144,9 +143,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
-  step = 60000; // check every ~60s of sim time
   while(1) {
-    etimer_set(&t, step);
+    etimer_set(&t, 60000); // check every ~60s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     if(is_simulation_time_over()) {
       wrapup();
