@@ -124,6 +124,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
   uint32_t ticks_left, step;
+
+  PROCESS_EXITHANDLER(wrapup()); 
 	
   PROCESS_BEGIN();
 
@@ -151,7 +153,6 @@ PROCESS_THREAD(udp_server_process, ev, data)
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     ticks_left -= step;
   }
-  wrapup();
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
