@@ -12,10 +12,10 @@ echo "Starting the COOJA multi-simulations..."
 start_time=$(date +%s)
 
 # Define arrays for the different simulation parameters.
-declare -a nodes=("60" "80" "100")
-declare -a ppm_values=("80" "100" "120")
-#declare -a nodes=("60")
-#declare -a ppm_values=("80")
+#declare -a nodes=("60" "80" "100")
+#declare -a ppm_values=("80" "100" "120")
+declare -a nodes=("60")
+declare -a ppm_values=("80")
 
 # Define the base directory for all simulation logs.
 LOGS_BASE_DIR="testbed/logs"
