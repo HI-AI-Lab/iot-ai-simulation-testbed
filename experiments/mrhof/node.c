@@ -13,7 +13,6 @@
 #include <inttypes.h>
 #include <math.h>
 #include "net/packetbuf.h"
-#include "net/routing/rpl-lite/rpl-neighbor.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -156,7 +155,12 @@ ip_to_nodeid(const uip_ipaddr_t *ip) {
 /* Get our current preferred parent node_id, fallback = 0 (none) */
 static unsigned
 get_parent_id(void) {
-  return state.last_parent_id; // no parent
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(dag && dag->preferred_parent) {
+    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
+    return ip_to_nodeid(p_ip);
+  }
+  return -1; // no parent
 }
 
 /* Return 1 if simulation time is over; also update state */
@@ -215,22 +219,13 @@ static void sniff_output(int mac_status) {
       double d = distance_nodes(node_id, parent_id);
       uint16_t len = packetbuf_datalen();
       state.residual_energy -= tx_energy(d, len*8);
+	  if(parent_id!=state.last_parent_id){
+		  state.last_parent_id = parent_id;
+		  state.parent_switches++;
+	  }
     }
   }
 }
-
-static void
-on_parent_switch(rpl_parent_t *old, rpl_parent_t *new)
-{
-  if(new != NULL) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(new);
-    unsigned parent_id = ip_to_nodeid(p_ip);  // you already have this helper
-    state.last_parent_id = parent_id;
-    state.parent_switches++;
-  }
-}
-
-RPL_CALLBACK(parent_switch, on_parent_switch);
 
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 
