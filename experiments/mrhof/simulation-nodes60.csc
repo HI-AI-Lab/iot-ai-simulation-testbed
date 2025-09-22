@@ -642,11 +642,4 @@
       <active>true</active>
       </plugin_config>
     </plugin>
-	<plugin>
-     org.contikios.cooja.serialsocket.SerialSocketClient
-      <mote>1</mote>
-      <host>127.0.0.1</host>
-      <port>5000</port>
-     <bound>false</bound>
-    </plugin>
 </simconf>
