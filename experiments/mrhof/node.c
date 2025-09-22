@@ -230,7 +230,7 @@ on_parent_switch(rpl_parent_t *old, rpl_parent_t *new)
   }
 }
 
-RPL_CALLBACKS(rpl_callbacks) = { .parent_switch = on_parent_switch };
+RPL_CALLBACK(parent_switch, on_parent_switch);
 
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 
