@@ -69,7 +69,7 @@ do
 
         # Run the simulation. The output will be named 'COOJA.testlog' by default.
         # Ensure you are in the correct directory for the gradlew command to work.
-        contiki-ng/tools/cooja/gradlew -p contiki-ng/tools/cooja run --args="--no-gui ${CSC_PATH}"
+        xvfb-run -a contiki-ng/tools/cooja/gradlew -p contiki-ng/tools/cooja run --args="--no-gui ${CSC_PATH}"
 
         # Check if the simulation log file was created successfully.
         if [ -f "COOJA.testlog" ]; then
