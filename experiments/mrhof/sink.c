@@ -128,9 +128,9 @@ PROCESS(udp_server_process, "SINK");
 AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
-  LOG_INFO("TO_AI_AGENT: PING by the SINK");
   static struct etimer t;
   PROCESS_BEGIN();
+  LOG_INFO("TO_AI_AGENT: PING by the SINK");
   // Init stats
   for(int i = 0; i <= NUM_NODES; i++) {
     stats[i].recv_count = 0;
