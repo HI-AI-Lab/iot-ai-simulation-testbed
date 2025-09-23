@@ -15,8 +15,7 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		out.println(".");
-		/*
+		
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         if (msg.startsWith("[INFO: App       ] TO_AI_AGENT:")) {
@@ -24,6 +23,7 @@ try {
             out.println(msg);
 			var mem = motes[id-1].getMemory();
 			mem.setIntValue("ai_value", 1);
+			log.log(time + "\t" + id + "\t" + "Set a value in ai_value\n");
             // You can optionally read a reply here
             // var line = inp.readLine();
             // if (line != null) {
@@ -32,7 +32,7 @@ try {
         } else {
             // Log all other messages to the simulator
             log.log(time + "\t" + id + "\t" + msg + "\n");
-        }*/
+        }
     }
     sock.close(); // This will only be reached if the loop terminates
 } catch (e) {
