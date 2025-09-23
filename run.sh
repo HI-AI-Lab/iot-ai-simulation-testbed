@@ -9,7 +9,7 @@
 echo "Starting the COOJA multi-simulations..."
 
 # Define the full path to your script
-AGENT_PATH="/workspace/utils/agent.py"
+AGENT_PATH="/workspace/testbed/utils/agent.py"
 
 # Record the start time of the entire script.
 start_time=$(date +%s)
