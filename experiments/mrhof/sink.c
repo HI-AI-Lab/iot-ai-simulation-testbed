@@ -128,6 +128,7 @@ PROCESS(udp_server_process, "SINK");
 AUTOSTART_PROCESSES(&udp_server_process);
 PROCESS_THREAD(udp_server_process, ev, data)
 {
+  LOG_INFO("TO_AI_AGENT: PING by the SINK");
   static struct etimer t;
   PROCESS_BEGIN();
   // Init stats

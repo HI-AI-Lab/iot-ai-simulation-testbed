@@ -6,29 +6,33 @@ var BufferedReader = Java.type("java.io.BufferedReader");
 
 TIMEOUT(6000000, log.testOK()); // On timeout, exit with status 0
 
-// --- One-shot ping at simulation start ---
+// --- Open the socket once, before the main loop ---
 try {
-  var sock = new Socket("localhost", 5000);
-  var out = new PrintWriter(sock.getOutputStream(), true);
-  var inp = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+    var sock = new Socket("localhost", 5000);
+    var out = new PrintWriter(sock.getOutputStream(), true);
+    var inp = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 
-  var msg = "PING";
-  log.log("JS sending: " + msg + "\n");
-  out.println(msg);
-
-  var line = inp.readLine();
-  if (line != null) {
-    log.log("JS got reply: " + line + "\n");
-  }
-
-  sock.close();
+    // --- Main simulation loop ---
+    while (true) {
+        YIELD();
+        // Variables provided: time (ms), id (mote id), msg (string)
+        
+        // Check if the message is intended for the AI agent
+        if (msg.startsWith("TO_AI_AGENT:")) {
+			log.log(time + "\t" + id + "\t" + "Talking to AI Agent: " + msg + "\n");
+            out.println(msg);
+            // You can optionally read a reply here
+            // var line = inp.readLine();
+            // if (line != null) {
+            //     log.log("JS got reply: " + line + "\n");
+            // }
+        } else {
+            // Log all other messages to the simulator
+            log.log(time + "\t" + id + "\t" + msg + "\n");
+        }
+    }
+    
+    sock.close(); // This will only be reached if the loop terminates
 } catch (e) {
-  log.log("Socket error: " + e + "\n");
-}
-
-while (true) {
-  YIELD();
-  // Append every mote output to the simulator log
-  // Variables provided: time (ms), id (mote id), msg (string)
-  log.log(time + "\t" + id + "\t" + msg + "\n");
+    log.log("Socket error: " + e + "\n");
 }
