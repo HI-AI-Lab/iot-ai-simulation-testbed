@@ -15,8 +15,7 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-        // Variables provided: time (ms), id (mote id), msg (string)
-        
+        // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         if (msg.startsWith("TO_AI_AGENT:")) {
 			log.log(time + "\t" + id + "\t" + "Talking to AI Agent: " + msg + "\n");

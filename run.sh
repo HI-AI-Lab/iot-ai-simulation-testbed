@@ -8,9 +8,6 @@
 
 echo "Starting the COOJA multi-simulations..."
 
-# Define the full path to your script
-AGENT_PATH="/workspace/testbed/utils/agent.py"
-
 # Record the start time of the entire script.
 start_time=$(date +%s)
 
@@ -39,13 +36,6 @@ do
 			echo "--------------------------------------------------------"
 		echo "Running simulation with ${node_count} nodes..."
 		# -------------------------------------------------------------
-		# Start the Python server in the background and capture its PID
-		echo "Starting the AI Agent from $AGENT_PATH..."
-		python3 "$AGENT_PATH" &
-
-		# Get the PID of the last background process
-		AGENT_PID=$!
-		echo "AI Agent started with PID: $AGENT_PID"
 		# --- Create a generic simulation file for this node count ---
 		# We copy the specific node count file to a generic name.
 		echo "Creating a generic simulation.csc file from simulation-nodes${node_count}.csc..."
@@ -108,8 +98,6 @@ do
 			rm -rf "${MRHOF_DIR}/build"
 		fi
 		# --- At the end of your simulatin, kill the agent process ---
-        echo "Killing the AI Agent with PID: $AGENT_PID"
-        kill "$AGENT_PID"
     done
 done
 # Record the end time of the entire script.
