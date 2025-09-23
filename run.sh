@@ -108,8 +108,8 @@ do
 			rm -rf "${MRHOF_DIR}/build"
 		fi
 		# --- At the end of your simulatin, kill the agent process ---
-        echo "Killing the Python server with PID: $SERVER_PID"
-        kill "$SERVER_PID"
+        echo "Killing the AI Agent with PID: $AGENT_PID"
+        kill "$AGENT_PID"
     done
 done
 # Record the end time of the entire script.
