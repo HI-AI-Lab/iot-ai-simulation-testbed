@@ -1,4 +1,6 @@
 // Run simulation for exactly this many milliseconds of simulated time
+importPackage(java.net);
+importPackage(java.io);
 
 TIMEOUT(6000000, log.testOK()); // On timeout, exit with status 0
 
