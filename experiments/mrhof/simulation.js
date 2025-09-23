@@ -15,6 +15,8 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
+		out.println(".");
+		/*
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         if (msg.startsWith("[INFO: App       ] TO_AI_AGENT:")) {
@@ -30,7 +32,7 @@ try {
         } else {
             // Log all other messages to the simulator
             log.log(time + "\t" + id + "\t" + msg + "\n");
-        }
+        }*/
     }
     sock.close(); // This will only be reached if the loop terminates
 } catch (e) {
