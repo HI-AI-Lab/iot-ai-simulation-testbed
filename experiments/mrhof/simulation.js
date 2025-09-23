@@ -17,7 +17,7 @@ try {
         YIELD();
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
-        if (msg.startsWith("TO_AI_AGENT:")) {
+        if (msg.startsWith("[INFO: App       ] TO_AI_AGENT:")) {
 			log.log(time + "\t" + id + "\t" + "Talking to AI Agent: " + msg + "\n");
             out.println(msg);
             // You can optionally read a reply here
@@ -30,7 +30,6 @@ try {
             log.log(time + "\t" + id + "\t" + msg + "\n");
         }
     }
-    
     sock.close(); // This will only be reached if the loop terminates
 } catch (e) {
     log.log("Socket error: " + e + "\n");
