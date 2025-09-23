@@ -20,6 +20,8 @@ try {
         if (msg.startsWith("[INFO: App       ] TO_AI_AGENT:")) {
 			log.log(time + "\t" + id + "\t" + "Talking to AI Agent: " + msg + "\n");
             out.println(msg);
+			var mem = motes[id-1].getMemory();
+			mem.setIntValue("ai_value", 1);
             // You can optionally read a reply here
             // var line = inp.readLine();
             // if (line != null) {

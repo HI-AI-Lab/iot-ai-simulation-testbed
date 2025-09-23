@@ -43,6 +43,8 @@
 
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
+int ai_value = 0;
+
 typedef struct {
   uint32_t t_sent;
   uint16_t origin_id;
@@ -146,6 +148,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
                       UDP_CLIENT_PORT, udp_rx_callback);
   while(1) {
     etimer_set(&t, 60000); // check every ~60s of sim time
+	LOG_INFO("TO_AI_AGENT: ai_value:%d\n",ai_value);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     if(is_simulation_time_over()) {
       wrapup();
