@@ -1,6 +1,8 @@
 // Run simulation for exactly this many milliseconds of simulated time
-importPackage(java.net);
-importPackage(java.io);
+var Socket = Java.type("java.net.Socket");
+var PrintWriter = Java.type("java.io.PrintWriter");
+var InputStreamReader = Java.type("java.io.InputStreamReader");
+var BufferedReader = Java.type("java.io.BufferedReader");
 
 TIMEOUT(6000000, log.testOK()); // On timeout, exit with status 0
 
