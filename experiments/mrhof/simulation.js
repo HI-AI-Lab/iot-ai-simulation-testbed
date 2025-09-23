@@ -23,7 +23,7 @@ try {
             out.println(msg);
 			var mem = motes[id-1].getMemory();
 			mem.setIntValue("ai_value", 1);
-			log.log(time + "\t" + id + "\t" + "Set a value in ai_value\n");
+			out.println(time + "\t" + id + "\t" + "Set a value in ai_value\n");
             // You can optionally read a reply here
             // var line = inp.readLine();
             // if (line != null) {
