@@ -22,6 +22,7 @@ try {
 		log.log("[JS] Class = "+mote.getMemory().getSections().getClass().getName()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().keySet().size()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().keySet().toArray()[0]+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().toArray()[0].toString()"\n");
 		//log.log("[JS] mote class = " + mote.getMemory().getNumberOfSections()+ "\n");
 		//var mem = mote.getMemory();
