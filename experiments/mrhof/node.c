@@ -30,7 +30,7 @@
 #define PKT_BITS        (128*8)    /* 128 B = 1024 bits */
 /* === Energy Model (Lei & Liu 2024) === */
 
-uint32_t toggle_value = node_id;
+uint32_t toggle_value = 0;
 
 /*MOTE STATE*/
 typedef enum {
@@ -251,6 +251,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
     /* build and enqueue packet */
+	toggle_value++;
 	if(is_energy_depleted() || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
