@@ -30,7 +30,7 @@
 #define PKT_BITS        (128*8)    /* 128 B = 1024 bits */
 /* === Energy Model (Lei & Liu 2024) === */
 
-uint32_t toggle_value = 0;
+uint32_t toggle_value = node_id;
 
 /*MOTE STATE*/
 typedef enum {
