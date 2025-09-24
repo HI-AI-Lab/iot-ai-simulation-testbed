@@ -17,9 +17,10 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		log.log("[JS] Mote Class = "+mote.getClass().getName()+"\n");
-		log.log("[JS] Memory Class = "+mote.getMemory().getClass().getName()+"\n");
-		log.log("[JS] Memory Class = "+mote.getMemory().getSections().getClass().getName()+"\n");
+		log.log("[JS] Class = "+mote.getClass().getName()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getClass().getName()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().getClass().getName()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
 		//log.log("[JS] mote class = " + mote.getMemory().getNumberOfSections()+ "\n");
 		//var mem = mote.getMemory();
 		//var toggle_value = mem.getInt32ValueOf("toggle_value");
