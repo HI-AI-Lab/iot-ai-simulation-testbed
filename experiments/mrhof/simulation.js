@@ -15,16 +15,11 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		if (typeof mote === "undefined") {
-			log.log("DEBUG: mote is undefined!\n");
-		} else {
-			log.log("DEBUG: mote found\n");
-		}
-		//var mem = motes[id-1].getMemory();
-		//var toggle_value = mem.getIntValue("toggle_value");
-		//toggle_value = toggle_value+1;
-		//mem.setIntValue("toggle_value", toggle_value);
-		//log.log(time + "\t" + id + "\t" + msg + "\n");
+		var mem = mote.getMemory();
+		var toggle_value = mem.getIntValue("toggle_value");
+		toggle_value = toggle_value+1;
+		mem.setIntValue("toggle_value", toggle_value);
+		log.log(time + "\t" + id + "\t" + msg + "\n");
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         //if (msg.startsWith("[INFO: App       ] TOGGLE:")) {
