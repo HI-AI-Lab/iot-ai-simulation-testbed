@@ -15,7 +15,10 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		
+		var mem = motes[id-1].getMemory();
+		var toggle_value = mem.getIntValue();
+		toggle_value = toggle_value+1;
+		mem.setIntValue("toggle_value", toggle_value);
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         //if (msg.startsWith("[INFO: App       ] TOGGLE:")) {
