@@ -18,14 +18,14 @@ function setInt(mote, varname, value) {
   mote.getMemory().setMemorySegment(sym.addr, buf.array());
 }
 
-TIMEOUT(6000000, log.testOK());
+TIMEOUT(600000, log.testOK());
 
 while (true) {
   YIELD();
   //log.log(""+msg+"\n");
-  /*
-  if(msg.startsWith("[INFO: Main      ] toggle_value:")){
-	  log.log("mote_id: " +id + "\t" + "JS: " + getInt(mote, "toggle_value") + "MOTE: " + msg + "\n");
-  }*/
-  log.log(time + "\t" + id + "\t" + msg + "\n");
+  
+  if(msg.startsWith("[INFO: App       ] toggle_value:")){
+	  log.log("mote_id: " +id+ "\t" + "JS: " + getInt(mote, "toggle_value")+"MOTE: " +msg+ "\n");
+  }
+  //log.log(time + "\t" + id + "\t" + msg + "\n");
 }
