@@ -1,8 +1,8 @@
 // Run simulation for exactly this many milliseconds of simulated time
-var Socket = Java.type("java.net.Socket");
-var PrintWriter = Java.type("java.io.PrintWriter");
-var InputStreamReader = Java.type("java.io.InputStreamReader");
-var BufferedReader = Java.type("java.io.BufferedReader");
+//var Socket = Java.type("java.net.Socket");
+//var PrintWriter = Java.type("java.io.PrintWriter");
+//var InputStreamReader = Java.type("java.io.InputStreamReader");
+//var BufferedReader = Java.type("java.io.BufferedReader");
 
 TIMEOUT(6000000, log.testOK()); // On timeout, exit with status 0
 
@@ -15,11 +15,16 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		var mem = motes[id-1].getMemory();
-		var toggle_value = mem.getIntValue("toggle_value");
-		toggle_value = toggle_value+1;
-		mem.setIntValue("toggle_value", toggle_value);
-		log.log(time + "\t" + id + "\t" + msg + "\n");
+		if (typeof motes === "undefined") {
+			log.log("DEBUG: motes is undefined!\n");
+		} else {
+			log.log("DEBUG: motes length = " + motes.length + "\n");
+		}
+		//var mem = motes[id-1].getMemory();
+		//var toggle_value = mem.getIntValue("toggle_value");
+		//toggle_value = toggle_value+1;
+		//mem.setIntValue("toggle_value", toggle_value);
+		//log.log(time + "\t" + id + "\t" + msg + "\n");
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         //if (msg.startsWith("[INFO: App       ] TOGGLE:")) {
@@ -35,10 +40,10 @@ try {
             // }
         //} else {
             // Log all other messages to the simulator
-        log.log(time + "\t" + id + "\t" + msg + "\n");
+        //log.log(time + "\t" + id + "\t" + msg + "\n");
         //}
     }
     //sock.close(); // This will only be reached if the loop terminates
 } catch (e) {
-    log.log("Socket error: " + e + "\n");
+    log.log("Error: " + e + "\n");
 }
