@@ -80,7 +80,7 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-	LOG_INFO("TOGGLE_STATUS OF NODE node_id=%u toggle_value=%d\n", (unsigned int)node_id, toggle_value);
+	LOG_INFO("TOGGLE_STATUS OF NODE node_id=%u toggle_value=%d\n", (unsigned int)state.node_id, toggle_value);
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
 			 "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
 			 "residual=%.6fJ ppm=%" PRIu32 " parent=%u switches=%" PRIu32 "\n",
