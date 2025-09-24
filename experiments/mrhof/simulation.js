@@ -26,7 +26,7 @@ while (true) {
   
   if(msg.startsWith("[INFO: App       ] toggle_value:")){
 	  var toggle_value = getInt(mote, "toggle_value");
-	  log.log("mote_id: " +id+ "\t" + "JS: " + toggle_value +"MOTE: " +msg+ "\n");
+	  log.log("mote_id: " +id+"- \t" + "JS: " + toggle_value +" MOTE: " +msg+ "\n");
 	  toggle_value++;
 	  setInt(mote, "toggle_value", toggle_value);
   }
