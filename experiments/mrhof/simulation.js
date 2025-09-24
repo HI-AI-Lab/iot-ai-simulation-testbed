@@ -22,54 +22,10 @@ function setInt(mote, varname, value) {
   mote.getMemory().setMemorySegment(sym.addr, buf.array());
 }
 
-TIMEOUT(6000, log.testOK()); // On timeout, exit with status 0
+TIMEOUT(6000, log.testOK());
 
-// --- Open the socket once, before the main loop ---
-try {
-    //var sock = new Socket("localhost", 5000);
-    //var out = new PrintWriter(sock.getOutputStream(), true);
-    //var inp = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-
-    // --- Main simulation loop ---
-    while (true) {
-        YIELD();
-		//log.log("[JS] Class = "+mote.getClass().getName()+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getClass().getName()+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().getClass().getName()+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getClass().getName()+"\n");
-		log.log("[JS] BSS = "+mote.getMemory().getSections().get("bss").getSymbolMap()['toggle_value'].addr+"\n");
-		log.log("[JS] DATA = "+mote.getMemory().getSections().get("data").getSymbolMap()['toggle_value'].addr+"\n");
-		
-		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().size()+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().toArray()[0]+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().toArray()[1]+"\n");
-		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().toArray()[0].toString()"\n");
-		//log.log("[JS] mote class = " + mote.getMemory().getNumberOfSections()+ "\n");
-		//var mem = mote.getMemory();
-		//var toggle_value = mem.getInt32ValueOf("toggle_value");
-		//toggle_value = toggle_value+1;
-		//mem.getInt32ValueOf("toggle_value", toggle_value);
-		//log.log(time + "\t" + id + "\t" + msg + "\n");
-        // Variables provided: time (ms), id (mote id), msg (string)        
-        // Check if the message is intended for the AI agent
-        //if (msg.startsWith("[INFO: App       ] TOGGLE:")) {
-			//log.log(time + "\t" + id + "\t" + "Talking to AI Agent: " + msg + "\n");
-            //out.println(msg);
-			// var mem = motes[id-1].getMemory();
-			// mem.setIntValue("toggle_value", 1);
-			//out.println(time + "\t" + id + "\t" + "Set a value in ai_value\n");
-            // You can optionally read a reply here
-            // var line = inp.readLine();
-            // if (line != null) {
-            //     log.log("JS got reply: " + line + "\n");
-            // }
-        //} else {
-            // Log all other messages to the simulator
-        //log.log(time + "\t" + id + "\t" + msg + "\n");
-        //}
-    }
-    //sock.close(); // This will only be reached if the loop terminates
-} catch (e) {
-    log.log("Error: " + e + "\n");
+while (true) {
+	YIELD();
+	log.log(""+getInt(mote, "toggle_value")+"\n");
+	log.log(time + "\t" + id + "\t" + msg + "\n");
 }
