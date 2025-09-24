@@ -1,10 +1,6 @@
-// Run simulation for exactly this many milliseconds of simulated time
-//var Socket = Java.type("java.net.Socket");
-//var PrintWriter = Java.type("java.io.PrintWriter");
-//var InputStreamReader = Java.type("java.io.InputStreamReader");
-//var BufferedReader = Java.type("java.io.BufferedReader");
-
-//6000000
+// Java NIO helpers (add these at the top!)
+var ByteBuffer = Java.type("java.nio.ByteBuffer");
+var ByteOrder  = Java.type("java.nio.ByteOrder");
 
 function getInt(mote, varname) {
   var sym = mote.getMemory().getSymbolMap().get(varname);
@@ -25,7 +21,7 @@ function setInt(mote, varname, value) {
 TIMEOUT(6000, log.testOK());
 
 while (true) {
-	YIELD();
-	log.log(""+getInt(mote, "toggle_value")+"\n");
-	log.log(time + "\t" + id + "\t" + msg + "\n");
+  YIELD();
+  log.log("toggle_value=" + getInt(mote, "toggle_value") + "\n");
+  log.log(time + "\t" + id + "\t" + msg + "\n");
 }
