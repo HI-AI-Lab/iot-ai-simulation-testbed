@@ -15,10 +15,10 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		if (typeof motes === "undefined") {
-			log.log("DEBUG: motes is undefined!\n");
+		if (typeof mote === "undefined") {
+			log.log("DEBUG: mote is undefined!\n");
 		} else {
-			log.log("DEBUG: motes length = " + motes.length + "\n");
+			log.log("DEBUG: mote found\n");
 		}
 		//var mem = motes[id-1].getMemory();
 		//var toggle_value = mem.getIntValue("toggle_value");
