@@ -79,7 +79,7 @@ end_reason_str(end_reason_t r) {
     default:         return "none";
   }
 }
-
+/*
 static void
 wrapup(void) {
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
@@ -97,6 +97,7 @@ wrapup(void) {
 			 state.last_parent_id,
 			 state.parent_switches);
 }
+*/
 /*MOTE STATE*/
 
 /* Distance between two nodes by ID, using generated positions header */
