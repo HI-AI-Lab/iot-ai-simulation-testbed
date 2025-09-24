@@ -70,7 +70,7 @@ static mote_state_t state = {
   .last_parent_id = 0,
   .parent_switches = 0
 };
-
+/*
 static const char *
 end_reason_str(end_reason_t r) {
   switch(r) {
@@ -78,7 +78,7 @@ end_reason_str(end_reason_t r) {
     case END_TIME:   return "time";
     default:         return "none";
   }
-}
+}*/
 /*
 static void
 wrapup(void) {
