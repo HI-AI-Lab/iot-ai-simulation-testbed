@@ -23,6 +23,7 @@ try {
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getClass().getName()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getClass().getName()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getSymbolMap().keySet().size()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getSymbolMap().keySet().size()+"\n");
 		
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().size()+"\n");
