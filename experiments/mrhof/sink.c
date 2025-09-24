@@ -43,7 +43,7 @@
 
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
-uint32_t toggle_value = 0;
+//uint32_t toggle_value = 0;
 
 typedef struct {
   uint32_t t_sent;
@@ -61,7 +61,7 @@ typedef struct {
 } node_stats_t;
 
 static node_stats_t stats[NUM_NODES+1];   // index 0 dummy, 1 sink, 2..N motes
-/*
+
 static void
 wrapup(void) {
   LOG_INFO("WRAPUP sink end_ms=%"PRIu32"\n",
@@ -82,7 +82,7 @@ wrapup(void) {
     }
   }
 }
-*/
+
 static int
 is_simulation_time_over(void) {
   uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
@@ -151,10 +151,10 @@ PROCESS_THREAD(udp_server_process, ev, data)
   while(1) {
     etimer_set(&t, 60000); // check every ~60s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-   	LOG_INFO("%" PRIu32,toggle_value);
-    toggle_value++;
+//   	LOG_INFO("%" PRIu32,toggle_value);
+//    toggle_value++;
 	if(is_simulation_time_over()) {
-      //wrapup();
+      wrapup();
       PROCESS_EXIT();
     }
 }

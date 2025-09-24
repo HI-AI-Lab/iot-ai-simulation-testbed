@@ -70,7 +70,7 @@ static mote_state_t state = {
   .last_parent_id = 0,
   .parent_switches = 0
 };
-/*
+
 static const char *
 end_reason_str(end_reason_t r) {
   switch(r) {
@@ -78,8 +78,8 @@ end_reason_str(end_reason_t r) {
     case END_TIME:   return "time";
     default:         return "none";
   }
-}*/
-/*
+}
+
 static void
 wrapup(void) {
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
@@ -97,7 +97,7 @@ wrapup(void) {
 			 state.last_parent_id,
 			 state.parent_switches);
 }
-*/
+
 /*MOTE STATE*/
 
 /* Distance between two nodes by ID, using generated positions header */
@@ -250,11 +250,10 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
-    /* build and enqueue packet */
-	LOG_INFO("toggle_value: %" PRIu32, toggle_value);
-	toggle_value++;
+//	LOG_INFO("toggle_value: %" PRIu32, toggle_value);
+//	toggle_value++;
 	if(is_energy_depleted() || is_simulation_time_over()) {
-      //wrapup();
+      wrapup();
       PROCESS_EXIT();
     }
 	send_a_packet(&udp_conn);
