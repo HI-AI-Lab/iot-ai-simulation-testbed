@@ -22,6 +22,6 @@ TIMEOUT(6000, log.testOK());
 
 while (true) {
   YIELD();
-  log.log(time + "\t" + id + "\t" + getInt(mote, "toggle_value") + "\n");
+  log.log(time + "\t" + id + "\t" + "toggle_value: " + getInt(mote, "toggle_value") + "\n");
   //log.log(time + "\t" + id + "\t" + msg + "\n");
 }
