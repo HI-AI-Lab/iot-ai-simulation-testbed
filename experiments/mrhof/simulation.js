@@ -18,7 +18,7 @@ function setInt(mote, varname, value) {
   mote.getMemory().setMemorySegment(sym.addr, buf.array());
 }
 
-TIMEOUT(600000, log.testOK());
+TIMEOUT(6000, log.testOK());
 
 while (true) {
   YIELD();
