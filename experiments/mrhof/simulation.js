@@ -17,7 +17,7 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		log.log("[JS] mote class = " + mote.getMemory().getClass().getName() + "\n");
+		log.log("[JS] mote class = " + mote.getMemory().getNumberOfSections()+ "\n");
 		//var mem = mote.getMemory();
 		//var toggle_value = mem.getInt32ValueOf("toggle_value");
 		//toggle_value = toggle_value+1;
