@@ -6,6 +6,22 @@
 
 //6000000
 
+function getInt(mote, varname) {
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var bytes = mote.getMemory().getMemorySegment(sym.addr, sym.size);
+  var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+  return bb.getInt();
+}
+
+function setInt(mote, varname, value) {
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var buf = ByteBuffer.allocate(sym.size).order(ByteOrder.LITTLE_ENDIAN);
+  buf.putInt(value);
+  mote.getMemory().setMemorySegment(sym.addr, buf.array());
+}
+
 TIMEOUT(6000, log.testOK()); // On timeout, exit with status 0
 
 // --- Open the socket once, before the main loop ---
