@@ -250,7 +250,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
-	LOG_INFO("toggle_value: %" PRIu32, toggle_value);
+	LOG_INFO("toggle_value: %" PRIu32 "\n", toggle_value);
 	toggle_value++;
 	if(is_energy_depleted() || is_simulation_time_over()) {
       //wrapup();
