@@ -64,7 +64,7 @@ static node_stats_t stats[NUM_NODES+1];   // index 0 dummy, 1 sink, 2..N motes
 
 static void
 wrapup(void) {
-  LOG_INFO("TOGGLE_STATUS OF SINK toggle_value=%d", toggle_value);
+  LOG_INFO("TOGGLE_STATUS OF SINK toggle_value=%d\n", toggle_value);
   LOG_INFO("WRAPUP sink end_ms=%"PRIu32"\n",
            (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND));
 
