@@ -24,6 +24,8 @@ try {
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getClass().getName()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getSymbolMap().keySet().size()+"\n");
 		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getSymbolMap().keySet().size()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getSymbolMap().values().toArray()[0].getClass().getName()+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getSymbolMap().values().toArray()[0].getClass().getName()+"\n");
 		
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().size()+"\n");
