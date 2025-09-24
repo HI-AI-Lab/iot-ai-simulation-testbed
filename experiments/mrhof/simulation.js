@@ -4,7 +4,9 @@
 //var InputStreamReader = Java.type("java.io.InputStreamReader");
 //var BufferedReader = Java.type("java.io.BufferedReader");
 
-TIMEOUT(6000000, log.testOK()); // On timeout, exit with status 0
+//6000000
+
+TIMEOUT(6000, log.testOK()); // On timeout, exit with status 0
 
 // --- Open the socket once, before the main loop ---
 try {
@@ -15,11 +17,12 @@ try {
     // --- Main simulation loop ---
     while (true) {
         YIELD();
-		var mem = mote.getMemory();
-		var toggle_value = mem.getInt32ValueOf("toggle_value");
-		toggle_value = toggle_value+1;
-		mem.getInt32ValueOf("toggle_value", toggle_value);
-		log.log(time + "\t" + id + "\t" + msg + "\n");
+		log.log("[JS] mote class = " + mote.getClass().getName() + "\n");
+		//var mem = mote.getMemory();
+		//var toggle_value = mem.getInt32ValueOf("toggle_value");
+		//toggle_value = toggle_value+1;
+		//mem.getInt32ValueOf("toggle_value", toggle_value);
+		//log.log(time + "\t" + id + "\t" + msg + "\n");
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
         //if (msg.startsWith("[INFO: App       ] TOGGLE:")) {
