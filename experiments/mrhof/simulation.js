@@ -21,8 +21,8 @@ try {
 		//log.log("[JS] Class = "+mote.getMemory().getClass().getName()+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().getClass().getName()+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getClass().getName()+"\n");
-		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getSymbolMap()['toggle_value'].name+"\n");
-		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getSymbolMap()['toggle_value'].name+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().get("bss").getSymbolMap()['toggle_value'].addr+"\n");
+		log.log("[JS] Class = "+mote.getMemory().getSections().get("data").getSymbolMap()['toggle_value'].addr+"\n");
 		
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().getClass().getName()+"\n");
 		//log.log("[JS] Class = "+mote.getMemory().getSections().keySet().size()+"\n");
