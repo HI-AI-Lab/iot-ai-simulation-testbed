@@ -16,9 +16,9 @@ try {
     while (true) {
         YIELD();
 		var mem = mote.getMemory();
-		var toggle_value = mem.getIntValueOf("toggle_value");
+		var toggle_value = mem.getInt32ValueOf("toggle_value");
 		toggle_value = toggle_value+1;
-		mem.setIntValueOf("toggle_value", toggle_value);
+		mem.getInt32ValueOf("toggle_value", toggle_value);
 		log.log(time + "\t" + id + "\t" + msg + "\n");
         // Variables provided: time (ms), id (mote id), msg (string)        
         // Check if the message is intended for the AI agent
