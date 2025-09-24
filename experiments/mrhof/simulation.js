@@ -18,7 +18,7 @@ function setInt(mote, varname, value) {
   mote.getMemory().setMemorySegment(sym.addr, buf.array());
 }
 
-log.log("[JS] Total motes in sim: " + sim.getMotes().length + "\n");
+log.log("_JS_ Total motes in sim: " + sim.getMotes().length + "\n");
 
 TIMEOUT(6000, log.testOK());
 
