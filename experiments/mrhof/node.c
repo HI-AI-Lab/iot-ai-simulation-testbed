@@ -82,7 +82,6 @@ end_reason_str(end_reason_t r) {
 
 static void
 wrapup(void) {
-	LOG_INFO("TOGGLE_STATUS OF NODE node_id=%u toggle_value=%" PRIu32 "\n", (unsigned int)node_id, toggle_value);
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
 			 "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
 			 "residual=%.6fJ ppm=%" PRIu32 " parent=%u switches=%" PRIu32 "\n",
@@ -251,9 +250,10 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
     /* build and enqueue packet */
+	LOG_INFO("%" PRIu32,toggle_value);
 	toggle_value++;
 	if(is_energy_depleted() || is_simulation_time_over()) {
-      wrapup();
+      //wrapup();
       PROCESS_EXIT();
     }
 	send_a_packet(&udp_conn);

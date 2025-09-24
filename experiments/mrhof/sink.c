@@ -64,7 +64,6 @@ static node_stats_t stats[NUM_NODES+1];   // index 0 dummy, 1 sink, 2..N motes
 
 static void
 wrapup(void) {
-  LOG_INFO("TOGGLE_STATUS OF SINK toggle_value=%" PRIu32 "\n", toggle_value);
   LOG_INFO("WRAPUP sink end_ms=%"PRIu32"\n",
            (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND));
 
@@ -115,12 +114,15 @@ udp_rx_callback(struct simple_udp_connection *c,
         if(latency < s->min_latency) s->min_latency = latency;
         if(latency > s->max_latency) s->max_latency = latency;
       }
+	  /*
       LOG_INFO("RX origin=%u latency=%"PRId32"ms size=%uB\n",
                pkt.origin_id, latency, datalen);
+	  */
   } else {
+	  /*
       LOG_WARN("RX wrong size=%u from ", datalen);
       LOG_WARN_6ADDR(sender_addr);
-      LOG_WARN_("\n");
+      LOG_WARN_("\n");*/
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -133,7 +135,6 @@ PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-  LOG_INFO("TO_AI_AGENT: Hello to Mufrah\n");
   // Init stats
   for(int i = 0; i <= NUM_NODES; i++) {
     stats[i].recv_count = 0;
@@ -150,8 +151,10 @@ PROCESS_THREAD(udp_server_process, ev, data)
   while(1) {
     etimer_set(&t, 60000); // check every ~60s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-    if(is_simulation_time_over()) {
-      wrapup();
+   	LOG_INFO("%" PRIu32,toggle_value);
+    toggle_value++;
+	if(is_simulation_time_over()) {
+      //wrapup();
       PROCESS_EXIT();
     }
 }
