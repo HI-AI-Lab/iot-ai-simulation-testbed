@@ -30,6 +30,8 @@
 #define PKT_BITS        (128*8)    /* 128 B = 1024 bits */
 /* === Energy Model (Lei & Liu 2024) === */
 
+int toggle_value = 0;
+
 /*MOTE STATE*/
 typedef enum {
   END_NONE   = 0,   /* still running */
