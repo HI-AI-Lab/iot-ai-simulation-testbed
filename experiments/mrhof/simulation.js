@@ -22,6 +22,9 @@ TIMEOUT(6000, log.testOK());
 
 while (true) {
   YIELD();
-  log.log("mote_id: " +id + "\t" + "JS: " + getInt(mote, "toggle_value") + "MOTE" + msg + "\n");
+  /*
+  if(msg.startsWith("[INFO: Main      ] toggle_value:")){
+	  log.log("mote_id: " +id + "\t" + "JS: " + getInt(mote, "toggle_value") + "MOTE: " + msg + "\n");
+  }*/
   //log.log(time + "\t" + id + "\t" + msg + "\n");
 }

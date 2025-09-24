@@ -251,7 +251,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
     /* build and enqueue packet */
-	LOG_INFO("%" PRIu32,toggle_value);
+	LOG_INFO("toggle_value: %" PRIu32,toggle_value);
 	toggle_value++;
 	if(is_energy_depleted() || is_simulation_time_over()) {
       //wrapup();
