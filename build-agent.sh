@@ -3,7 +3,7 @@ set -e
 
 # Paths
 AGENT_DIR="/workspace/testbed/agent"
-COOJA_LIB_DIR="/workspace/contiki-ng/tools/cooja/dist/lib"
+COOJA_LIB_DIR="/workspace/contiki-ng/tools/cooja/lib"
 
 # Step 1: Build fat jar with Gradle wrapper
 echo "[INFO] Building RL Agent fat jar..."
@@ -17,7 +17,7 @@ if [ ! -f "$JAR" ]; then
   exit 1
 fi
 
-# Step 3: Copy to COOJA lib
+# Step 3: Copy to COOJA lib (unpacked mode)
 echo "[INFO] Copying jar to $COOJA_LIB_DIR..."
 cp "$JAR" "$COOJA_LIB_DIR/rl-agent-all.jar"
 
