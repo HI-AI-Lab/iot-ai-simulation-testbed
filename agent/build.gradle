@@ -1,0 +1,30 @@
+plugins {
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'io.testbed'
+version = '0.1.0'
+
+repositories { mavenCentral() }
+
+ext {
+  dl4jVer = '1.0.0-M1.1'
+}
+
+dependencies {
+  implementation "org.deeplearning4j:deeplearning4j-core:${dl4jVer}"
+  implementation "org.nd4j:nd4j-native-platform:${dl4jVer}"
+  implementation 'org.slf4j:slf4j-simple:2.0.13'
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.encoding = 'UTF-8'
+}
+
+tasks.shadowJar {
+  archiveBaseName.set('rl-agent-all')
+  archiveClassifier.set('')
+  archiveVersion.set('')
+  mergeServiceFiles()
+}
