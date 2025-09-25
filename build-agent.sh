@@ -2,7 +2,7 @@
 set -e
 
 # Paths
-AGENT_DIR="/workspace/testbed/java-agent"
+AGENT_DIR="/workspace/testbed/agent"
 COOJA_LIB_DIR="/workspace/contiki-ng/tools/cooja/dist/lib"
 
 # Step 1: Build fat jar with Gradle wrapper
