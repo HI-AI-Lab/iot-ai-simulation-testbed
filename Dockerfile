@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config \
     openjdk-21-jdk-headless \
     libfann-dev \
+    gradle \
     python3 python3-pip python3-venv python3-setuptools python3-wheel \
     python3-numpy python3-pandas python3-scipy python3-networkx python3-serial \
     python3-matplotlib \
