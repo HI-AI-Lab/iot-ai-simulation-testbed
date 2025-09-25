@@ -3,11 +3,11 @@ var AGENT = "/workspace/testbed/ai/agent.py";
 proc = new ProcessBuilder(Arrays.asList("python3", AGENT, "--port", String(PORT)))
   .redirectErrorStream(true).start();
 */
+var Agent = Java.type('io.testbed.rl.Agent');
 
 // Java NIO helpers (add these at the top!)
 var ByteBuffer = Java.type("java.nio.ByteBuffer");
 var ByteOrder  = Java.type("java.nio.ByteOrder");
-var Py4JBridge = Java.type("bridge.Py4JBridge");
 
 function getInt(mote, varname) {
   var sym = mote.getMemory().getSymbolMap().get(varname);
