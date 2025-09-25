@@ -31,7 +31,6 @@ YIELD();
 
 log.log("JavaScript Total motes in sim: " + sim.getMotes().length + "\n");
 
-
 while (true) {
   YIELD();
   //log.log(""+msg+"\n");
