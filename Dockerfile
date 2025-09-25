@@ -14,11 +14,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config \
     openjdk-21-jdk-headless \
     libfann-dev \
-    gradle \
     python3 python3-pip python3-venv python3-setuptools python3-wheel \
     python3-numpy python3-pandas python3-scipy python3-networkx python3-serial \
     python3-matplotlib \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    # Install Gradle 8.7 (official distribution)
+    && curl -sLo /tmp/gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip \
+    && unzip /tmp/gradle-8.7-bin.zip -d /opt/ \
+    && ln -s /opt/gradle-8.7/bin/gradle /usr/local/bin/gradle \
+    && rm /tmp/gradle-8.7-bin.zip
+
 
 # MSP430 toolchain (optional; keep if you use it)
 COPY msp430-gcc-9.3.1.11_linux64.tar.bz2 /opt/
