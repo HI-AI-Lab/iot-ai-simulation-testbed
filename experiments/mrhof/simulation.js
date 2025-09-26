@@ -1,11 +1,5 @@
-/*
-var AGENT = "/workspace/testbed/ai/agent.py";
-proc = new ProcessBuilder(Arrays.asList("python3", AGENT, "--port", String(PORT)))
-  .redirectErrorStream(true).start();
-*/
 var Agent = Java.type('io.testbed.rl.Agent');
-
-// Java NIO helpers (add these at the top!)
+var agent = new Agent(3, 4);
 var ByteBuffer = Java.type("java.nio.ByteBuffer");
 var ByteOrder  = Java.type("java.nio.ByteOrder");
 
@@ -27,18 +21,12 @@ function setInt(mote, varname, value) {
 
 TIMEOUT(6000, log.testOK());
 
-YIELD();
-
-log.log("JavaScript Total motes in sim: " + sim.getMotes().length + "\n");
-
 while (true) {
-  YIELD();
-  //log.log(""+msg+"\n");
-  
+  YIELD();  
   if(msg.startsWith("[INFO: App       ] toggle_value:")){
 	  var toggle_value = getInt(mote, "toggle_value");
 	  log.log("mote_id: " +id+"- \t" + "JS: " + toggle_value +" MOTE: " +msg+ "\n");
-	  toggle_value++;
+	  toggle_value = agent.increment(toggle_value);
 	  setInt(mote, "toggle_value", toggle_value);
   }
   log.log(time + "\t" + id + "\t" + msg + "\n");

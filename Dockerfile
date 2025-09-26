@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -s /opt/gradle-8.7/bin/gradle /usr/local/bin/gradle \
     && rm /tmp/gradle-8.7-bin.zip
 
-
 # MSP430 toolchain (optional; keep if you use it)
 COPY msp430-gcc-9.3.1.11_linux64.tar.bz2 /opt/
 RUN cd /opt && \
