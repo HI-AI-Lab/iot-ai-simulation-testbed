@@ -137,7 +137,12 @@ while (true) {
     counters.rankViolations = getInt32(mote, "status_parent_switches");
 
     // === Call agent ===
-    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
+    var validArr = [];
+    for (var i = 0; i < candIds.length; i++) {
+      validArr.push(true);
+    }
+    var valid = Java.to(validArr, "boolean[]");
+
     var choice = agent.decide(nodeId, S, valid, counters);
     var chosenParent = candIds[choice];
 
