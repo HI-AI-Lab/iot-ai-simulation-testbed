@@ -142,11 +142,13 @@ while (true) {
       validArr.push(true);
     }
     var valid = Java.to(validArr, "boolean[]");
-		
- // --- LOG INPUT AND OUTPUT ON A SINGLE LINE ---
+	
+	// ---------------------------------------------
+    var jsValid = Java.from(valid); 
+    
     var inputLog = "AGENT_DECIDE node=" + nodeId + 
             " | S=" + JSON.stringify(S) + 
-            " | valid=" + valid.join(",") + 
+            " | valid=" + jsValid.join(",") + // Use jsValid.join() here
             " | counters={" + 
               "gen:" + counters.generated + 
               ",del:" + counters.delivered + 
@@ -162,8 +164,9 @@ while (true) {
     var chosenParent = candIds[choice];
     var outputLog = " -> OUT: choice=" + choice + " parent_id=" + chosenParent;
 
-    log.log(inputLog + outputLog + "\n"); // The final '\n' makes it a distinct log entry
+    log.log(inputLog + outputLog + "\n");
     // ---------------------------------------------
+
 
     // === Write back decision ===
     setInt16(mote, "agent_parent", chosenParent);
