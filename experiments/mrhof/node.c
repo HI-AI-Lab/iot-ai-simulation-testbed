@@ -335,32 +335,22 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   static struct etimer t;
   PROCESS_BEGIN();
 
-  etimer_set(&t, CLOCK_SECOND);
+  etimer_set(&t, CLOCK_SECOND / 5);
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
 
-    /* keep status fresh */
-    refresh_status();
-
-    /* emit request only if none pending */
+    refresh_status();               // keep features fresh
     if(status_num_neighbors > 0 && agent_waiting == 0) {
-      ask_agent_for_parent();
+      ask_agent_for_parent();       // only when free
     }
 
-    /* apply agent decision when available */
-    if(agent_waiting == 1 && agent_parent != 0) {
-      agent_waiting = 0;
-      state.last_parent_id = agent_parent;
-      LOG_INFO("AGENT_APPLY node=%u parent=%u\n", node_id, state.last_parent_id);
-
-      /* force preferred parent */
+    if(agent_parent != 0) {         // re-force parent each tick
       rpl_dag_t *dag = rpl_get_any_dag();
       if(dag) {
         rpl_nbr_t *nbr;
         for(nbr = nbr_table_head(rpl_neighbors);
             nbr != NULL;
             nbr = nbr_table_next(rpl_neighbors, nbr)) {
-
           uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
           if(ip && ip_to_nodeid(ip) == agent_parent) {
             dag->preferred_parent = nbr;

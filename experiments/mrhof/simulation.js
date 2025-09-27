@@ -75,7 +75,7 @@ function setInt8(mote, varname, value) {
 }
 
 // === Controller loop ===
-TIMEOUT(600000, log.testOK()); // 600s timeout
+TIMEOUT(6000000, log.testOK());
 
 while (true) {
   YIELD();
