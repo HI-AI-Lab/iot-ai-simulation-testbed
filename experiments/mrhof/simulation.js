@@ -7,9 +7,9 @@ var ByteOrder  = Java.type("java.nio.ByteOrder");
 // Example: only ETX on, everything else off
 var mask = Java.to(
     [true,  // 0 ETX
-     false, // 1 HC
-     false, // 2 RE
-     false, // 3 QLR
+     true, // 1 HC
+     true, // 2 RE
+     true, // 3 QLR
      false, // 4 BDI
      false, // 5 WR
      false, // 6 CC (not in node.c yet)
