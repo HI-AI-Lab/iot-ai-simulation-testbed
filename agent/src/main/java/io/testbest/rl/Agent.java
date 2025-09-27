@@ -172,7 +172,7 @@ public class Agent implements Serializable {
             boolean[] v2 = copyOrAllValid(valid2);
 
             double r = computeReward(ep.c0, cNow);
-            addReplay(new Transition(ep.sFlat, ep.a, r, s2Flat, false, v2));
+            addReplay(new Transition(ep.sFlat, ep.a, r, s2Flat, true, v2));
         }
         open.clear();
 
@@ -205,9 +205,13 @@ public class Agent implements Serializable {
                 if (t.done) {
                     targetQ = t.r;
                 } else {
-                    int aStar = argmaxMasked(forward(online, t.s2), t.valid2);
-                    double[] qNextT = forward(target, t.s2);
-                    targetQ = t.r + gamma * qNextT[aStar];
+					int aStar = argmaxMasked(forward(online, t.s2), t.valid2);
+					if (aStar < 0) {
+						// No valid next action → treat as terminal
+						targetQ = t.r;
+					} else {
+						double[] qNextT = forward(target, t.s2);
+						targetQ = t.r + gamma * qNextT[aStar];
                 }
 
                 qCurr[t.a] = targetQ;
@@ -237,27 +241,44 @@ public class Agent implements Serializable {
         return out.toDoubleVector();
     }
 
-    private int selectAction(double[] flat, boolean[] valid) {
-        double[] q = forward(online, flat);
-        int greedy = argmaxMasked(q, valid);
-        if (rng.nextDouble() < epsilon) {
-            // explore among valid indices
-            List<Integer> idxs = new ArrayList<>();
-            for (int i = 0; i < k; i++) if (valid == null || valid[i]) idxs.add(i);
-            if (!idxs.isEmpty()) return idxs.get(rng.nextInt(idxs.size()));
-        }
-        return greedy;
-    }
+	private int selectAction(double[] flat, boolean[] valid) {
+		double[] q = forward(online, flat);
+		int greedy = argmaxMasked(q, valid);
 
-    private static int argmaxMasked(double[] q, boolean[] valid) {
-        int best = -1; double bestVal = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < q.length; i++) {
-            if (valid == null || valid[i]) {
-                if (q[i] > bestVal) { bestVal = q[i]; best = i; }
-            }
-        }
-        return (best >= 0) ? best : 0;
-    }
+		// If nothing is valid, fall back to 0 (or keep previous parent upstream)
+		if (greedy < 0) return 0;
+
+		if (rng.nextDouble() < epsilon) {
+			List<Integer> idxs = new ArrayList<>();
+			if (valid == null) {
+				for (int i = 0; i < k; i++) idxs.add(i);
+			} else {
+				int L = Math.min(k, valid.length);
+				for (int i = 0; i < L; i++) if (valid[i]) idxs.add(i);
+			}
+			if (!idxs.isEmpty()) return idxs.get(rng.nextInt(idxs.size()));
+		}
+		return greedy;
+	}
+
+	private static int argmaxMasked(double[] q, boolean[] valid) {
+		int best = -1;
+		double bestVal = Double.NEGATIVE_INFINITY;
+
+		if (valid == null) { // no mask: regular argmax
+			for (int i = 0; i < q.length; i++) {
+				if (q[i] > bestVal) { bestVal = q[i]; best = i; }
+			}
+			return best; // may be >=0 always (since q.length>=1)
+		}
+
+		// masked argmax (guard against mask shorter than q)
+		int L = Math.min(q.length, valid.length);
+		for (int i = 0; i < L; i++) {
+			if (valid[i] && q[i] > bestVal) { bestVal = q[i]; best = i; }
+		}
+		return best; // return -1 if none valid
+	}
 
     private void hardSyncTarget() {
         target.setParams(online.params().dup());
@@ -299,13 +320,12 @@ public class Agent implements Serializable {
         return out;
     }
 
-    private static boolean[] copyOrAllValid(boolean[] valid) {
-        if (valid == null) {
-            boolean[] v = new boolean[0]; // treat null as "no mask"; handled by argmaxMasked
-            return v;
-        }
-        return Arrays.copyOf(valid, valid.length);
-    }
+	private static boolean[] copyOrAllValid(boolean[] valid) {
+		// Null means "no mask" → return null (callers already treat null as all-true)
+		if (valid == null) return null;
+		// Defensive copy; if someone passed a shorter/longer mask, normalize by padding/truncating to k
+		return Arrays.copyOf(valid, valid.length);
+	}
 
     private static Counters cloneCounters(Counters c) {
         Counters d = new Counters();
