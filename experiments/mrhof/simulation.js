@@ -75,7 +75,7 @@ function setInt8(mote, varname, value) {
 }
 
 // === Controller loop ===
-TIMEOUT(6000000, log.testOK());
+TIMEOUT(60000, log.testOK());
 
 while (true) {
   YIELD();
@@ -142,9 +142,28 @@ while (true) {
       validArr.push(true);
     }
     var valid = Java.to(validArr, "boolean[]");
+		
+ // --- LOG INPUT AND OUTPUT ON A SINGLE LINE ---
+    var inputLog = "AGENT_DECIDE node=" + nodeId + 
+            " | S=" + JSON.stringify(S) + 
+            " | valid=" + valid.join(",") + 
+            " | counters={" + 
+              "gen:" + counters.generated + 
+              ",del:" + counters.delivered + 
+              ",drop:" + counters.dropped + 
+              ",e:" + counters.residualEnergy.toFixed(2) + 
+              ",etx:" + counters.etx + 
+              ",hc:" + counters.hopCount + 
+              ",sw:" + counters.rankViolations + 
+            "}";
+		
+    var choice = agent.decide(nodeId, S, valid, counters);
 
-    var choice = agent.decide(nodeId, S, valid, counters);
     var chosenParent = candIds[choice];
+    var outputLog = " -> OUT: choice=" + choice + " parent_id=" + chosenParent;
+
+    log.log(inputLog + outputLog + "\n"); // The final '\n' makes it a distinct log entry
+    // ---------------------------------------------
 
     // === Write back decision ===
     setInt16(mote, "agent_parent", chosenParent);
