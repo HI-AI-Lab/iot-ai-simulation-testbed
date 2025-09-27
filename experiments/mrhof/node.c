@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "net/routing/rpl-lite/rpl-neighbor.h"
+#include "net/nbr-table.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -277,10 +277,15 @@ refresh_etx_table(void) {
   status_num_neighbors = 0;
   rpl_nbr_t *nbr;
 
-  rpl_neighbor_iterate(nbr) {
+  for(nbr = nbr_table_head(rpl_neighbors);
+      nbr != NULL;
+      nbr = nbr_table_next(rpl_neighbors, nbr)) {
+
     if(status_num_neighbors >= MAX_PARENTS_FOR_AGENT) break;
+
     uip_ipaddr_t *p_ip = rpl_neighbor_get_ipaddr(nbr);
     if(!p_ip) continue;
+
     status_neighbor_ids[status_num_neighbors] =
         (uint8_t)ip_to_nodeid(p_ip);
     status_etx_x100[status_num_neighbors] =
@@ -309,13 +314,15 @@ refresh_status(void) {
                  ((double)status_fwd_count / status_gen_count) : 0.0;
 
   /* Parent count = number of candidates */
-  status_pc = 0;
-  if(dag) {
-    rpl_parent_t *p;
-    for(p = list_head(dag->parents); p != NULL; p = list_item_next(p)) {
-      status_pc++;
-    }
+status_pc = 0;
+{
+  rpl_nbr_t *nbr;
+  for(nbr = nbr_table_head(rpl_neighbors);
+      nbr != NULL;
+      nbr = nbr_table_next(rpl_neighbors, nbr)) {
+    status_pc++;
   }
+}
 
   /* Stability index (parent switches) already counted in sniff_output() */
   refresh_etx_table();
@@ -327,6 +334,7 @@ refresh_status(void) {
 
 static void
 ask_agent_for_parent(void) {
+  return;
   agent_waiting = 1;
   agent_parent  = 0;
 
@@ -378,6 +386,7 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     refresh_status();
+	ask_agent_for_parent();
 
     if(agent_waiting == 1 && agent_parent != 0) {
       agent_waiting = 0;
