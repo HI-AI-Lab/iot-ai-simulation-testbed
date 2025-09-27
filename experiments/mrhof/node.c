@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "net/routing/rpl-lite/rpl-neighbor.h"
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -263,38 +264,27 @@ sniff_output(int mac_status) {
 
 /* ETX*100 for a given RPL parent (via link-stats), or 1000 if unknown */
 static uint16_t
-etx_x100_for_parent(const rpl_parent_t *p) {
-  if(p == NULL) return 1000;
-  const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(p);
-  if(p_ip == NULL) return 1000;
-  // Use the function that returns the link-stats struct
-  const struct link_stats *st = rpl_get_link_stats(p);
-  // NOTE: This assumes rpl_get_link_stats is available, which it is in modern RPL-lite.
+etx_x100_for_neighbor(rpl_nbr_t *nbr) {
+  if(nbr == NULL) return 1000;
+  const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
   if(st == NULL) return 1000;
   return (uint16_t)((100UL * st->etx) / LINK_STATS_ETX_DIVISOR);
-  // Also, add an explicit final return for -Werror=return-type if all checks fail
-  return 1000;
 }
 
 /* Refresh per-neighbor ETX table (bounded to MAX_PARENTS_FOR_AGENT) */
 static void
 refresh_etx_table(void) {
   status_num_neighbors = 0;
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(!dag) return;
+  rpl_nbr_t *nbr;
 
-  rpl_parent_t *p;
-  // ITERATION FIX
-  for(p = rpl_get_parent_list_head(dag); 
-      p != NULL; 
-      p = rpl_get_parent_next(p)) {
+  rpl_neighbor_iterate(nbr) {
     if(status_num_neighbors >= MAX_PARENTS_FOR_AGENT) break;
-
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(p);
+    uip_ipaddr_t *p_ip = rpl_neighbor_get_ipaddr(nbr);
     if(!p_ip) continue;
-
-    status_neighbor_ids[status_num_neighbors] = (uint8_t)ip_to_nodeid(p_ip);
-    status_etx_x100[status_num_neighbors]     = etx_x100_for_parent(p);
+    status_neighbor_ids[status_num_neighbors] =
+        (uint8_t)ip_to_nodeid(p_ip);
+    status_etx_x100[status_num_neighbors] =
+        etx_x100_for_neighbor(nbr);
     status_num_neighbors++;
   }
 }
@@ -337,24 +327,15 @@ refresh_status(void) {
 
 static void
 ask_agent_for_parent(void) {
-  return;
   agent_waiting = 1;
   agent_parent  = 0;
 
-  /* Announce candidate set + ETX */
   LOG_INFO("AGENT_REQ node=%u cand=", node_id);
   for(int i = 0; i < status_num_neighbors; i++) {
-    LOG_INFO_("%u:etx=%u,", status_neighbor_ids[i], status_etx_x100[i]);
+    LOG_INFO_("%u:etx=%u,", status_neighbor_ids[i],
+              status_etx_x100[i]);
   }
   LOG_INFO_("\n");
-
-  /* Block until ScriptRunner writes agent_parent and clears waiting flag */
-  while(agent_waiting) {
-    PROCESS_PAUSE();
-  }
-
-  state.last_parent_id = agent_parent;
-  LOG_INFO("AGENT_APPLY node=%u parent=%u\n", node_id, state.last_parent_id);
 }
 
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
@@ -392,13 +373,33 @@ PROCESS_THREAD(status_refresher_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-  ask_agent_for_parent();
+
   etimer_set(&t, CLOCK_SECOND);
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     refresh_status();
+
+    if(agent_waiting == 1 && agent_parent != 0) {
+      agent_waiting = 0;
+      state.last_parent_id = agent_parent;
+      LOG_INFO("AGENT_APPLY node=%u parent=%u\n",
+               node_id, state.last_parent_id);
+
+      // override preferred parent
+      rpl_dag_t *dag = rpl_get_any_dag();
+      if(dag) {
+        rpl_nbr_t *nbr;
+        rpl_neighbor_iterate(nbr) {
+          uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
+          if(ip && ip_to_nodeid(ip) == agent_parent) {
+            dag->preferred_parent = nbr;
+            break;
+          }
+        }
+      }
+    }
+
     etimer_reset(&t);
   }
-
   PROCESS_END();
 }
