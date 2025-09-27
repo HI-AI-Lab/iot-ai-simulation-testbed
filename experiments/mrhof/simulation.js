@@ -26,7 +26,8 @@ while (true) {
   if(msg.startsWith("[INFO: App       ] toggle_value:")){
 	  var toggle_value = getInt(mote, "toggle_value");
 	  log.log("mote_id: " +id+"- \t" + "JS: " + toggle_value +" MOTE: " +msg+ "\n");
-	  toggle_value = agent.increment(toggle_value);
+	  agent.ping();
+	  toggle_value++;
 	  setInt(mote, "toggle_value", toggle_value);
   }
   log.log(time + "\t" + id + "\t" + msg + "\n");
