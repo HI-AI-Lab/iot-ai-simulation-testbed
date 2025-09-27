@@ -118,7 +118,7 @@ public class Agent implements Serializable {
     // ------------ Basic sanity / testing ------------
 
     /** Quick test hook to verify wiring from ScriptRunner. */
-    public void ping() { return }
+    public void ping() {}
 
     // ------------ Controller-facing API (stateless controller) ------------
 
