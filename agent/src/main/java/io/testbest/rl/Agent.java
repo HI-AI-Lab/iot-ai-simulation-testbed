@@ -202,9 +202,9 @@ public class Agent implements Serializable {
                 double[] qCurr = forward(online, t.s);
                 double targetQ;
 
-                if (t.done) {
-                    targetQ = t.r;
-                } else {
+				if (t.done) {
+					targetQ = t.r;
+				} else {
 					int aStar = argmaxMasked(forward(online, t.s2), t.valid2);
 					if (aStar < 0) {
 						// No valid next action → treat as terminal
@@ -212,7 +212,8 @@ public class Agent implements Serializable {
 					} else {
 						double[] qNextT = forward(target, t.s2);
 						targetQ = t.r + gamma * qNextT[aStar];
-                }
+					}
+				}
 
                 qCurr[t.a] = targetQ;
                 Y.putRow(i, Nd4j.createFromArray(qCurr));
