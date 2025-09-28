@@ -34,6 +34,10 @@
 #include "sys/log.h"
 #include "node-id.h"
 #include "positions-simulation.h"
+#include "net/routing/rpl-lite/rpl.h"
+#include "net/routing/rpl-lite/rpl-neighbor.h"   /* for rpl_nbr_t, rpl_neighbors */
+#include "net/nbr-table.h"                       /* for nbr_table_* */
+
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -44,7 +48,7 @@
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
 #define INIT_ENERGY_J   2000.0
-#define ROOT_RANK       RPL_MIN_HOPRANKINC
+#define ROOT_RANK RPL_MIN_HOPRANKINC
 
 uint32_t status_gen_count       = 0;
 uint32_t status_fwd_count       = 0;
