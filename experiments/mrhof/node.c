@@ -339,12 +339,20 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
 
-    refresh_status();               // keep features fresh
-    if(status_num_neighbors > 0 && agent_waiting == 0) {
-      ask_agent_for_parent();       // only when free
+    refresh_status();   // update metrics
+
+    if(agent_waiting == 0) {
+      if(status_num_neighbors >= 2) {
+        // real decision → ask agent
+        ask_agent_for_parent();
+      } else {
+        // 0 or 1 parent → no agent involved
+        agent_parent = 0;
+      }
     }
 
-    if(agent_parent != 0) {         // re-force parent each tick
+    // Enforce only if decision came from agent
+    if(agent_parent != 0 && status_num_neighbors >= 2) {
       rpl_dag_t *dag = rpl_get_any_dag();
       if(dag) {
         rpl_nbr_t *nbr;
