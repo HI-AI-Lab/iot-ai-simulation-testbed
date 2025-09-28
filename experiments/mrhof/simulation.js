@@ -156,7 +156,11 @@ while (true) {
     var qlrArrJ   = Java.to(qlrArr, "double[]");
 
     // Valid actions = number of real candidates
-    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
+    var validArr = [];
+	for (var i = 0; i < candIds.length; i++) {
+	  validArr[i] = true;
+	}
+	var valid = Java.to(validArr, "boolean[]");
 
     // Counters for the requesting node (optional)
     var counters = new Agent.Counters();
