@@ -115,63 +115,49 @@ while (true) {
       continue;
     }
 
-    // Build state (rows = real candidates; agent zero-pads internally to K)
-    var S = Java.to(new Array(candIds.length), "double[][]");
-    var hcArr = [], reArr = [], qlrArr = [];
+	// Build state (rows = real candidates; agent zero-pads internally to K)
+	var S = [];
+	var hcArr = [], reArr = [], qlrArr = [];
 
-    for (var r = 0; r < candIds.length; r++) {
-      var parentMote = sim.getMoteWithID(candIds[r]);
-      var row = [];
+	for (var r = 0; r < candIds.length; r++) {
+	  var parentMote = sim.getMoteWithID(candIds[r]);
+	  var row = [];
 
-      for (var j = 0; j < mask.length; j++) {
-        if (!mask[j]) continue;
-        var val = 0.0;
-        switch (j) {
-          case 0:  val = candETX[r]; break; // ETX from parsed log
-          case 1:  val = getInt16(parentMote, "status_rank"); break;
-          case 2:  val = getDouble(parentMote, "status_residual_energy"); break;
-          case 3:  val = getDouble(parentMote, "status_qlr"); break;
-          case 4:  val = getDouble(parentMote, "status_bdi"); break;
-          case 5:  val = getDouble(parentMote, "status_wr"); break;
-          case 6:  val = 0.0; break; // CC (not wired)
-          case 7:  val = getInt16(parentMote, "status_pc"); break;
-          case 8:  val = getInt32(parentMote, "status_parent_switches"); break;
-          case 9:  val = getInt32(parentMote, "status_gen_count"); break;
-          case 10: val = getInt32(parentMote, "status_fwd_count"); break;
-          case 11: val = getInt32(parentMote, "status_qloss_count"); break;
-        }
-        row.push(val);
-      }
+	  for (var j = 0; j < mask.length; j++) {
+		if (!mask[j]) continue;
+		var val = 0.0;
+		switch (j) {
+		  case 0:  val = candETX[r]; break;
+		  case 1:  val = getInt16(parentMote, "status_rank"); break;
+		  case 2:  val = getDouble(parentMote, "status_residual_energy"); break;
+		  case 3:  val = getDouble(parentMote, "status_qlr"); break;
+		  case 4:  val = getDouble(parentMote, "status_bdi"); break;
+		  case 5:  val = getDouble(parentMote, "status_wr"); break;
+		  case 6:  val = 0.0; break;
+		  case 7:  val = getInt16(parentMote, "status_pc"); break;
+		  case 8:  val = getInt32(parentMote, "status_parent_switches"); break;
+		  case 9:  val = getInt32(parentMote, "status_gen_count"); break;
+		  case 10: val = getInt32(parentMote, "status_fwd_count"); break;
+		  case 11: val = getInt32(parentMote, "status_qloss_count"); break;
+		}
+		row.push(val);
+	  }
 
-      S[r] = Java.to(row, "double[]");
+	  S[r] = Java.to(row, "double[]"); // convert each row
+	  hcArr.push(getInt16(parentMote, "status_rank"));
+	  reArr.push(getDouble(parentMote, "status_residual_energy"));
+	  qlrArr.push(getDouble(parentMote, "status_qlr"));
+	}
 
-      // Per-candidate true values (for reward inside Agent)
-      hcArr.push(getInt16(parentMote, "status_rank"));
-      reArr.push(getDouble(parentMote, "status_residual_energy"));
-      qlrArr.push(getDouble(parentMote, "status_qlr"));
-    }
+	// Convert outer structure to double[][]
+	var SArr   = Java.to(S, "double[][]");
+	var candIdsArr = Java.to(candIds, "int[]");
+	var hcArrJ  = Java.to(hcArr,  "double[]");
+	var reArrJ  = Java.to(reArr,  "double[]");
+	var qlrArrJ = Java.to(qlrArr, "double[]");
 
-    // Action validity mask: true for each real candidate row
-    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
-
-    // Pack counters for the requesting node (optional features for Agent)
-    var counters = new Agent.Counters();
-    counters.generated      = getInt32(mote, "status_gen_count");
-    counters.delivered      = getInt32(mote, "status_fwd_count");
-    counters.dropped        = getInt32(mote, "status_qloss_count");
-    counters.residualEnergy = getDouble(mote, "status_residual_energy");
-    counters.etx            = Math.round(candETX[0] * 100); // coarse ETX snapshot
-    counters.hopCount       = getInt16(mote, "status_rank");
-    counters.rankViolations = getInt32(mote, "status_parent_switches");
-
-    // Typed arrays for the Agent (new signature)
-    var candIdsArr = Java.to(candIds, "int[]");
-    var hcArrJ  = Java.to(hcArr,  "double[]");
-    var reArrJ  = Java.to(reArr,  "double[]");
-    var qlrArrJ = Java.to(qlrArr, "double[]");
-
-    // === Decide (Agent remembers parentId and maps reward later) ===
-    var choice = agent.decide(nodeId, S, valid, counters, candIdsArr, hcArrJ, reArrJ, qlrArrJ);
+	var choice = agent.decide(nodeId, SArr, valid, counters,
+							  candIdsArr, hcArrJ, reArrJ, qlrArrJ);
 
     // Map index -> parent ID safely
     var idx = (typeof choice === "number") ? (choice|0) : 0;
