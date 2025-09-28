@@ -213,7 +213,7 @@ public class Agent implements Serializable {
 		for (Map.Entry<Integer, Episode> e : open.entrySet()) {
 			Episode ep = e.getValue();
 			// Use stored snapshot values instead of old hcTrue/reTrue/qlrTrue
-			double r = rewardFromRank(ep.hcSnap, ep.reSnap, ep.qlSnap);
+			double r = rewardFromRank(ep.hcSnap, ep.reSnap, ep.qlrSnap);
 			addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
 		}
 		open.clear();
