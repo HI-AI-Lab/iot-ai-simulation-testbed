@@ -170,7 +170,6 @@ PROCESS_THREAD(udp_server_process, ev, data)
   while(1) {
     etimer_set(&t, 60000); // check every ~60s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-
 	if(is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
@@ -184,15 +183,12 @@ PROCESS_THREAD(endphase_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-
+  LOG_INFO("ALL_NODES_TRAIN\n");
   while(1) {
-    // 10 minutes interval (600 seconds)
-    etimer_set(&t, CLOCK_SECOND * 10);
+	// 10 second interval
+	etimer_set(&t, CLOCK_SECOND * 10);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-
-    // This log line is picked up by simulation.js to call agent.endPhase()
-    LOG_INFO("END_PHASE\n");
+    LOG_INFO("ALL_NODES_RETRAIN\n");
   }
-
   PROCESS_END();
 }
