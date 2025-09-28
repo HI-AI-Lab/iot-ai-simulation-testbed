@@ -113,6 +113,8 @@ while (true) {
 							  Java.to(hcArr, "double[]"),
 							  Java.to(reArr, "double[]"),
 							  Java.to(qlrArr, "double[]"));
+    
+	log.log("AGENT_CHOICE: ID: "+id+"- choice: "+choice+"\n");
 
     var chosenParent = candIds[choice != null ? choice : 0] || 0;
     setInt16(mote, "agent_parent", chosenParent);
