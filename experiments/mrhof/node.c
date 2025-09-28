@@ -196,6 +196,29 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
      !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
     return;
   }
+
+  /* --- Enforce controller's parent before each packet --- */
+  if(agent_parent != 0) {
+    rpl_dag_t *dag = rpl_get_any_dag();
+    if(dag) {
+      rpl_nbr_t *nbr;
+      for(nbr = nbr_table_head(rpl_neighbors);
+          nbr != NULL;
+          nbr = nbr_table_next(rpl_neighbors, nbr)) {
+        uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
+        if(ip && ip_to_nodeid(ip) == agent_parent) {
+          if(dag->preferred_parent != nbr) {
+            rpl_select_parent(dag, nbr);
+            state.last_parent_id = agent_parent;
+            state.parent_switches++;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /* --- Normal packet generation --- */
   app_packet_t pkt;
   pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
   pkt.origin_id = node_id;
@@ -203,6 +226,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
   simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
   state.gen_count++;
 }
+
 
 static void sniff_input(void) {
   uint16_t len = packetbuf_datalen();
@@ -285,20 +309,6 @@ static void refresh_status(void) {
   refresh_etx_table();
 }
 
-/* ===== agent handshake ===== */
-static void ask_agent_for_parent(void) {
-  if(agent_waiting) return; /* avoid spamming while one is pending */
-
-  agent_waiting = 1;
-  agent_parent  = 0;
-
-  LOG_INFO("AGENT_REQ node=%u cand=", node_id);
-  for(int i = 0; i < status_num_neighbors; i++) {
-    LOG_INFO_("%u:etx=%u,", status_neighbor_ids[i], status_etx_x100[i]);
-  }
-  LOG_INFO_("\n");
-}
-
 /* ===== sniffer & UDP ===== */
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 static struct simple_udp_connection udp_conn;
@@ -312,10 +322,8 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
-
   netstack_sniffer_add(&my_sniffer);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
-
   etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
@@ -323,10 +331,9 @@ PROCESS_THREAD(packet_generator_process, ev, data)
       wrapup();
       PROCESS_EXIT();
     }
-    send_a_packet(&udp_conn);
+	if(agent_parent != 0) send_a_packet(&udp_conn);
     etimer_set(&gen_timer, poisson_next_delay_ticks());
   }
-
   PROCESS_END();
 }
 
@@ -334,42 +341,11 @@ PROCESS_THREAD(status_refresher_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-
   etimer_set(&t, CLOCK_SECOND);
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-
-    refresh_status();   // update metrics
-
-    if(agent_waiting == 0) {
-      if(status_num_neighbors >= 2) {
-        // real decision → ask agent
-        ask_agent_for_parent();
-      } else {
-        // 0 or 1 parent → no agent involved
-        agent_parent = 0;
-      }
-    }
-
-    // Enforce only if decision came from agent
-    if(agent_parent != 0 && status_num_neighbors >= 2) {
-      rpl_dag_t *dag = rpl_get_any_dag();
-      if(dag) {
-        rpl_nbr_t *nbr;
-        for(nbr = nbr_table_head(rpl_neighbors);
-            nbr != NULL;
-            nbr = nbr_table_next(rpl_neighbors, nbr)) {
-          uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
-          if(ip && ip_to_nodeid(ip) == agent_parent) {
-            dag->preferred_parent = nbr;
-            break;
-          }
-        }
-      }
-    }
-
+    refresh_status();
     etimer_reset(&t);
   }
-
   PROCESS_END();
 }

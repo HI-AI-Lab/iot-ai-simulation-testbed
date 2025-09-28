@@ -192,7 +192,7 @@ while (true) {
 
   // --- Sink signals end of phase ---
   if (msg.startsWith("[INFO: App       ] END_PHASE")) {
-    agent.endPhase();
+    //agent.endPhase();
     //log.log("CTRL: endPhase triggered by sink\n");
   }
 
