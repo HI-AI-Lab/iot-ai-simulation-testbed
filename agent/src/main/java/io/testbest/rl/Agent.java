@@ -196,7 +196,7 @@ public class Agent implements Serializable {
 
 		// Store episode with chosen parent + snapshots
 		open.put(moteId, new Episode(flat, a, chosenParentId, hcSnap, reSnap, qlSnap));
-
+		/*
 		log("decide: mote=" + moteId +
 			" choiceIdx=" + a +
 			" parentId=" + chosenParentId +
@@ -204,24 +204,43 @@ public class Agent implements Serializable {
 			" re=" + reSnap +
 			" qlr=" + qlSnap +
 			" eps=" + epsilon);
-
+		*/
 		return a;
 	}
 
-
 	public synchronized void endPhase() {
+		double sumR = 0.0;
+		double minR = Double.POSITIVE_INFINITY;
+		double maxR = Double.NEGATIVE_INFINITY;
+		int countR = 0;
+
 		for (Map.Entry<Integer, Episode> e : open.entrySet()) {
 			Episode ep = e.getValue();
-			// Use stored snapshot values instead of old hcTrue/reTrue/qlrTrue
+			// Use stored snapshot values
 			double r = rewardFromRank(ep.hcSnap, ep.reSnap, ep.qlrSnap);
 			addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
+
+			sumR += r;
+			minR = Math.min(minR, r);
+			maxR = Math.max(maxR, r);
+			countR++;
 		}
 		open.clear();
-		trainStep(autoBatches());
+
+		int nBatches = autoBatches();
+		trainStep(nBatches);
 
 		// epsilon decay
 		epsilon = Math.max(0.01, epsilon * 0.995);
-		log("endPhase: replay=" + replay.size() + " epsilon=" + epsilon);
+
+		double avgR = (countR > 0) ? sumR / countR : 0.0;
+		/*
+		log("endPhase: replay=" + replay.size() +
+			" batches=" + nBatches +
+			" avgR=" + avgR +
+			" minR=" + minR +
+			" maxR=" + maxR +
+			" epsilon=" + epsilon);*/
 	}
 
     // -------- Training --------
@@ -325,8 +344,8 @@ public class Agent implements Serializable {
         if (!Double.isFinite(rank) || rank <= 0.0) rank = 1.0;
         double r = 1.0 / rank;
         if (!Double.isFinite(r)) r = 0.0;
-            log("reward: hc=" + hcTrue + " re=" + reTrue + " qlr=" + qlrTrue +
-				" ecr=" + ecr + " => r=" + r);
+            /*log("reward: hc=" + hcTrue + " re=" + reTrue + " qlr=" + qlrTrue +
+				" ecr=" + ecr + " => r=" + r);*/
 		return r;
     }
 
