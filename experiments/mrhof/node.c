@@ -10,6 +10,7 @@
 #include "net/packetbuf.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-neighbor.h"   /* <-- needed */
+#include "net/routing/rpl-lite/rpl-dag.h"
 #include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/nbr-table.h"                       /* <-- needed */
@@ -208,7 +209,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
         if(ip && ip_to_nodeid(ip) == agent_parent) {
           if(dag->preferred_parent != nbr) {
-            rpl_select_parent(dag, nbr);
+            rpl_set_preferred_parent(dag->instance, nbr);
             state.last_parent_id = agent_parent;
             state.parent_switches++;
           }
