@@ -35,7 +35,7 @@ function setInt16(mote, varname, value){ var sym=mote.getMemory().getSymbolMap()
 function setInt8(mote, varname, value){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var buf=ByteBuffer.allocate(sym.size); buf.put(value & 0xFF); mote.getMemory().setMemorySegment(sym.addr, buf.array()); }
 
 // === Controller loop ===
-TIMEOUT(600000, log.testOK());
+TIMEOUT(60000, log.testOK());
 
 while (true) {
   YIELD();

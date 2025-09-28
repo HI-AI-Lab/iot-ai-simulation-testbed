@@ -297,7 +297,7 @@ public class Agent implements Serializable {
             for (int j = 0; j < Ftotal; j++) {
                 if (featureMask[j]) {
                     double v = (row != null && j < row.length) ? row[j] : 0.0;
-                    out[idx++] = Double.isFinite(v) ? v : 0.0;
+                    out[idx++] = scaleFeature(j, v);
                 }
             }
         }
@@ -336,4 +336,32 @@ public class Agent implements Serializable {
         this.w1_QU = Math.max(0.0, w1_QU);
         this.w2_ECR = Math.max(0.0, w2_ECR);
     }
+	
+	private double scaleFeature(int featIdx, double v) {
+		if (!Double.isFinite(v)) return 0.0;
+		switch (featIdx) {
+			case IDX_ETX:
+				return Math.max(1.0, Math.min(10.0, v)) / 10.0; // ~[0.1,1]
+			case IDX_HC:
+				return v / 16.0; // hop count ~[0,1]
+			case IDX_RE:
+				return Math.max(0.0, Math.min(1.0, v / initialEnergy));
+			case IDX_QLR:
+			case IDX_BDI:
+			case IDX_WR:
+				return Math.max(0.0, Math.min(1.0, v)); // ratios already 0–1
+			case IDX_CC:
+				return Math.min(v, 10.0) / 10.0; // child count, assume ≤10
+			case IDX_PC:
+				return Math.min(v, 10.0) / 10.0; // parent count, assume ≤10
+			case IDX_SI:
+				return Math.log1p(Math.max(0.0, v)) / 5.0; // parent switches, compress
+			case IDX_GEN:
+			case IDX_FWD:
+			case IDX_QLOSS:
+				return Math.log1p(Math.max(0.0, v)) / 10.0; // counters
+				default:
+				return v;
+		}
+	}	
 }
