@@ -75,7 +75,7 @@ public class Agent implements Serializable {
     private final boolean[] featureMask;
     private final int Factive;
 
-    private double epsilon = 0.10;
+    private double epsilon = 0.30;
     private double gamma   = 0.90;
     private int batchSize = 32;
     private int targetUpdateEvery = 5;
@@ -160,15 +160,24 @@ public class Agent implements Serializable {
         return a;
     }
 
-    public synchronized void endPhase() {
-        for (Map.Entry<Integer, Episode> e : open.entrySet()) {
-            Episode ep = e.getValue();
-            double r = rewardFromRank(ep.hcTrue, ep.reTrue, ep.qlrTrue);
-            addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
-        }
-        open.clear();
-        trainStep(autoBatches());
-    }
+	public synchronized void endPhase() {
+		for (Map.Entry<Integer, Episode> e : open.entrySet()) {
+			Episode ep = e.getValue();
+			double r = rewardFromRank(ep.hcTrue, ep.reTrue, ep.qlrTrue);
+			addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
+		}
+		open.clear();
+
+		// Train on accumulated replay
+		trainStep(autoBatches());
+
+		// --- ε-greedy decay ---
+		// Exponential decay: shrinks a bit each phase, never below 0.01
+		epsilon = Math.max(0.01, epsilon * 0.995);
+
+		// (Optional: log current epsilon to trace training progress)
+		// System.out.println("Agent epsilon now: " + epsilon);
+	}
 
     // -------- Training --------
     private void trainStep(int nBatches) {
