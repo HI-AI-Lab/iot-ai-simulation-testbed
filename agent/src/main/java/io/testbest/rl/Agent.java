@@ -15,6 +15,10 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.io.Serializable;
 import java.util.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 /**
  * Double-DQN Agent (CTDE-style).
  * - Children call decide(); sink calls endPhase() to close episodes & train.
@@ -22,6 +26,26 @@ import java.util.*;
  * - Reward always uses true HC, RE, QLR (mask-independent).
  */
 public class Agent implements Serializable {
+
+	private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
+	private static PrintWriter logger;
+
+	static {
+		try {
+			logger = new PrintWriter(new FileWriter(LOG_PATH, true), true); // append mode
+			logger.println("=== Agent started ===");
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger = new PrintWriter(System.err, true);
+		}
+	}
+
+	private static void log(String msg) {
+		if (logger != null) {
+			logger.println(System.currentTimeMillis() + " " + msg);
+			logger.flush();
+		}
+	}
 
     // -------- Controller inputs --------
     public static class Counters {
@@ -156,6 +180,9 @@ public class Agent implements Serializable {
         }
 
         int a = selectAction(flat, valid);
+		log("decide: mote=" + moteId + " choiceIdx=" + a +
+			" hc=" + hcTrue + " re=" + reTrue + " qlr=" + qlrTrue +
+			" eps=" + epsilon);
         open.put(moteId, new Episode(flat, a, hcTrue, reTrue, qlrTrue));
         return a;
     }
@@ -175,8 +202,9 @@ public class Agent implements Serializable {
 		// Exponential decay: shrinks a bit each phase, never below 0.01
 		epsilon = Math.max(0.01, epsilon * 0.995);
 
-		// (Optional: log current epsilon to trace training progress)
-		// System.out.println("Agent epsilon now: " + epsilon);
+		log("endPhase: replaySize=" + replay.size() +
+			" epsilon=" + epsilon +
+			" trainSteps=" + trainSteps);
 	}
 
     // -------- Training --------
@@ -280,7 +308,9 @@ public class Agent implements Serializable {
         if (!Double.isFinite(rank) || rank <= 0.0) rank = 1.0;
         double r = 1.0 / rank;
         if (!Double.isFinite(r)) r = 0.0;
-        return r;
+            log("reward: hc=" + hcTrue + " re=" + reTrue + " qlr=" + qlrTrue +
+				" ecr=" + ecr + " => r=" + r);
+		return r;
     }
 
     // -------- Utilities --------
