@@ -24,7 +24,7 @@ var mask = Java.to(
 
 // === Instantiate Agent ===
 var K = 4; // max candidate parents
-var agent = new Agent(K, mask);
+var agent = new Agent(K, mask, 2000.0);
 
 // === Helper: read/write memory with correct sizes ===
 function getInt32(mote, varname) {
