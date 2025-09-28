@@ -27,12 +27,47 @@ var INIT_ENERGY = 2000.0;
 var agent = new Agent(K, mask, INIT_ENERGY);
 
 // === Helpers ===
-function getInt32(mote, varname){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var bytes=mote.getMemory().getMemorySegment(sym.addr, sym.size); var bb=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN); return bb.getInt(); }
-function getInt16(mote, varname){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var bytes=mote.getMemory().getMemorySegment(sym.addr, sym.size); var bb=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN); return bb.getShort() & 0xFFFF; }
-function getByte(mote, varname){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var bytes=mote.getMemory().getMemorySegment(sym.addr, sym.size); return bytes[0] & 0xFF; }
-function getDouble(mote, varname){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var bytes=mote.getMemory().getMemorySegment(sym.addr, sym.size); var bb=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN); return bb.getDouble(); }
-function setInt16(mote, varname, value){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var buf=ByteBuffer.allocate(sym.size).order(ByteOrder.LITTLE_ENDIAN); buf.putShort(value & 0xFFFF); mote.getMemory().setMemorySegment(sym.addr, buf.array()); }
-function setInt8(mote, varname, value){ var sym=mote.getMemory().getSymbolMap().get(varname); if(sym==null) throw "Variable not found: "+varname; var buf=ByteBuffer.allocate(sym.size); buf.put(value & 0xFF); mote.getMemory().setMemorySegment(sym.addr, buf.array()); }
+function getInt32(mote, varname){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var bytes = mote.getMemory().getMemorySegment(sym.addr, sym.size);
+  var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+  return bb.getInt();
+}
+function getInt16(mote, varname){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var bytes = mote.getMemory().getMemorySegment(sym.addr, sym.size);
+  var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+  return bb.getShort() & 0xFFFF;
+}
+function getByte(mote, varname){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var bytes = mote.getMemory().getMemorySegment(sym.addr, sym.size);
+  return bytes[0] & 0xFF;
+}
+function getDouble(mote, varname){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var bytes = mote.getMemory().getMemorySegment(sym.addr, sym.size);
+  var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+  return bb.getDouble();
+}
+function setInt16(mote, varname, value){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var buf = ByteBuffer.allocate(sym.size).order(ByteOrder.LITTLE_ENDIAN);
+  buf.putShort(value & 0xFFFF);
+  mote.getMemory().setMemorySegment(sym.addr, buf.array());
+}
+function setInt8(mote, varname, value){
+  var sym = mote.getMemory().getSymbolMap().get(varname);
+  if (sym == null) throw "Variable not found: " + varname;
+  var buf = ByteBuffer.allocate(sym.size);
+  buf.put(value & 0xFF);
+  mote.getMemory().setMemorySegment(sym.addr, buf.array());
+}
 
 // === Controller loop ===
 TIMEOUT(60000, log.testOK());
@@ -42,90 +77,122 @@ while (true) {
 
   // --- Children request parent selection ---
   if (msg.startsWith("[INFO: App       ] AGENT_REQ")) {
-    var parts = msg.split(" ");
-    var nodeId = parseInt(parts[2].split("=")[1]);
+    // Robustly parse tokens (avoid assuming fixed positions)
+    var parts = msg.trim().split(/\s+/);
 
-    var candStr = parts[3].replace("cand=", "");
+    var nodeTok = null, candTok = null;
+    for (var p = 0; p < parts.length; p++) {
+      if (parts[p].indexOf("node=") === 0) nodeTok = parts[p];
+      if (parts[p].indexOf("cand=") === 0) candTok = parts[p];
+    }
+
+    var nodeId = nodeTok ? parseInt(nodeTok.substring(5)) : id; // fallback to current simulator id
+    var candStr = candTok ? candTok.substring(5) : "";
     var candPairs = candStr.length ? candStr.split(",") : [];
+
     var candIds = [];
     var candETX = [];
 
     for (var i = 0; i < candPairs.length; i++) {
-      var kv = candPairs[i].split(":etx=");
-      if (kv.length !== 2) continue;
-      candIds.push(parseInt(kv[0]));
-      candETX.push(parseInt(kv[1]) / 100.0);
+      // Expect "NN:etx=XYZ"
+      var pos = candPairs[i].indexOf(":etx=");
+      if (pos <= 0) continue;
+      var idStr = candPairs[i].substring(0, pos);
+      var etxStr = candPairs[i].substring(pos + 5);
+      var pid = parseInt(idStr);
+      var petx = parseInt(etxStr);
+      if (!isNaN(pid) && !isNaN(petx)) {
+        candIds.push(pid);
+        candETX.push(petx / 100.0);
+      }
     }
 
-    var S = Java.to(new Array(candIds.length), "double[][]");
-    var hcArr = []; var reArr = []; var qlrArr = [];
+    if (candIds.length === 0) {
+      // Should not happen if mote requires ≥2 neighbors, but be defensive.
+      log.log("AGENT_CHOICE: node=" + nodeId + " candIds=[] (no neighbors) — skipping decision\n");
+      setInt8(mote, "agent_waiting", 0);
+      log.log(time + "\t" + id + "\t" + msg + "\n");
+      continue;
+    }
 
-    for (var i = 0; i < candIds.length; i++) {
-      var parentMote = sim.getMoteWithID(candIds[i]);
+    // Build state (rows = real candidates; agent zero-pads internally to K)
+    var S = Java.to(new Array(candIds.length), "double[][]");
+    var hcArr = [], reArr = [], qlrArr = [];
+
+    for (var r = 0; r < candIds.length; r++) {
+      var parentMote = sim.getMoteWithID(candIds[r]);
       var row = [];
 
       for (var j = 0; j < mask.length; j++) {
-        if (mask[j]) {
-          var val = 0.0;
-          switch (j) {
-            case 0: val = candETX[i]; break;
-            case 1: val = getInt16(parentMote, "status_rank"); break;
-            case 2: val = getDouble(parentMote, "status_residual_energy"); break;
-            case 3: val = getDouble(parentMote, "status_qlr"); break;
-            case 4: val = getDouble(parentMote, "status_bdi"); break;
-            case 5: val = getDouble(parentMote, "status_wr"); break;
-            case 6: val = 0.0; break;
-            case 7: val = getInt16(parentMote, "status_pc"); break;
-            case 8: val = getInt32(parentMote, "status_parent_switches"); break;
-            case 9: val = getInt32(parentMote, "status_gen_count"); break;
-            case 10: val = getInt32(parentMote, "status_fwd_count"); break;
-            case 11: val = getInt32(parentMote, "status_qloss_count"); break;
-          }
-          row.push(val);
+        if (!mask[j]) continue;
+        var val = 0.0;
+        switch (j) {
+          case 0:  val = candETX[r]; break; // ETX from parsed log
+          case 1:  val = getInt16(parentMote, "status_rank"); break;
+          case 2:  val = getDouble(parentMote, "status_residual_energy"); break;
+          case 3:  val = getDouble(parentMote, "status_qlr"); break;
+          case 4:  val = getDouble(parentMote, "status_bdi"); break;
+          case 5:  val = getDouble(parentMote, "status_wr"); break;
+          case 6:  val = 0.0; break; // CC (not wired)
+          case 7:  val = getInt16(parentMote, "status_pc"); break;
+          case 8:  val = getInt32(parentMote, "status_parent_switches"); break;
+          case 9:  val = getInt32(parentMote, "status_gen_count"); break;
+          case 10: val = getInt32(parentMote, "status_fwd_count"); break;
+          case 11: val = getInt32(parentMote, "status_qloss_count"); break;
         }
+        row.push(val);
       }
-      S[i] = Java.to(row, "double[]");
 
-      // true values for reward
+      S[r] = Java.to(row, "double[]");
+
+      // Per-candidate true values (for reward inside Agent)
       hcArr.push(getInt16(parentMote, "status_rank"));
       reArr.push(getDouble(parentMote, "status_residual_energy"));
       qlrArr.push(getDouble(parentMote, "status_qlr"));
     }
 
+    // Action validity mask: true for each real candidate row
+    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
+
+    // Pack counters for the requesting node (optional features for Agent)
     var counters = new Agent.Counters();
     counters.generated      = getInt32(mote, "status_gen_count");
     counters.delivered      = getInt32(mote, "status_fwd_count");
     counters.dropped        = getInt32(mote, "status_qloss_count");
     counters.residualEnergy = getDouble(mote, "status_residual_energy");
-    counters.etx            = candETX.length > 0 ? Math.round(candETX[0]*100) : 1000;
+    counters.etx            = Math.round(candETX[0] * 100); // coarse ETX snapshot
     counters.hopCount       = getInt16(mote, "status_rank");
     counters.rankViolations = getInt32(mote, "status_parent_switches");
 
-	// Valid mask for actions
-	var validArr = [];
-	for (var i = 0; i < candIds.length; i++) {
-	  validArr.push(true);
-	}
-	var valid = Java.to(validArr, "boolean[]");
+    // Typed arrays for the Agent (new signature)
+    var candIdsArr = Java.to(candIds, "int[]");
+    var hcArrJ  = Java.to(hcArr,  "double[]");
+    var reArrJ  = Java.to(reArr,  "double[]");
+    var qlrArrJ = Java.to(qlrArr, "double[]");
 
-	// === Decide ===
-	var choice = agent.decide(nodeId, S, valid, counters,
-							  Java.to(hcArr, "double[]"),
-							  Java.to(reArr, "double[]"),
-							  Java.to(qlrArr, "double[]"));
-    
-	log.log("AGENT_CHOICE: ID: "+id+"- cand: "+candIds[choice]+"\n");
+    // === Decide (Agent remembers parentId and maps reward later) ===
+    var choice = agent.decide(nodeId, S, valid, counters, candIdsArr, hcArrJ, reArrJ, qlrArrJ);
 
-    var chosenParent = candIds[choice != null ? choice : 0] || 0;
+    // Map index -> parent ID safely
+    var idx = (typeof choice === "number") ? (choice|0) : 0;
+    if (idx < 0 || idx >= candIds.length) idx = 0;
+    var chosenParent = candIds[idx] || 0;
+
+    log.log("AGENT_CHOICE: node=" + nodeId +
+            " choiceIdx=" + idx +
+            " chosenParent=" + chosenParent +
+            " candIds=" + JSON.stringify(candIds) + "\n");
+
     setInt16(mote, "agent_parent", chosenParent);
     setInt8(mote, "agent_waiting", 0);
   }
 
   // --- Sink signals end of phase ---
   if (msg.startsWith("[INFO: App       ] END_PHASE")) {
-    // Only sink should log this
     agent.endPhase();
     log.log("CTRL: endPhase triggered by sink\n");
   }
+
+  // Always write raw line too
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }
