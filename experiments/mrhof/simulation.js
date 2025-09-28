@@ -104,9 +104,9 @@ while (true) {
     }
 
     if (candIds.length === 0) {
-      log.log("AGENT_CHOICE: node=" + nodeId + " candIds=[] (no neighbors) — skipping decision\n");
+      //log.log("AGENT_CHOICE: node=" + nodeId + " candIds=[] (no neighbors) — skipping decision\n");
       setInt8(mote, "agent_waiting", 0);
-      log.log(time + "\t" + id + "\t" + msg + "\n");
+      //log.log(time + "\t" + id + "\t" + msg + "\n");
       continue;
     }
 
@@ -180,11 +180,11 @@ while (true) {
     var idx = (typeof choice === "number") ? (choice|0) : 0;
     if (idx < 0 || idx >= candIds.length) idx = 0;
     var chosenParent = candIds[idx] || 0;
-
+    /*
     log.log("AGENT_CHOICE: node=" + nodeId +
             " choiceIdx=" + idx +
             " chosenParent=" + chosenParent +
-            " candIds=" + JSON.stringify(candIds) + "\n");
+            " candIds=" + JSON.stringify(candIds) + "\n");*/
 
     setInt16(mote, "agent_parent", chosenParent);
     setInt8(mote, "agent_waiting", 0);
@@ -193,9 +193,9 @@ while (true) {
   // --- Sink signals end of phase ---
   if (msg.startsWith("[INFO: App       ] END_PHASE")) {
     agent.endPhase();
-    log.log("CTRL: endPhase triggered by sink\n");
+    //log.log("CTRL: endPhase triggered by sink\n");
   }
 
   // Raw line too
-  log.log(time + "\t" + id + "\t" + msg + "\n");
+  //log.log(time + "\t" + id + "\t" + msg + "\n");
 }
