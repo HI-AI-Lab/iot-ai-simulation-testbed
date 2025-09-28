@@ -79,12 +79,9 @@ TIMEOUT(60000, log.testOK());
 
 while (true) {
   YIELD();
-
   if (msg.startsWith("[INFO: App       ] AGENT_REQ")) {
     // Example log: AGENT_REQ node=7 cand=3:etx=192,5:etx=240
-
 	log.log("CTRL_DEBUG: ID: "+ id + "- MSG: "+ msg + "\n")
-    
 	// Parse node id
     var parts = msg.split(" ");
     var nodeId = parseInt(parts[2].split("=")[1]); // node=7
@@ -110,17 +107,17 @@ while (true) {
           var val = 0.0;
           switch (j) {
             case 0: val = candETX[i]; break;                               // ETX
-            case 1: val = getInt16(mote, "status_rank"); break;            // HC
-            case 2: val = getDouble(mote, "status_residual_energy"); break;// RE
-            case 3: val = getDouble(mote, "status_qlr"); break;            // QLR
-            case 4: val = getDouble(mote, "status_bdi"); break;            // BDI
-            case 5: val = getDouble(mote, "status_wr"); break;             // WR
+            case 1: val = getInt16(sim.getMoteWithID(candIds[i]), "status_rank"); break;            // HC
+            case 2: val = getDouble(sim.getMoteWithID(candIds[i]), "status_residual_energy"); break;// RE
+            case 3: val = getDouble(sim.getMoteWithID(candIds[i]), "status_qlr"); break;            // QLR
+            case 4: val = getDouble(sim.getMoteWithID(candIds[i]), "status_bdi"); break;            // BDI
+            case 5: val = getDouble(sim.getMoteWithID(candIds[i]), "status_wr"); break;             // WR
             case 6: val = 0.0; break; // CC placeholder
-            case 7: val = getInt16(mote, "status_pc"); break;              // PC
-            case 8: val = getInt32(mote, "status_parent_switches"); break; // SI
-            case 9: val = getInt32(mote, "status_gen_count"); break;       // GEN
-            case 10: val = getInt32(mote, "status_fwd_count"); break;      // FWD
-            case 11: val = getInt32(mote, "status_qloss_count"); break;    // QLOSS
+            case 7: val = getInt16(sim.getMoteWithID(candIds[i]), "status_pc"); break;              // PC
+            case 8: val = getInt32(sim.getMoteWithID(candIds[i]), "status_parent_switches"); break; // SI
+            case 9: val = getInt32(sim.getMoteWithID(candIds[i]), "status_gen_count"); break;       // GEN
+            case 10: val = getInt32(sim.getMoteWithID(candIds[i]), "status_fwd_count"); break;      // FWD
+            case 11: val = getInt32(sim.getMoteWithID(candIds[i]), "status_qloss_count"); break;    // QLOSS
           }
           row.push(val);
         }
@@ -176,6 +173,5 @@ while (true) {
 
     //log.log("AGENT_APPLY node=" + nodeId + " parent=" + chosenParent + "\n");
   }
-
   //log.log(time + "\t" + id + "\t" + msg + "\n");
 }
