@@ -197,13 +197,13 @@ public class Agent implements Serializable {
 		// Store episode with chosen parent + snapshots
 		open.put(moteId, new Episode(flat, a, chosenParentId, hcSnap, reSnap, qlSnap));
 
-		logger.info("decide: mote=" + moteId +
-					" choiceIdx=" + a +
-					" parentId=" + chosenParentId +
-					" hc=" + hcSnap +
-					" re=" + reSnap +
-					" qlr=" + qlSnap +
-					" eps=" + epsilon);
+		log("decide: mote=" + moteId +
+			" choiceIdx=" + a +
+			" parentId=" + chosenParentId +
+			" hc=" + hcSnap +
+			" re=" + reSnap +
+			" qlr=" + qlSnap +
+			" eps=" + epsilon);
 
 		return a;
 	}
@@ -221,7 +221,7 @@ public class Agent implements Serializable {
 
 		// epsilon decay
 		epsilon = Math.max(0.01, epsilon * 0.995);
-		logger.info("endPhase: replay=" + replay.size() + " epsilon=" + epsilon);
+		log("endPhase: replay=" + replay.size() + " epsilon=" + epsilon);
 	}
 
     // -------- Training --------
