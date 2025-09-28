@@ -83,7 +83,9 @@ while (true) {
   if (msg.startsWith("[INFO: App       ] AGENT_REQ")) {
     // Example log: AGENT_REQ node=7 cand=3:etx=192,5:etx=240
 
-    // Parse node id
+	log.log("CTRL_DEBUG: ID: "+ id + "- MSG: "+ msg + "\n")
+    
+	// Parse node id
     var parts = msg.split(" ");
     var nodeId = parseInt(parts[2].split("=")[1]); // node=7
 
@@ -164,7 +166,7 @@ while (true) {
     var chosenParent = candIds[choice];
     var outputLog = " -> OUT: choice=" + choice + " parent_id=" + chosenParent;
 
-    log.log(inputLog + outputLog + "\n");
+    //log.log(inputLog + outputLog + "\n");
     // ---------------------------------------------
 
 
@@ -172,8 +174,8 @@ while (true) {
     setInt16(mote, "agent_parent", chosenParent);
     setInt8(mote, "agent_waiting", 0);
 
-    log.log("AGENT_APPLY node=" + nodeId + " parent=" + chosenParent + "\n");
+    //log.log("AGENT_APPLY node=" + nodeId + " parent=" + chosenParent + "\n");
   }
 
-  log.log(time + "\t" + id + "\t" + msg + "\n");
+  //log.log(time + "\t" + id + "\t" + msg + "\n");
 }
