@@ -77,30 +77,26 @@ while (true) {
 
   // --- Children request parent selection ---
   if (msg.startsWith("[INFO: App       ] AGENT_REQ")) {
-    // Robustly parse tokens (avoid assuming fixed positions)
+    // Robust parse
     var parts = msg.trim().split(/\s+/);
-
     var nodeTok = null, candTok = null;
     for (var p = 0; p < parts.length; p++) {
       if (parts[p].indexOf("node=") === 0) nodeTok = parts[p];
       if (parts[p].indexOf("cand=") === 0) candTok = parts[p];
     }
 
-    var nodeId = nodeTok ? parseInt(nodeTok.substring(5)) : id; // fallback to current simulator id
+    var nodeId = nodeTok ? parseInt(nodeTok.substring(5)) : id;
     var candStr = candTok ? candTok.substring(5) : "";
     var candPairs = candStr.length ? candStr.split(",") : [];
 
     var candIds = [];
     var candETX = [];
-
     for (var i = 0; i < candPairs.length; i++) {
-      // Expect "NN:etx=XYZ"
+      // "NN:etx=XYZ"
       var pos = candPairs[i].indexOf(":etx=");
       if (pos <= 0) continue;
-      var idStr = candPairs[i].substring(0, pos);
-      var etxStr = candPairs[i].substring(pos + 5);
-      var pid = parseInt(idStr);
-      var petx = parseInt(etxStr);
+      var pid = parseInt(candPairs[i].substring(0, pos));
+      var petx = parseInt(candPairs[i].substring(pos + 5));
       if (!isNaN(pid) && !isNaN(petx)) {
         candIds.push(pid);
         candETX.push(petx / 100.0);
@@ -108,56 +104,73 @@ while (true) {
     }
 
     if (candIds.length === 0) {
-      // Should not happen if mote requires ≥2 neighbors, but be defensive.
       log.log("AGENT_CHOICE: node=" + nodeId + " candIds=[] (no neighbors) — skipping decision\n");
       setInt8(mote, "agent_waiting", 0);
       log.log(time + "\t" + id + "\t" + msg + "\n");
       continue;
     }
 
-	// Build state (rows = real candidates; agent zero-pads internally to K)
-	var S = [];
-	var hcArr = [], reArr = [], qlrArr = [];
+    // Build state rows for real candidates (agent pads internally to K)
+    var S = [];
+    var hcArr = [], reArr = [], qlrArr = [];
+    for (var r = 0; r < candIds.length; r++) {
+      var parentMote = sim.getMoteWithID(candIds[r]);
+      var row = [];
+      if (parentMote != null) {
+        for (var j = 0; j < mask.length; j++) {
+          if (!mask[j]) continue;
+          var val = 0.0;
+          switch (j) {
+            case 0:  val = candETX[r]; break;
+            case 1:  val = getInt16(parentMote, "status_rank"); break;
+            case 2:  val = getDouble(parentMote, "status_residual_energy"); break;
+            case 3:  val = getDouble(parentMote, "status_qlr"); break;
+            case 4:  val = getDouble(parentMote, "status_bdi"); break;
+            case 5:  val = getDouble(parentMote, "status_wr"); break;
+            case 6:  val = 0.0; break; // CC not wired
+            case 7:  val = getInt16(parentMote, "status_pc"); break;
+            case 8:  val = getInt32(parentMote, "status_parent_switches"); break;
+            case 9:  val = getInt32(parentMote, "status_gen_count"); break;
+            case 10: val = getInt32(parentMote, "status_fwd_count"); break;
+            case 11: val = getInt32(parentMote, "status_qloss_count"); break;
+          }
+          row.push(val);
+        }
+        // per-candidate ground truth (for reward inside Agent)
+        hcArr.push(getInt16(parentMote, "status_rank"));
+        reArr.push(getDouble(parentMote, "status_residual_energy"));
+        qlrArr.push(getDouble(parentMote, "status_qlr"));
+      } else {
+        // Defensive: missing mote → zeros
+        for (var j = 0; j < mask.length; j++) if (mask[j]) row.push(0.0);
+        hcArr.push(0.0); reArr.push(0.0); qlrArr.push(0.0);
+      }
+      S[r] = Java.to(row, "double[]"); // convert each row
+    }
 
-	for (var r = 0; r < candIds.length; r++) {
-	  var parentMote = sim.getMoteWithID(candIds[r]);
-	  var row = [];
+    // Convert outer structures
+    var SArr      = Java.to(S, "double[][]");
+    var candIdsArr= Java.to(candIds, "int[]");
+    var hcArrJ    = Java.to(hcArr,  "double[]");
+    var reArrJ    = Java.to(reArr,  "double[]");
+    var qlrArrJ   = Java.to(qlrArr, "double[]");
 
-	  for (var j = 0; j < mask.length; j++) {
-		if (!mask[j]) continue;
-		var val = 0.0;
-		switch (j) {
-		  case 0:  val = candETX[r]; break;
-		  case 1:  val = getInt16(parentMote, "status_rank"); break;
-		  case 2:  val = getDouble(parentMote, "status_residual_energy"); break;
-		  case 3:  val = getDouble(parentMote, "status_qlr"); break;
-		  case 4:  val = getDouble(parentMote, "status_bdi"); break;
-		  case 5:  val = getDouble(parentMote, "status_wr"); break;
-		  case 6:  val = 0.0; break;
-		  case 7:  val = getInt16(parentMote, "status_pc"); break;
-		  case 8:  val = getInt32(parentMote, "status_parent_switches"); break;
-		  case 9:  val = getInt32(parentMote, "status_gen_count"); break;
-		  case 10: val = getInt32(parentMote, "status_fwd_count"); break;
-		  case 11: val = getInt32(parentMote, "status_qloss_count"); break;
-		}
-		row.push(val);
-	  }
+    // Valid actions = number of real candidates
+    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
 
-	  S[r] = Java.to(row, "double[]"); // convert each row
-	  hcArr.push(getInt16(parentMote, "status_rank"));
-	  reArr.push(getDouble(parentMote, "status_residual_energy"));
-	  qlrArr.push(getDouble(parentMote, "status_qlr"));
-	}
+    // Counters for the requesting node (optional)
+    var counters = new Agent.Counters();
+    counters.generated      = getInt32(mote, "status_gen_count");
+    counters.delivered      = getInt32(mote, "status_fwd_count");
+    counters.dropped        = getInt32(mote, "status_qloss_count");
+    counters.residualEnergy = getDouble(mote, "status_residual_energy");
+    counters.etx            = Math.round(candETX[0] * 100); // coarse ETX snapshot
+    counters.hopCount       = getInt16(mote, "status_rank");
+    counters.rankViolations = getInt32(mote, "status_parent_switches");
 
-	// Convert outer structure to double[][]
-	var SArr   = Java.to(S, "double[][]");
-	var candIdsArr = Java.to(candIds, "int[]");
-	var hcArrJ  = Java.to(hcArr,  "double[]");
-	var reArrJ  = Java.to(reArr,  "double[]");
-	var qlrArrJ = Java.to(qlrArr, "double[]");
-
-	var choice = agent.decide(nodeId, SArr, valid, counters,
-							  candIdsArr, hcArrJ, reArrJ, qlrArrJ);
+    // Decide
+    var choice = agent.decide(nodeId, SArr, valid, counters,
+                              candIdsArr, hcArrJ, reArrJ, qlrArrJ);
 
     // Map index -> parent ID safely
     var idx = (typeof choice === "number") ? (choice|0) : 0;
@@ -179,6 +192,6 @@ while (true) {
     log.log("CTRL: endPhase triggered by sink\n");
   }
 
-  // Always write raw line too
+  // Raw line too
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }
