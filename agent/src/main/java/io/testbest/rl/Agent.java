@@ -55,21 +55,22 @@ public class Agent implements Serializable {
     }
 
     // -------- Episode & Replay --------
-    private static class Episode {
-        final double[] sFlat; // masked NN input
-        final int a;          // chosen index
-        final double hcTrue;
-        final double reTrue;
-        final double qlrTrue;
+	private static class Episode {
+		final double[] sFlat;
+		final int a;          // action index (0..k-1)
+		final int parentId;   // actual chosen parent ID
+		final double hcSnap, reSnap, qlrSnap; // fallback snapshots
 
-        Episode(double[] sFlat, int a, double hcTrue, double reTrue, double qlrTrue) {
-            this.sFlat = sFlat;
-            this.a = a;
-            this.hcTrue = hcTrue;
-            this.reTrue = reTrue;
-            this.qlrTrue = qlrTrue;
-        }
-    }
+		Episode(double[] sFlat, int a, int parentId,
+				double hcSnap, double reSnap, double qlrSnap) {
+			this.sFlat = sFlat;
+			this.a = a;
+			this.parentId = parentId;
+			this.hcSnap = hcSnap;
+			this.reSnap = reSnap;
+			this.qlrSnap = qlrSnap;
+		}
+	}
 
     private static class Transition {
         final double[] s; final int a; final double r;
@@ -163,29 +164,35 @@ public class Agent implements Serializable {
         hardSyncTarget();
     }
 
-    // -------- Public API --------
-    public synchronized int decide(int moteId,
-                                   double[][] S,
-                                   boolean[] valid,
-                                   Counters countersNow,
-                                   double hcTrue,
-                                   double reTrue,
-                                   double qlrTrue) {
-        double[] flat = flattenState(S);
+	public synchronized int decide(int moteId,
+								   double[][] S,
+								   boolean[] valid,
+								   Counters countersNow,
+								   int[] candIds,
+								   double[] hcArr,
+								   double[] reArr,
+								   double[] qlrArr) {
+		double[] flat = flattenState(S);
 
-        Episode prev = open.remove(moteId);
-        if (prev != null) {
-            double rPrev = rewardFromRank(prev.hcTrue, prev.reTrue, prev.qlrTrue);
-            addReplay(new Transition(prev.sFlat, prev.a, rPrev, flat, false, copyOrAllValid(valid)));
-        }
+		// Close previous episode
+		Episode prev = open.remove(moteId);
+		if (prev != null) {
+			double rPrev = computeRewardForPrevious(prev, candIds, hcArr, reArr, qlrArr);
+			addReplay(new Transition(prev.sFlat, prev.a, rPrev, flat, false, copyOrAllValid(valid)));
+		}
 
-        int a = selectAction(flat, valid);
-		log("decide: mote=" + moteId + " choiceIdx=" + a +
-			" hc=" + hcTrue + " re=" + reTrue + " qlr=" + qlrTrue +
-			" eps=" + epsilon);
-        open.put(moteId, new Episode(flat, a, hcTrue, reTrue, qlrTrue));
-        return a;
-    }
+		// Choose new action
+		int a = selectAction(flat, valid);
+
+		// Store chosen parentId + snapshots
+		int chosenParentId = (candIds != null && a < candIds.length) ? candIds[a] : 0;
+		double hcSnap = valOrZero(hcArr, a);
+		double reSnap = valOrZero(reArr, a);
+		double qlSnap = valOrZero(qlrArr, a);
+
+		open.put(moteId, new Episode(flat, a, chosenParentId, hcSnap, reSnap, qlSnap));
+		return a;
+	}
 
 	public synchronized void endPhase() {
 		for (Map.Entry<Integer, Episode> e : open.entrySet()) {
@@ -402,5 +409,26 @@ public class Agent implements Serializable {
 				default:
 				return v;
 		}
-	}	
+	}
+	
+	private double computeRewardForPrevious(Episode prev,
+											int[] candIds,
+											double[] hcArr,
+											double[] reArr,
+											double[] qlrArr) {
+		int idx = -1;
+		if (candIds != null) {
+			for (int i = 0; i < candIds.length; i++) {
+				if (candIds[i] == prev.parentId) { idx = i; break; }
+			}
+		}
+		double hc = (idx >= 0) ? valOrZero(hcArr, idx) : prev.hcSnap;
+		double re = (idx >= 0) ? valOrZero(reArr, idx) : prev.reSnap;
+		double ql = (idx >= 0) ? valOrZero(qlrArr, idx) : prev.qlrSnap;
+		return rewardFromRank(hc, re, ql);
+	}
+
+	private static double valOrZero(double[] arr, int i) {
+		return (arr != null && i >= 0 && i < arr.length && Double.isFinite(arr[i])) ? arr[i] : 0.0;
+	}
 }
