@@ -358,6 +358,23 @@ public class Agent implements Serializable {
         return (int) Math.ceil(D / (double) Math.max(1, batchSize));
     }
 
+	// -------- Replay helper --------
+	private void addReplay(Transition t) {
+		if (t == null) return;
+		// Enforce capacity on ArrayDeque manually
+		while (replay.size() >= REPLAY_CAPACITY) {
+			replay.pollFirst(); // remove oldest
+		}
+		replay.addLast(t);
+	}
+
+	// -------- Math helper --------
+	private static double safeDiv(double num, double den) {
+		if (!Double.isFinite(num) || !Double.isFinite(den) || den == 0.0) return 0.0;
+		double v = num / den;
+		return Double.isFinite(v) ? v : 0.0;
+	}
+
     // -------- Tuning --------
     public int getReplaySize() { return replay.size(); }
     public int getBatchSize()  { return batchSize; }
