@@ -170,8 +170,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   while(1) {
     etimer_set(&t, 60000); // check every ~60s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-//   	LOG_INFO("%" PRIu32,toggle_value);
-//    toggle_value++;
+
 	if(is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();

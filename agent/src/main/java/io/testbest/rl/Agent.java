@@ -234,13 +234,13 @@ public class Agent implements Serializable {
 		epsilon = Math.max(0.01, epsilon * 0.995);
 
 		double avgR = (countR > 0) ? sumR / countR : 0.0;
-		/*
+		
 		log("endPhase: replay=" + replay.size() +
 			" batches=" + nBatches +
 			" avgR=" + avgR +
 			" minR=" + minR +
 			" maxR=" + maxR +
-			" epsilon=" + epsilon);*/
+			" epsilon=" + epsilon);
 	}
 
     // -------- Training --------
