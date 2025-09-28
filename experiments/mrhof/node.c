@@ -209,7 +209,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
         if(ip && ip_to_nodeid(ip) == agent_parent) {
           if(dag->preferred_parent != nbr) {
-            rpl_set_preferred_parent(dag->instance, nbr);
+            rpl_neighbor_set_preferred_parent(nbr);
             state.last_parent_id = agent_parent;
             state.parent_switches++;
           }
