@@ -184,34 +184,44 @@ public class Agent implements Serializable {
 		// Choose new action
 		int a = selectAction(flat, valid);
 
-		// Store chosen parentId + snapshots
-		int chosenParentId = (candIds != null && a < candIds.length) ? candIds[a] : 0;
-		double hcSnap = valOrZero(hcArr, a);
-		double reSnap = valOrZero(reArr, a);
-		double qlSnap = valOrZero(qlrArr, a);
+		// Defensive index checks
+		int chosenParentId = 0;
+		double hcSnap = 0.0, reSnap = 0.0, qlSnap = 0.0;
+		if (a >= 0 && candIds != null && a < candIds.length) {
+			chosenParentId = candIds[a];
+			hcSnap = valOrZero(hcArr, a);
+			reSnap = valOrZero(reArr, a);
+			qlSnap = valOrZero(qlrArr, a);
+		}
 
+		// Store episode with chosen parent + snapshots
 		open.put(moteId, new Episode(flat, a, chosenParentId, hcSnap, reSnap, qlSnap));
+
+		logger.info("decide: mote=" + moteId +
+					" choiceIdx=" + a +
+					" parentId=" + chosenParentId +
+					" hc=" + hcSnap +
+					" re=" + reSnap +
+					" qlr=" + qlSnap +
+					" eps=" + epsilon);
+
 		return a;
 	}
+
 
 	public synchronized void endPhase() {
 		for (Map.Entry<Integer, Episode> e : open.entrySet()) {
 			Episode ep = e.getValue();
-			double r = rewardFromRank(ep.hcTrue, ep.reTrue, ep.qlrTrue);
+			// Use stored snapshot values instead of old hcTrue/reTrue/qlrTrue
+			double r = rewardFromRank(ep.hcSnap, ep.reSnap, ep.qlSnap);
 			addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
 		}
 		open.clear();
-
-		// Train on accumulated replay
 		trainStep(autoBatches());
 
-		// --- ε-greedy decay ---
-		// Exponential decay: shrinks a bit each phase, never below 0.01
+		// epsilon decay
 		epsilon = Math.max(0.01, epsilon * 0.995);
-
-		log("endPhase: replaySize=" + replay.size() +
-			" epsilon=" + epsilon +
-			" trainSteps=" + trainSteps);
+		logger.info("endPhase: replay=" + replay.size() + " epsilon=" + epsilon);
 	}
 
     // -------- Training --------
