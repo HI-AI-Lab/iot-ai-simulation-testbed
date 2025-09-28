@@ -122,12 +122,8 @@ while (true) {
   // --- Sink signals end of phase ---
   if (msg.startsWith("[INFO: App       ] END_PHASE")) {
     // Only sink should log this
-    var parts = msg.split(" ");
-    var sinkId = parseInt(parts[2].split("=")[1]); // e.g., "sink=1"
-    if (sinkId === 1) { // adjust if your sink ID differs
-      agent.endPhase();
-      log.log("CTRL: endPhase triggered by sink " + sinkId + "\n");
-    }
+    agent.endPhase();
+    log.log("CTRL: endPhase triggered by sink\n");
   }
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }

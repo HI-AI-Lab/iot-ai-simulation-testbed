@@ -130,7 +130,10 @@ udp_rx_callback(struct simple_udp_connection *c,
 static struct simple_udp_connection udp_conn;
 
 PROCESS(udp_server_process, "SINK");
-AUTOSTART_PROCESSES(&udp_server_process);
+PROCESS(endphase_process, "EndPhase Trigger");
+
+AUTOSTART_PROCESSES(&udp_server_process, &endphase_process);
+
 PROCESS_THREAD(udp_server_process, ev, data)
 {
   static struct etimer t;
@@ -161,3 +164,20 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(endphase_process, ev, data)
+{
+  static struct etimer t;
+  PROCESS_BEGIN();
+
+  while(1) {
+    // 10 minutes interval (600 seconds)
+    etimer_set(&t, CLOCK_SECOND * 600);
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+
+    // This log line is picked up by simulation.js to call agent.endPhase()
+    LOG_INFO("END_PHASE\n");
+  }
+
+  PROCESS_END();
+}
