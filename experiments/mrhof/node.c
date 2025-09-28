@@ -335,7 +335,7 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   static struct etimer t;
   PROCESS_BEGIN();
 
-  etimer_set(&t, CLOCK_SECOND / 5);
+  etimer_set(&t, CLOCK_SECOND);
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
 
