@@ -48,13 +48,12 @@
 #define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
 #define INIT_ENERGY_J   2000.0
-#define ROOT_RANK RPL_MIN_HOPRANKINC
 
 uint32_t status_gen_count       = 0;
 uint32_t status_fwd_count       = 0;
 uint32_t status_qloss_count     = 0;
 double   status_residual_energy = INIT_ENERGY_J;
-uint16_t status_rank            = ROOT_RANK;
+uint16_t status_rank = RPL_MIN_HOPRANKINC;
 
 double   status_bdi             = 0.0;
 double   status_qlr             = 0.0;
@@ -148,9 +147,8 @@ static struct simple_udp_connection udp_conn;
 
 PROCESS(udp_server_process, "SINK");
 PROCESS(endphase_process, "EndPhase Trigger");
-PROCESS(status_refresher_process, "Sink status refresher");
 
-AUTOSTART_PROCESSES(&udp_server_process, &endphase_process, &status_refresher_process);
+AUTOSTART_PROCESSES(&udp_server_process, &endphase_process);
 
 PROCESS_THREAD(udp_server_process, ev, data)
 {
@@ -195,31 +193,6 @@ PROCESS_THREAD(endphase_process, ev, data)
 
     // This log line is picked up by simulation.js to call agent.endPhase()
     LOG_INFO("END_PHASE\n");
-  }
-
-  PROCESS_END();
-}
-
-PROCESS_THREAD(status_refresher_process, ev, data)
-{
-  static struct etimer t;
-  PROCESS_BEGIN();
-
-  etimer_set(&t, CLOCK_SECOND * 5);
-  while(1) {
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-
-    status_rank = ROOT_RANK;
-    status_residual_energy = INIT_ENERGY_J;
-
-    status_pc = 0;
-    for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
-        nbr != NULL;
-        nbr = nbr_table_next(rpl_neighbors, nbr)) {
-      status_pc++;
-    }
-
-    etimer_reset(&t);
   }
 
   PROCESS_END();
