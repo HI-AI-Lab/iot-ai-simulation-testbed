@@ -101,12 +101,18 @@ while (true) {
     counters.hopCount       = getInt16(mote, "status_rank");
     counters.rankViolations = getInt32(mote, "status_parent_switches");
 
-    var valid = Java.to(new Array(candIds.length).fill(true), "boolean[]");
+	// Valid mask for actions
+	var validArr = [];
+	for (var i = 0; i < candIds.length; i++) {
+	  validArr.push(true);
+	}
+	var valid = Java.to(validArr, "boolean[]");
 
-    var choice = agent.decide(nodeId, S, valid, counters,
-                              Java.to(hcArr, "double[]"),
-                              Java.to(reArr, "double[]"),
-                              Java.to(qlrArr, "double[]"));
+	// === Decide ===
+	var choice = agent.decide(nodeId, S, valid, counters,
+							  Java.to(hcArr, "double[]"),
+							  Java.to(reArr, "double[]"),
+							  Java.to(qlrArr, "double[]"));
 
     var chosenParent = candIds[choice != null ? choice : 0] || 0;
     setInt16(mote, "agent_parent", chosenParent);
