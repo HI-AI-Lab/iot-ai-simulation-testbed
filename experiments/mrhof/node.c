@@ -282,6 +282,7 @@ static void refresh_etx_table(void) {
 }
 
 static void refresh_status(void) {
+  return;
   status_gen_count       = state.gen_count;
   status_fwd_count       = state.fwd_count;
   status_qloss_count     = state.q_loss_count;
@@ -313,7 +314,6 @@ static void refresh_status(void) {
 /* ===== sniffer & UDP ===== */
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 static struct simple_udp_connection udp_conn;
-process_event_t event_refresh;
 
 /* ===== processes ===== */
 PROCESS(packet_generator_process, "Packet Generator");
@@ -341,13 +341,13 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 
 PROCESS_THREAD(status_refresher_process, ev, data)
 {
+  static struct etimer t;
   PROCESS_BEGIN();
-  event_refresh = process_alloc_event();
+  etimer_set(&t, CLOCK_SECOND);
   while(1) {
-    PROCESS_WAIT_EVENT();    // idle forever unless controller posts event
-    if(ev == event_refresh) {
-      refresh_status();      // run on demand only
-    }
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+    refresh_status();
+    etimer_reset(&t);
   }
   PROCESS_END();
 }
