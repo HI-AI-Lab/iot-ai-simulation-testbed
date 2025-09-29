@@ -6,19 +6,20 @@ var ByteOrder  = Java.type("java.nio.ByteOrder");
 // === Config ===
 var K = 4;
 var INIT_ENERGY = 2000.0;
+var SIM_END_MS = 5000000;   // match mote code
+var SUPERFRAME_MS = 10000;  // 9s data + 1s optimize
 
 // === Feature mask (ablation-friendly) ===
-// Index mapping must match mote's status_* fields meaning.
 var mask = Java.to(
   [true,  // 0 ETX
-   true, // 1 HC
-   true, // 2 RE
-   true, // 3 QLR
+   true,  // 1 HC
+   true,  // 2 RE
+   true,  // 3 QLR
    false, // 4 BDI
    false, // 5 WR
    false, // 6 CC
    false, // 7 PC
-   false, // 8 SI   (we map to parent_switches just as placeholder earlier)
+   false, // 8 SI
    false, // 9 GEN
    false, // 10 FWD
    false  // 11 QLOSS
@@ -96,13 +97,12 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
     var row = [];
     var parentMote = sim.getMoteWithID(candIds[r]);
 
-    // Prepare feature row according to mask
     for (var j = 0; j < mask.length; j++) {
       if (!mask[j]) continue;
       var val = 0.0;
       switch (j) {
-        case 0:  val = candEtx[r]; break;                                   // ETX
-        case 1:  val = parentMote ? getInt16(parentMote, "status_rank") : 0; break;  // HC (rank proxy)
+        case 0:  val = candEtx[r]; break;   // ETX
+        case 1:  val = parentMote ? getInt16(parentMote, "status_rank") : 0; break;
         case 2:  val = parentMote ? getDouble(parentMote, "status_residual_energy") : 0; break;
         case 3:  val = parentMote ? getDouble(parentMote, "status_qlr") : 0; break;
         case 4:  val = parentMote ? getDouble(parentMote, "status_bdi") : 0; break;
@@ -119,7 +119,6 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
 
     S[r] = Java.to(row, "double[]");
 
-    // ground-truth arrays (for Agent internals)
     if (parentMote) {
       hcArr.push(getInt16(parentMote, "status_rank"));
       reArr.push(getDouble(parentMote, "status_residual_energy"));
@@ -143,37 +142,24 @@ function decideAndSetParentFor(mote){
   if (id === 1) return; // never set for sink
 
   var nn = getByte(mote, "status_num_neighbors") | 0;
-  if (nn <= 0) {
-    // No neighbors yet → clear waiting and skip
-    setInt8(mote, "agent_waiting", 0);
-    return;
-  }
+  if (nn <= 0) { setInt8(mote, "agent_waiting", 0); return; }
 
   var candIdsU8  = getU8Array(mote, "status_neighbor_ids", K);
   var candEtxU16 = getU16Array(mote, "status_etx_x100",   K);
 
-  // Trim to nn and map to floats
-  var candIds = [];
-  var candEtx = [];
+  var candIds = [], candEtx = [];
   for (var i=0; i<nn && i<candIdsU8.length && i<candEtxU16.length; i++){
     candIds.push(candIdsU8[i] | 0);
     candEtx.push((candEtxU16[i] | 0) / 100.0);
   }
+  if (candIds.length === 0) { setInt8(mote, "agent_waiting", 0); return; }
 
-  if (candIds.length === 0) {
-    setInt8(mote, "agent_waiting", 0);
-    return;
-  }
-
-  // Build feature matrix for these candidates
   var mats = buildCandidateMatrixFor(mote, candIds, candEtx);
 
-  // Valid actions (one per listed neighbor)
   var validBool = [];
   for (var v=0; v<candIds.length; v++) validBool.push(true);
   var valid = Java.to(validBool, "boolean[]");
 
-  // Requesting node counters
   var ctrs = new Agent.Counters();
   ctrs.generated      = getInt32(mote, "status_gen_count");
   ctrs.delivered      = getInt32(mote, "status_fwd_count");
@@ -183,23 +169,15 @@ function decideAndSetParentFor(mote){
   ctrs.hopCount       = getInt16(mote, "status_rank");
   ctrs.rankViolations = getInt32(mote, "status_parent_switches");
 
-  // Decide
-  var SArr       = mats.SArr;
-  var candIdsArr = Java.to(candIds, "int[]");
-  var choice = agent.decide(id, SArr, valid, ctrs,
-                            candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
+  var choice = agent.decide(id, mats.SArr, valid, Java.to(candIds,"int[]"),
+                            mats.hcArr, mats.reArr, mats.qlrArr);
 
-  // Index -> parent ID
   var idx = (typeof choice === "number") ? (choice|0) : 0;
   if (idx < 0 || idx >= candIds.length) idx = 0;
   var chosenParent = candIds[idx] || 0;
 
-  // Write to mote
   setInt16(mote, "agent_parent", chosenParent);
   setInt8(mote, "agent_waiting", 0);
-
-  // Optional log (commented to reduce console noise)
-  // log.log("ASSIGN node=" + id + " parent=" + chosenParent + " cand=" + JSON.stringify(candIds) + "\n");
 }
 
 // === Global "assign all" ===
@@ -209,34 +187,71 @@ function assignParentsAll(){
     var m = sim.getMote(i);
     if (!m) continue;
     var id = m.getID();
-    if (id === 1) continue; // skip sink
-    try {
-      decideAndSetParentFor(m);
-    } catch(e){
-      // Defensive: don't kill controller on one bad mote
-      log.log("ASSIGN_ERROR node=" + id + " err=" + e + "\n");
-    }
+    if (id === 1) continue;
+    try { decideAndSetParentFor(m); }
+    catch(e){ log.log("ASSIGN_ERROR node=" + id + " err=" + e + "\n"); }
   }
 }
 
-// === Controller main loop ===
-TIMEOUT(6000000, log.testOK());
+// === Trigger refresh_event on all motes ===
+function triggerRefreshAll(){
+  for (var mote of sim.getMotes()) {
+    if (mote.getID() == 1) continue; // skip sink
+    sim.invokeSimulationThread(function() {
+      mote.getSimulation().postEvent(
+        mote,
+        mote.getSimulation().getEvent("event_refresh"),
+        null
+      );
+    });
+  }
+}
 
+// === Super-frame controller ===
+var first = true;
+var phase = 0;
+
+function superframeStep() {
+  var now = sim.getSimulationTimeMillis();
+  phase++;
+
+  // Always trigger refresh
+  triggerRefreshAll();
+
+  // End phase only after first cycle
+  if (!first) {
+    agent.endPhase();
+  }
+
+  // Always assign parents
+  assignParentsAll();
+
+  // Log one line per phase
+  log.log("[CTRL] phase=" + phase + " t=" + now +
+          " refresh=1 endPhase=" + (!first ? 1 : 0) +
+          " assign=1\n");
+
+  first = false;
+
+  // Stop if past SIM_END_MS
+  if (now >= SIM_END_MS) {
+    log.log("[CTRL] reached SIM_END_MS, stopping\n");
+    log.testOK();
+    return;
+  }
+
+  // Schedule next step
+  TIMEOUT(SUPERFRAME_MS, superframeStep);
+}
+
+// Kick off first step at 9 s
+TIMEOUT(9000, superframeStep);
+
+// === Mote log handling ===
 while (true) {
   YIELD();
-  // ----- Phase control from sink -----
-  if (msg.indexOf("ALL_NODES_TRAIN") >= 0) {
-    // Initial assignment at start
-    assignParentsAll();
-    log.log("CTRL: INIT_ASSIGN done\n");
-    continue;
+  // Only capture WRAPUP from sink
+  if (id == 1 && msg.indexOf("WRAPUP") >= 0) {
+    log.log("SINK " + time + " " + msg + "\n");
   }
-  if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-    // End phase + train + re-assign
-    agent.endPhase();
-    assignParentsAll();
-    continue;
-  }
-  // Always keep a raw log line if you want
-  log.log(time + "\t" + id + "\t" + msg + "\n");
 }
