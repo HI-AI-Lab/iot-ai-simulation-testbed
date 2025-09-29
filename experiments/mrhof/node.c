@@ -36,7 +36,7 @@
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
 #define EPS_MP          10e-12
-#define PKT_BITS        (128*8)
+#define PKT_BITS        (64*8)
 /* ===================================== */
 
 #define MAX_PARENTS_FOR_AGENT 4
@@ -74,7 +74,7 @@ typedef enum {
 typedef struct {
   uint32_t t_sent;
   uint16_t origin_id;
-  char     padding[118];
+  char     padding[58];
 } app_packet_t;
 
 typedef struct {
@@ -199,7 +199,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
   }
 
   /* --- Enforce controller's parent before each packet --- */
-  /*if(agent_parent != 0) {
+  if(agent_parent != 0) {
     rpl_dag_t *dag = rpl_get_any_dag();
     if(dag) {
       rpl_nbr_t *nbr;
@@ -217,7 +217,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         }
       }
     }
-  }*/
+  }
 
   /* --- Normal packet generation --- */
   app_packet_t pkt;
@@ -244,10 +244,6 @@ static void sniff_output(int mac_status) {
       double d = distance_nodes(node_id, parent_id);
       uint16_t len = packetbuf_datalen();
       state.residual_energy -= tx_energy(d, len * 8);
-      if(parent_id != state.last_parent_id) {
-        state.last_parent_id = parent_id;
-        state.parent_switches++;
-      }
     }
   }
 }
@@ -282,7 +278,7 @@ static void refresh_etx_table(void) {
 }
 
 static void refresh_status(void) {
-  return;
+  status_parent_switches = state.parent_switches;
   status_gen_count       = state.gen_count;
   status_fwd_count       = state.fwd_count;
   status_qloss_count     = state.q_loss_count;
@@ -342,11 +338,13 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 PROCESS_THREAD(status_refresher_process, ev, data)
 {
   static struct etimer t;
+  static uint32_t sec_counter = 0;
   PROCESS_BEGIN();
   etimer_set(&t, CLOCK_SECOND);
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-    refresh_status();
+    sec_counter++;
+	if(sec_counter % 10 >= 7 || sec_counter % 10 == 0) refresh_status();
     etimer_reset(&t);
   }
   PROCESS_END();
