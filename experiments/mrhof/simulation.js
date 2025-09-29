@@ -11,9 +11,9 @@ var INIT_ENERGY = 2000.0;
 // Index mapping must match mote's status_* fields meaning.
 var mask = Java.to(
   [true,  // 0 ETX
-   true, // 1 HC
-   true, // 2 RE
-   true, // 3 QLR
+   false, // 1 HC
+   false, // 2 RE
+   false, // 3 QLR
    false, // 4 BDI
    false, // 5 WR
    false, // 6 CC
