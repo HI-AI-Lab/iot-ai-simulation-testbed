@@ -227,14 +227,14 @@ while (true) {
   // ----- Phase control from sink -----
   if (msg.indexOf("ALL_NODES_TRAIN") >= 0) {
     // Initial assignment at start
-    assignParentsAll();
+    //assignParentsAll();
     log.log("CTRL: INIT_ASSIGN done\n");
     continue;
   }
   if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
     // End phase + train + re-assign
-    agent.endPhase();
-    assignParentsAll();
+    //agent.endPhase();
+    //assignParentsAll();
     continue;
   }
   // Always keep a raw log line if you want

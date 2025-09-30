@@ -210,8 +210,8 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         if(ip && ip_to_nodeid(ip) == agent_parent) {
           if(dag->preferred_parent != nbr) {
             rpl_neighbor_set_preferred_parent(nbr);
+			if(state.last_parent_id != agent_parent) state.parent_switches++;
             state.last_parent_id = agent_parent;
-            state.parent_switches++;
           }
           break;
         }
