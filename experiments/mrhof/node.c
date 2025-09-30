@@ -250,16 +250,6 @@ static void sniff_output(int mac_status) {
 
 /* ===== neighbor features ===== */
 
-static uint16_t etx_x100_for_neighbor(rpl_nbr_t *nbr) {
-  return 1000;
-  /*
-  if(nbr == NULL) return 1000;
-  const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
-  if(st == NULL) return 1000;
-  return (uint16_t)((100UL * st->etx) / LINK_STATS_ETX_DIVISOR);
-  */
-}
-
 static void refresh_etx_table(void) {
   
   status_num_neighbors = 0;
@@ -275,7 +265,11 @@ static void refresh_etx_table(void) {
     if(!p_ip) continue;
     
     status_neighbor_ids[status_num_neighbors] = (uint8_t)ip_to_nodeid(p_ip);
-	status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor(nbr);
+	
+	uint16_t etx_x100_for_neighbor = 1000;
+	const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
+    if(st != NULL) etx_x100_for_neighbor = ((100UL * st->etx) / LINK_STATS_ETX_DIVISOR);
+	status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor;
     status_num_neighbors++;
   }
 }
