@@ -260,11 +260,11 @@ static void refresh_etx_table(void) {
   
   status_num_neighbors = 0;
   rpl_nbr_t *nbr;
-  return;
+  
   for(nbr = nbr_table_head(rpl_neighbors);
       nbr != NULL;
       nbr = nbr_table_next(rpl_neighbors, nbr)) {
-
+    break;
     if(status_num_neighbors >= MAX_PARENTS_FOR_AGENT) break;
 
     uip_ipaddr_t *p_ip = rpl_neighbor_get_ipaddr(nbr);
