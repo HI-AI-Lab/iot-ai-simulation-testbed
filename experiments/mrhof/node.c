@@ -278,6 +278,7 @@ static void refresh_etx_table(void) {
 }
 
 static void refresh_status(void) {
+  return;
   status_parent_switches = state.parent_switches;
   status_gen_count       = state.gen_count;
   status_fwd_count       = state.fwd_count;
