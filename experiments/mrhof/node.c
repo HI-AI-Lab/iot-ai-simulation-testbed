@@ -264,12 +264,12 @@ static void refresh_etx_table(void) {
   for(nbr = nbr_table_head(rpl_neighbors);
       nbr != NULL;
       nbr = nbr_table_next(rpl_neighbors, nbr)) {
-    continue;
+    
     if(status_num_neighbors >= MAX_PARENTS_FOR_AGENT) break;
 
     uip_ipaddr_t *p_ip = rpl_neighbor_get_ipaddr(nbr);
     if(!p_ip) continue;
-
+    continue;
     status_neighbor_ids[status_num_neighbors] =
         (uint8_t)ip_to_nodeid(p_ip);
     status_etx_x100[status_num_neighbors] =
