@@ -17,7 +17,7 @@ var mask = Java.to(
    false, // 4 BDI
    false, // 5 WR
    false, // 6 CC
-   false, // 7 PC
+   true, // 7 PC
    false, // 8 SI   (we map to parent_switches just as placeholder earlier)
    false, // 9 GEN
    false, // 10 FWD
