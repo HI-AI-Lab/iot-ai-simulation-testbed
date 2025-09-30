@@ -257,6 +257,7 @@ static inline uint16_t etx_x100_for_neighbor(rpl_nbr_t *nbr) {
 }
 
 static void refresh_etx_table(void) {
+  return;
   status_num_neighbors = 0;
   rpl_nbr_t *nbr;
 
@@ -271,8 +272,8 @@ static void refresh_etx_table(void) {
 
     status_neighbor_ids[status_num_neighbors] =
         (uint8_t)ip_to_nodeid(p_ip);
-    /*status_etx_x100[status_num_neighbors] =
-        etx_x100_for_neighbor(nbr);*/
+    status_etx_x100[status_num_neighbors] =
+        etx_x100_for_neighbor(nbr);
     status_num_neighbors++;
   }
 }
