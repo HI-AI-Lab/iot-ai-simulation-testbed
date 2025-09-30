@@ -271,8 +271,8 @@ static void refresh_etx_table(void) {
 
     status_neighbor_ids[status_num_neighbors] =
         (uint8_t)ip_to_nodeid(p_ip);
-    status_etx_x100[status_num_neighbors] =
-        etx_x100_for_neighbor(nbr);
+    /*status_etx_x100[status_num_neighbors] =
+        etx_x100_for_neighbor(nbr);*/
     status_num_neighbors++;
   }
 }
@@ -303,7 +303,6 @@ static void refresh_status(void) {
       status_pc++;
     }
   }
-  return; 
   refresh_etx_table();
 }
 
