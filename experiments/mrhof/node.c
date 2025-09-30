@@ -249,7 +249,7 @@ static void sniff_output(int mac_status) {
 }
 
 /* ===== neighbor features ===== */
-/*
+
 static uint16_t etx_x100_for_neighbor(rpl_nbr_t *nbr) {
   return 1000;
   if(nbr == NULL) return 1000;
@@ -257,7 +257,7 @@ static uint16_t etx_x100_for_neighbor(rpl_nbr_t *nbr) {
   if(st == NULL) return 1000;
   return (uint16_t)((100UL * st->etx) / LINK_STATS_ETX_DIVISOR);
 }
-*/
+
 static void refresh_etx_table(void) {
   
   status_num_neighbors = 0;
