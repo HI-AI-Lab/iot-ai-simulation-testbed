@@ -278,7 +278,6 @@ static void refresh_etx_table(void) {
 }
 
 static void refresh_status(void) {
-  return;
   status_parent_switches = state.parent_switches;
   status_gen_count       = state.gen_count;
   status_fwd_count       = state.fwd_count;
@@ -293,7 +292,7 @@ static void refresh_status(void) {
                ((double)status_qloss_count / status_fwd_count) : 0.0;
   status_wr  = (status_gen_count > 0) ?
                ((double)status_fwd_count / status_gen_count) : 0.0;
-
+  return;
   /* Parent count = neighbors in table */
   status_pc = 0;
   {
@@ -304,7 +303,7 @@ static void refresh_status(void) {
       status_pc++;
     }
   }
-
+   
   refresh_etx_table();
 }
 
