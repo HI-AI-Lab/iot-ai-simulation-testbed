@@ -270,6 +270,7 @@ static void refresh_etx_table(void) {
 	const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
     //if(st != NULL) etx_x100_for_neighbor = ((100UL * st->etx) / LINK_STATS_ETX_DIVISOR);
 	//status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor;
+	st = NULL;
 	etx_x100_for_neighbor--;
     status_num_neighbors++;
   }
