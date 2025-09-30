@@ -344,7 +344,8 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     sec_counter++;
-	if(sec_counter % 10 == 9) refresh_status();
+	//if(sec_counter % 10 == 9)
+	refresh_status();
     etimer_reset(&t);
   }
   PROCESS_END();
