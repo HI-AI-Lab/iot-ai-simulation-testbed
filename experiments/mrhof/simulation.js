@@ -12,16 +12,16 @@ var INIT_ENERGY = 2000.0;
 var mask = Java.to(
   [true,  // 0 ETX
    true, // 1 HC
-   false, // 2 RE
-   false, // 3 QLR
-   true, // 4 BDI
+   true, // 2 RE
+   true, // 3 QLR
+   false, // 4 BDI
    false, // 5 WR
    false, // 6 CC
-   true, // 7 PC
+   false, // 7 PC
    false, // 8 SI   (we map to parent_switches just as placeholder earlier)
    false, // 9 GEN
    false, // 10 FWD
-   true  // 11 QLOSS
+   false  // 11 QLOSS
   ],
   "boolean[]"
 );
