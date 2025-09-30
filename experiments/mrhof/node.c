@@ -271,9 +271,10 @@ static void refresh_etx_table(void) {
 
     uip_ipaddr_t *p_ip = rpl_neighbor_get_ipaddr(nbr);
     if(!p_ip) continue;
-    continue;
+    
     status_neighbor_ids[status_num_neighbors] = (uint8_t)ip_to_nodeid(p_ip);
-    status_etx_x100[status_num_neighbors] = 1000;//etx_x100_for_neighbor(nbr);
+    continue;
+	status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor(nbr);
     status_num_neighbors++;
   }
 }
