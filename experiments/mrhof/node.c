@@ -271,7 +271,6 @@ static void refresh_etx_table(void) {
 	status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor;
 	status_num_neighbors++;
   }
-  status_num_neighbors=0;
 }
 
 static void refresh_status(void) {
