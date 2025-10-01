@@ -199,7 +199,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
   }
 
   /* --- Enforce controller's parent before each packet --- */
-  /*if(agent_parent != 0) {
+  if(agent_parent != 0) {
     rpl_dag_t *dag = rpl_get_any_dag();
     if(dag) {
       rpl_nbr_t *nbr;
@@ -217,7 +217,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         }
       }
     }
-  }*/
+  }
 
   /* --- Normal packet generation --- */
   app_packet_t pkt;
