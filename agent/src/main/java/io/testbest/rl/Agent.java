@@ -242,7 +242,6 @@ public class Agent implements Serializable {
 			" minR=" + minR +
 			" maxR=" + maxR +
 			" epsilon=" + epsilon);*/
-		*/
 	}
 
     // -------- Training --------
