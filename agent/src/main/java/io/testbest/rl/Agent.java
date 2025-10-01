@@ -172,7 +172,7 @@ public class Agent implements Serializable {
 								   double[] hcArr,
 								   double[] reArr,
 								   double[] qlrArr) {
-		return 1;
+		return 1;/*
 		double[] flat = flattenState(S);
 
 		// Close previous episode
@@ -204,13 +204,12 @@ public class Agent implements Serializable {
 			" hc=" + hcSnap +
 			" re=" + reSnap +
 			" qlr=" + qlSnap +
-			" eps=" + epsilon);
-		*/
-		return a;
+			" eps=" + epsilon);*/
+		//return a;
 	}
 
 	public synchronized void endPhase() {
-		return;
+		/*
 		double sumR = 0.0;
 		double minR = Double.POSITIVE_INFINITY;
 		double maxR = Double.NEGATIVE_INFINITY;
@@ -243,6 +242,7 @@ public class Agent implements Serializable {
 			" minR=" + minR +
 			" maxR=" + maxR +
 			" epsilon=" + epsilon);*/
+		*/
 	}
 
     // -------- Training --------
