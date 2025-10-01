@@ -199,7 +199,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
   }
 
   /* --- Enforce controller's parent before each packet --- */
-  if(agent_parent != 0) {
+  /*if(agent_parent != 0) {
     rpl_dag_t *dag = rpl_get_any_dag();
     if(dag) {
       rpl_nbr_t *nbr;
@@ -217,7 +217,7 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
         }
       }
     }
-  }
+  }*/
 
   /* --- Normal packet generation --- */
   app_packet_t pkt;
@@ -324,7 +324,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
       wrapup();
       PROCESS_EXIT();
     }
-	if(agent_parent != 0) send_a_packet(&udp_conn);
+	/*if(agent_parent != 0)*/ send_a_packet(&udp_conn);
     etimer_set(&gen_timer, poisson_next_delay_ticks());
   }
   PROCESS_END();
@@ -340,7 +340,7 @@ PROCESS_THREAD(status_refresher_process, ev, data)
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     sec_counter++;
 	//if(sec_counter % 10 == 9)
-	refresh_status();
+	//refresh_status();
     etimer_reset(&t);
   }
   PROCESS_END();

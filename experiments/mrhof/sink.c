@@ -134,11 +134,6 @@ udp_rx_callback(struct simple_udp_connection *c,
       LOG_INFO("RX origin=%u latency=%"PRId32"ms size=%uB\n",
                pkt.origin_id, latency, datalen);
 	  */
-  } else {
-	  /*
-      LOG_WARN("RX wrong size=%u from ", datalen);
-      LOG_WARN_6ADDR(sender_addr);
-      LOG_WARN_("\n");*/
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -183,12 +178,12 @@ PROCESS_THREAD(endphase_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-  LOG_INFO("ALL_NODES_TRAIN\n");
+  //LOG_INFO("ALL_NODES_TRAIN\n");
   while(1) {
 	// 10 second interval
 	etimer_set(&t, CLOCK_SECOND * 10);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-    LOG_INFO("ALL_NODES_RETRAIN\n");
+    //LOG_INFO("ALL_NODES_RETRAIN\n");
   }
   PROCESS_END();
 }
