@@ -172,6 +172,7 @@ public class Agent implements Serializable {
 								   double[] hcArr,
 								   double[] reArr,
 								   double[] qlrArr) {
+		return 1;
 		double[] flat = flattenState(S);
 
 		// Close previous episode
@@ -209,6 +210,7 @@ public class Agent implements Serializable {
 	}
 
 	public synchronized void endPhase() {
+		return;
 		double sumR = 0.0;
 		double minR = Double.POSITIVE_INFINITY;
 		double maxR = Double.NEGATIVE_INFINITY;
