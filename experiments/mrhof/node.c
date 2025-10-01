@@ -251,8 +251,6 @@ static void sniff_output(int mac_status) {
 /* ===== neighbor features ===== */
 
 static void refresh_etx_table(void) {
-  status_num_neighbors = MAX_PARENTS_FOR_AGENT;
-  return;
   status_num_neighbors = 0;
   rpl_nbr_t *nbr;
   
@@ -273,6 +271,7 @@ static void refresh_etx_table(void) {
 	status_etx_x100[status_num_neighbors] = etx_x100_for_neighbor;
 	status_num_neighbors++;
   }
+  status_num_neighbors=0;
 }
 
 static void refresh_status(void) {
