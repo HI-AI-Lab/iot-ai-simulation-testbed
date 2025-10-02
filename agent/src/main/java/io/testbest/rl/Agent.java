@@ -208,7 +208,7 @@ public class Agent implements Serializable {
 	}
 
 	public synchronized void endPhase() {
-		
+		open.clear(); return;
 		double sumR = 0.0;
 		double minR = Double.POSITIVE_INFINITY;
 		double maxR = Double.NEGATIVE_INFINITY;
