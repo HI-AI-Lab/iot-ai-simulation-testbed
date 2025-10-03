@@ -186,8 +186,8 @@ function decideAndSetParentFor(mote){
   // Decide
   var SArr       = mats.SArr;
   var candIdsArr = Java.to(candIds, "int[]");
-  //var choice = agent.decide(id, SArr, valid, ctrs,
-  //                          candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
+  var choice = agent.decide(id, SArr, valid, ctrs,
+                            candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
 
   var choice = 1;
 
