@@ -1,4 +1,4 @@
-package io.testbest.rl;
+package io.testbed.rl;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
