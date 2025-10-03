@@ -245,116 +245,149 @@ public class Agent implements Serializable {
     }
 
     // -------- Training (PER + Double-Dueling targets) --------
-    private void trainOneBatchPER() {
-        int D = replay.size();
-        int bs = Math.min(batchSize, D);
+	private void trainOneBatchPER() {
+		long t0 = System.nanoTime();
 
-        // Pool & priorities
-        Transition[] pool = replay.toArray(new Transition[0]);
-        double[] pArr = new double[D];
-        double sumP = 0.0;
-        for (int i=0;i<D;i++) {
-            double p = pri.getOrDefault(pool[i], 1.0);
-            p = Math.pow(Math.max(p, 1e-12), perAlpha);
-            pArr[i] = p; sumP += p;
-        }
-        // Prefix sums
-        double[] pref = new double[D];
-        double c=0; for (int i=0;i<D;i++){ c+=pArr[i]; pref[i]=c; }
-        final double total = c;
+		int D = replay.size();
+		int bs = Math.min(batchSize, D);
+		if (bs <= 0) return;
 
-        // Stratified sampling
-        int[] idxs = new int[bs];
-        for (int i=0;i<bs;i++) {
-            double u = ((i + rng.nextDouble())/bs) * total;
-            int lo=0, hi=D-1;
-            while (lo < hi) {
-                int mid = (lo+hi)>>>1;
-                if (pref[mid] >= u) hi = mid; else lo = mid+1;
-            }
-            idxs[i] = lo;
-        }
+		Transition[] pool = replay.toArray(new Transition[0]);
+		double[] pArr = new double[D];
+		double sumP = 0.0;
+		for (int i=0;i<D;i++) {
+			double p = pri.getOrDefault(pool[i], 1.0);
+			p = Math.pow(Math.max(p, 1e-12), perAlpha);
+			pArr[i] = p; sumP += p;
+		}
+		double[] pref = new double[D];
+		double c=0; for (int i=0;i<D;i++){ c+=pArr[i]; pref[i]=c; }
+		final double total = c;
 
-        // Importance-sampling weights
-        double[] is = new double[bs];
-        double maxW = 1e-12;
-        for (int i=0;i<bs;i++) {
-            double Pi = pArr[idxs[i]] / total;
-            double wi = Math.pow(D * Pi, -perBeta);
-            is[i] = wi; if (wi > maxW) maxW = wi;
-        }
-        for (int i=0;i<bs;i++) is[i] /= maxW; // normalize to <=1
+		int[] idxs = new int[bs];
+		for (int i=0;i<bs;i++) {
+			double u = ((i + rng.nextDouble())/bs) * total;
+			int lo=0, hi=D-1;
+			while (lo < hi) {
+				int mid = (lo+hi)>>>1;
+				if (pref[mid] >= u) hi = mid; else lo = mid+1;
+			}
+			idxs[i] = lo;
+		}
 
-        // Build tensors
-        INDArray X = Nd4j.create(bs, 1, k, Factive);
-        INDArray Yadv = Nd4j.create(bs, k);
-        INDArray Yval = Nd4j.create(bs, 1);
-        INDArray Madv = Nd4j.zeros(bs, k); // label masks (weights per output)
-        INDArray Mval = Nd4j.zeros(bs, 1);
+		double[] is = new double[bs];
+		double maxW = 1e-12;
+		for (int i=0;i<bs;i++) {
+			double Pi = pArr[idxs[i]] / total;
+			double wi = Math.pow(D * Pi, -perBeta);
+			is[i] = wi; if (wi > maxW) maxW = wi;
+		}
+		for (int i=0;i<bs;i++) is[i] /= maxW;
 
-        double[] newPriorities = new double[bs];
-        Transition[] batch = new Transition[bs];
+		INDArray X    = Nd4j.create(bs, 1, k, Factive);
+		INDArray Yadv = Nd4j.create(bs, k);
+		INDArray Yval = Nd4j.create(bs, 1);
+		INDArray Madv = Nd4j.zeros(bs, k);
+		INDArray Mval = Nd4j.zeros(bs, 1);
 
-        for (int i=0;i<bs;i++) {
-            Transition t = pool[idxs[i]];
-            batch[i] = t;
+		double[] newPriorities = new double[bs];
+		Transition[] batch = new Transition[bs];
 
-            putConvFromFlat(X, i, t.s);
+		// --- METRICS accumulators ---
+		double sumAbsTd = 0.0, maxAbsTd = 0.0;
+		double sumQ = 0.0, sumQ2 = 0.0; int qCount = 0;
 
-            // Current dueling outputs
-            double[] A_curr; double V_curr;
-            INDArray[] outCurr = online.output(false, convFromFlat(t.s,1));
-            A_curr = outCurr[0].toDoubleVector();
-            V_curr = outCurr[1].getDouble(0);
-            double meanA = mean(A_curr);
+		for (int i=0;i<bs;i++) {
+			Transition t = pool[idxs[i]];
+			batch[i] = t;
 
-            // Double DQN target
-            double targetQ;
-            if (t.done) {
-                targetQ = t.r;
-            } else {
-                double[] Q_online_next = qValues(online, t.s2);
-                int aStar = argmaxMasked(Q_online_next, t.valid2);
-                if (aStar < 0) aStar = 0;
-                INDArray[] outTgt = target.output(false, convFromFlat(t.s2,1));
-                double[] A_tgt = outTgt[0].toDoubleVector();
-                double V_tgt   = outTgt[1].getDouble(0);
-                double meanAt  = mean(A_tgt);
-                double Qnext = V_tgt + (A_tgt[aStar] - meanAt);
-                targetQ = t.r + gamma * Qnext;
-            }
+			putConvFromFlat(X, i, t.s);
 
-            // TD error for chosen action
-            int aIdx = clamp(t.a, 0, k-1);
-            double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
-            double td = targetQ - Q_curr_a;
-            newPriorities[i] = Math.abs(td) + 1e-3;
+			INDArray[] outCurr = online.output(false, convFromFlat(t.s,1));
+			double[] A_curr = outCurr[0].toDoubleVector();
+			double V_curr  = outCurr[1].getDouble(0);
+			double meanA   = mean(A_curr);
 
-            // Labels: Advantage (only chosen a supervised)
-            double[] A_lbl = Arrays.copyOf(A_curr, k);
-            A_lbl[aIdx] = targetQ - V_curr + meanA;
-            Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
-            Madv.putScalar(i, aIdx, is[i]);
+			// METRICS: Q stats for this sample
+			for (int j=0;j<k;j++){
+				double qv = V_curr + (A_curr[j] - meanA);
+				sumQ += qv; sumQ2 += qv*qv; qCount++;
+			}
 
-            // Labels: Value
-            double V_lbl = targetQ - (A_curr[aIdx] - meanA);
-            Yval.putScalar(i, 0, V_lbl);
-            Mval.putScalar(i, 0, is[i]);
-        }
+			double targetQ;
+			if (t.done) {
+				targetQ = t.r;
+			} else {
+				double[] Q_online_next = qValues(online, t.s2);
+				int aStar = argmaxMasked(Q_online_next, t.valid2);
+				if (aStar < 0) aStar = 0;
+				INDArray[] outTgt = target.output(false, convFromFlat(t.s2,1));
+				double[] A_tgt = outTgt[0].toDoubleVector();
+				double V_tgt   = outTgt[1].getDouble(0);
+				double meanAt  = mean(A_tgt);
+				double Qnext = V_tgt + (A_tgt[aStar] - meanAt);
+				targetQ = t.r + gamma * Qnext;
+			}
 
-        // Fit graph with label masks
-        MultiDataSet mds = new MultiDataSet(new INDArray[]{X},
-                new INDArray[]{Yadv, Yval},
-                null,
-                new INDArray[]{Madv, Mval});
-        online.fit(mds);
+			int aIdx = clamp(t.a, 0, k-1);
+			double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
+			double td = targetQ - Q_curr_a;
 
-        trainSteps++;
-        if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
+			// METRICS: TD error
+			double absTd = Math.abs(td);
+			sumAbsTd += absTd;
+			if (absTd > maxAbsTd) maxAbsTd = absTd;
 
-        // Update priorities
-        for (int i=0;i<bs;i++) pri.put(batch[i], newPriorities[i]);
-    }
+			newPriorities[i] = absTd + 1e-3;
+
+			double[] A_lbl = Arrays.copyOf(A_curr, k);
+			A_lbl[aIdx] = targetQ - V_curr + meanA;
+			Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
+			Madv.putScalar(i, aIdx, is[i]);
+
+			double V_lbl = targetQ - (A_curr[aIdx] - meanA);
+			Yval.putScalar(i, 0, V_lbl);
+			Mval.putScalar(i, 0, is[i]);
+		}
+
+		MultiDataSet mds = new MultiDataSet(new INDArray[]{X},
+				new INDArray[]{Yadv, Yval},
+				null,
+				new INDArray[]{Madv, Mval});
+
+		online.fit(mds);
+		double loss = 0.0;
+		try {
+			loss = online.score(mds); // masked loss for this minibatch
+		} catch (Exception ignore) {
+			// some backends may not support score with masks perfectly; ignore if it happens
+		}
+
+		trainSteps++;
+		if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
+
+		for (int i=0;i<bs;i++) pri.put(batch[i], newPriorities[i]);
+
+		// --- finalize & LOG metrics ---
+		double durMs = (System.nanoTime() - t0) / 1e6;
+		double meanAbsTd = sumAbsTd / Math.max(1, bs);
+		double meanQ = sumQ / Math.max(1, qCount);
+		double varQ = (sumQ2 / Math.max(1, qCount)) - meanQ*meanQ;
+		double stdQ = Math.sqrt(Math.max(0.0, varQ));
+
+		String line = String.format(Locale.US,
+				"phase=%d,steps=%d,replay=%d,bs=%d,loss=%.6f,mean|td|=%.6f,max|td|=%.6f,meanQ=%.6f,stdQ=%.6f,eps=%.4f,beta=%.4f,dur_ms=%.2f",
+				phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
+
+		logger.println("TRAIN " + line);
+
+		if (logger != null) {
+			logger.println(Locale.US, "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
+					phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
+			logger.flush();
+		}
+	}
+
 
     // -------- Q helpers (dueling combine) --------
     private double[] qValues(ComputationGraph net, double[] flat) {
