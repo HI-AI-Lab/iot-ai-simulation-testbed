@@ -1,17 +1,18 @@
 package io.testbed.rl;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.ConvolutionMode;
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.layers.PoolingType;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
@@ -24,12 +25,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Double-Dueling DQN Agent (CTDE-style) with PER, conv front-end, and annealing.
- * - Children call decide(); sink calls endPhase() to close episodes & train.
- * - Trains EVERY phase: exactly one mini-batch (size=32).
- * - Target network update every 5 steps. Replay capacity=1000.
- * - Dueling head: Q = V + (A - mean(A))
- * - Annealing: epsilon (exploration) and PER beta (IS weights) over phases.
+ * Paper-faithful Double-Dueling DQN with conv front-end + PER + annealing.
+ * - Train every phase: exactly 1 minibatch (size=32), target update every 5.
+ * - Replay capacity = 1000, prioritized sampling with IS weights.
+ * - Dueling combine: Q = V + (A - mean(A)).
+ * - Conv uses SAME padding to support small k / Factive.
  */
 public class Agent implements Serializable {
 
@@ -64,7 +64,6 @@ public class Agent implements Serializable {
             this.hcSnap = hcSnap; this.reSnap = reSnap; this.qlrSnap = qlrSnap;
         }
     }
-
     private static class Transition {
         final double[] s; final int a; final double r;
         final double[] s2; final boolean done; final boolean[] valid2;
@@ -73,7 +72,7 @@ public class Agent implements Serializable {
         }
     }
 
-    // -------- Feature indices (unchanged) --------
+    // -------- Feature indices --------
     private static final int IDX_ETX=0, IDX_HC=1, IDX_RE=2, IDX_QLR=3, IDX_BDI=4, IDX_WR=5,
                              IDX_CC=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
 
@@ -83,15 +82,15 @@ public class Agent implements Serializable {
     private final boolean[] featureMask;
     private final int Factive;
 
-    // Epsilon & PER-beta annealing (linear over phases)
+    // Annealing over phases
     private int phaseCount = 0;
-    private double epsilonStart = 0.30, epsilonEnd = 0.01;    // exploration
-    private int epsilonAnnealPhases = 500;                    // phases to reach epsilonEnd
-    private double betaStart = 0.40, betaEnd = 1.00;          // PER IS exponent
-    private int betaAnnealPhases = 500;                       // phases to reach betaEnd
+    private double epsilonStart = 0.30, epsilonEnd = 0.01;    // exploration ε
+    private int epsilonAnnealPhases = 500;
+    private double betaStart = 0.40, betaEnd = 1.00;          // PER IS β
+    private int betaAnnealPhases = 500;
 
-    private double epsilon = epsilonStart; // current eps
-    private double perBeta  = betaStart;   // current beta
+    private double epsilon = epsilonStart;
+    private double perBeta = betaStart;
 
     private double gamma   = 0.90;
     private int batchSize  = 32;
@@ -112,11 +111,9 @@ public class Agent implements Serializable {
     private final Map<Integer, Episode> open = new HashMap<>();
     private final Random rng = new Random(1234);
 
-    // Dueling networks: shared-style conv front, separate heads
-    private final MultiLayerNetwork onlineAdv;   // outputs k advantages
-    private final MultiLayerNetwork onlineVal;   // outputs 1 value
-    private final MultiLayerNetwork targetAdv;
-    private final MultiLayerNetwork targetVal;
+    // Dueling networks in a shared-trunk ComputationGraph
+    private final ComputationGraph online;
+    private final ComputationGraph target;
 
     private long trainSteps = 0;
     private final Map<Integer, Integer> activePos = new HashMap<>();
@@ -135,37 +132,46 @@ public class Agent implements Serializable {
         if (cnt == 0) throw new IllegalArgumentException("featureMask has no active features");
         this.Factive = cnt;
 
+        if (k < 1 || Factive < 1) {
+            throw new IllegalStateException("Invalid conv input: k=" + k + " Factive=" + Factive);
+        }
+        log("DNN input grid: k=" + k + " x Factive=" + Factive);
+
         Nd4j.getRandom().setSeed(123);
 
-        this.onlineAdv = buildConvNet(k);
-        this.onlineVal = buildConvNet(1);
-        this.onlineAdv.init();
-        this.onlineVal.init();
-
-        this.targetAdv = buildConvNet(k);
-        this.targetVal = buildConvNet(1);
-        this.targetAdv.init();
-        this.targetVal.init();
-
+        this.online = buildGraph(k);
+        this.target = buildGraph(k);
+        this.online.init();
+        this.target.init();
         hardSyncTarget();
     }
 
-    private MultiLayerNetwork buildConvNet(int outDim) {
-        // Input: [mb, 1, k, Factive]
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+    private ComputationGraph buildGraph(int outActions) {
+        ComputationGraphConfiguration.GraphBuilder gb = new ComputationGraphConfiguration.Builder()
                 .seed(123)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .updater(new Adam(1e-3))
                 .weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
-                .list()
-                .layer(new ConvolutionLayer.Builder(3,3).stride(1,1).nIn(1).nOut(16).activation(Activation.RELU).build())
-                .layer(new ConvolutionLayer.Builder(3,1).stride(1,1).nOut(32).activation(Activation.RELU).build())
-                .layer(new GlobalPoolingLayer.Builder(PoolingType.AVG).build())
-                .layer(new DenseLayer.Builder().nOut(128).activation(Activation.RELU).build())
-                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(Activation.IDENTITY).nOut(outDim).build())
-                .setInputType(InputType.convolutional(k, Factive, 1))
-                .build();
-        return new MultiLayerNetwork(conf);
+                .convolutionMode(ConvolutionMode.Same)
+                .graphBuilder()
+                .addInputs("input")
+                .setInputTypes(InputType.convolutional(k, Factive, 1))
+                // shared conv trunk
+                .addLayer("conv1", new ConvolutionLayer.Builder(3,3).stride(1,1)
+                        .nIn(1).nOut(16).activation(Activation.RELU).build(), "input")
+                .addLayer("conv2", new ConvolutionLayer.Builder(3,1).stride(1,1)
+                        .nOut(32).activation(Activation.RELU).build(), "conv1")
+                .addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
+                .addLayer("dense", new DenseLayer.Builder().nOut(128).activation(Activation.RELU).build(), "pool")
+                // dueling heads (separate small FC per head, optional but faithful)
+                .addLayer("advFC", new DenseLayer.Builder().nOut(64).activation(Activation.RELU).build(), "dense")
+                .addLayer("valFC", new DenseLayer.Builder().nOut(64).activation(Activation.RELU).build(), "dense")
+                .addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
+                .addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .activation(Activation.IDENTITY).nOut(1).build(), "valFC")
+                .setOutputs("advOut", "valOut");
+        return new ComputationGraph(gb.build());
     }
 
     // -------- Decide --------
@@ -188,7 +194,7 @@ public class Agent implements Serializable {
         }
 
         // ε-greedy over dueling Q
-        double[] q = qValues(onlineAdv, onlineVal, flat);
+        double[] q = qValues(online, flat);
         int greedy = argmaxMasked(q, valid);
         if (greedy < 0) greedy = 0;
         int a = (rng.nextDouble() < epsilon) ? randomValid(valid, k) : greedy;
@@ -221,7 +227,7 @@ public class Agent implements Serializable {
             trainOneBatchPER();
         }
 
-        // Phase-based annealing of epsilon and PER beta
+        // Phase-based annealing
         phaseCount++;
         double epsFrac  = Math.min(1.0, phaseCount / (double)Math.max(1, epsilonAnnealPhases));
         epsilon = epsilonStart + (epsilonEnd - epsilonStart) * epsFrac;
@@ -234,7 +240,7 @@ public class Agent implements Serializable {
         int D = replay.size();
         int bs = Math.min(batchSize, D);
 
-        // Snapshot pool & priorities
+        // Pool & priorities
         Transition[] pool = replay.toArray(new Transition[0]);
         double[] pArr = new double[D];
         double sumP = 0.0;
@@ -270,12 +276,11 @@ public class Agent implements Serializable {
         }
         for (int i=0;i<bs;i++) is[i] /= maxW; // normalize to <=1
 
-        // Build tensors for both heads
-        INDArray Xadv = Nd4j.create(bs, 1, k, Factive);
-        INDArray Xval = Nd4j.create(bs, 1, k, Factive);
+        // Build tensors
+        INDArray X = Nd4j.create(bs, 1, k, Factive);
         INDArray Yadv = Nd4j.create(bs, k);
         INDArray Yval = Nd4j.create(bs, 1);
-        INDArray Madv = Nd4j.zeros(bs, k); // label mask (per-output weights)
+        INDArray Madv = Nd4j.zeros(bs, k); // label masks (weights per output)
         INDArray Mval = Nd4j.zeros(bs, 1);
 
         double[] newPriorities = new double[bs];
@@ -285,25 +290,26 @@ public class Agent implements Serializable {
             Transition t = pool[idxs[i]];
             batch[i] = t;
 
-            putConvFromFlat(Xadv, i, t.s);
-            putConvFromFlat(Xval, i, t.s);
+            putConvFromFlat(X, i, t.s);
 
             // Current dueling outputs
-            double[] A_curr = advOutput(onlineAdv, t.s);
-            double V_curr   = valOutput(onlineVal, t.s);
+            double[] A_curr; double V_curr;
+            INDArray[] outCurr = online.output(false, convFromFlat(t.s,1));
+            A_curr = outCurr[0].toDoubleVector();
+            V_curr = outCurr[1].getDouble(0);
             double meanA = mean(A_curr);
-            double[] Q_curr = new double[k];
-            for (int a=0;a<k;a++) Q_curr[a] = V_curr + (A_curr[a] - meanA);
 
-            // Double DQN target with dueling combine
+            // Double DQN target
             double targetQ;
             if (t.done) {
                 targetQ = t.r;
             } else {
-                int aStar = argmaxMasked(qValues(onlineAdv, onlineVal, t.s2), t.valid2);
+                double[] Q_online_next = qValues(online, t.s2);
+                int aStar = argmaxMasked(Q_online_next, t.valid2);
                 if (aStar < 0) aStar = 0;
-                double[] A_tgt = advOutput(targetAdv, t.s2);
-                double V_tgt   = valOutput(targetVal, t.s2);
+                INDArray[] outTgt = target.output(false, convFromFlat(t.s2,1));
+                double[] A_tgt = outTgt[0].toDoubleVector();
+                double V_tgt   = outTgt[1].getDouble(0);
                 double meanAt  = mean(A_tgt);
                 double Qnext = V_tgt + (A_tgt[aStar] - meanAt);
                 targetQ = t.r + gamma * Qnext;
@@ -311,7 +317,8 @@ public class Agent implements Serializable {
 
             // TD error for chosen action
             int aIdx = clamp(t.a, 0, k-1);
-            double td = targetQ - Q_curr[aIdx];
+            double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
+            double td = targetQ - Q_curr_a;
             newPriorities[i] = Math.abs(td) + 1e-3;
 
             // Labels: Advantage (only chosen a supervised)
@@ -326,9 +333,12 @@ public class Agent implements Serializable {
             Mval.putScalar(i, 0, is[i]);
         }
 
-        // Fit both heads with label masks (weighted losses)
-        onlineAdv.fit(Xadv, Yadv, null, Madv);
-        onlineVal.fit(Xval, Yval, null, Mval);
+        // Fit graph with label masks
+        MultiDataSet mds = new MultiDataSet(new INDArray[]{X},
+                new INDArray[]{Yadv, Yval},
+                null,
+                new INDArray[]{Madv, Mval});
+        online.fit(mds);
 
         trainSteps++;
         if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
@@ -338,27 +348,18 @@ public class Agent implements Serializable {
     }
 
     // -------- Q helpers (dueling combine) --------
-    private double[] qValues(MultiLayerNetwork adv, MultiLayerNetwork val, double[] flat) {
-        double[] A = advOutput(adv, flat);
-        double V = valOutput(val, flat);
+    private double[] qValues(ComputationGraph net, double[] flat) {
+        INDArray x = convFromFlat(flat, 1);
+        INDArray[] out = net.output(false, x);
+        double[] A = out[0].toDoubleVector();
+        double V = out[1].getDouble(0);
         double m = mean(A);
         double[] Q = new double[k];
         for (int i=0;i<k;i++) Q[i] = V + (A[i] - m);
         return Q;
     }
-    private double[] advOutput(MultiLayerNetwork net, double[] flat) {
-        INDArray x = convFromFlat(flat, 1);
-        return net.output(x, false).toDoubleVector();
-    }
-    private double valOutput(MultiLayerNetwork net, double[] flat) {
-        INDArray x = convFromFlat(flat, 1);
-        return net.output(x, false).getDouble(0);
-    }
 
-    private void hardSyncTarget() {
-        targetAdv.setParams(onlineAdv.params().dup());
-        targetVal.setParams(onlineVal.params().dup());
-    }
+    private void hardSyncTarget() { target.setParams(online.params().dup()); }
 
     // -------- Replay / PER --------
     private void addReplay(Transition t) {
@@ -405,7 +406,7 @@ public class Agent implements Serializable {
         return out;
     }
 
-    // Build conv input tensor from flat [k*Factive]
+    // Conv input tensor from flat [k*Factive]
     private INDArray convFromFlat(double[] flat, int mb) {
         INDArray x = Nd4j.create(mb, 1, k, Factive);
         int idx = 0;
@@ -507,7 +508,6 @@ public class Agent implements Serializable {
         epsilonStart = Math.max(0.0, Math.min(1.0, start));
         epsilonEnd = Math.max(0.0, Math.min(1.0, end));
         epsilonAnnealPhases = Math.max(1, phases);
-        // reset current to follow new schedule
         epsilon = epsilonStart + (epsilonEnd - epsilonStart) *
                 Math.min(1.0, phaseCount / (double)Math.max(1, epsilonAnnealPhases));
     }
