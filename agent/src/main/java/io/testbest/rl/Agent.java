@@ -146,33 +146,41 @@ public class Agent implements Serializable {
         hardSyncTarget();
     }
 
-    private ComputationGraph buildGraph(int outActions) {
-        ComputationGraphConfiguration.GraphBuilder gb = new ComputationGraphConfiguration.Builder()
-                .seed(123)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .updater(new Adam(1e-3))
-                .weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
-                .convolutionMode(ConvolutionMode.Same)
-                .graphBuilder()
-                .addInputs("input")
-                .setInputTypes(InputType.convolutional(k, Factive, 1))
-                // shared conv trunk
-                .addLayer("conv1", new ConvolutionLayer.Builder(3,3).stride(1,1)
-                        .nIn(1).nOut(16).activation(Activation.RELU).build(), "input")
-                .addLayer("conv2", new ConvolutionLayer.Builder(3,1).stride(1,1)
-                        .nOut(32).activation(Activation.RELU).build(), "conv1")
-                .addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
-                .addLayer("dense", new DenseLayer.Builder().nOut(128).activation(Activation.RELU).build(), "pool")
-                // dueling heads (separate small FC per head, optional but faithful)
-                .addLayer("advFC", new DenseLayer.Builder().nOut(64).activation(Activation.RELU).build(), "dense")
-                .addLayer("valFC", new DenseLayer.Builder().nOut(64).activation(Activation.RELU).build(), "dense")
-                .addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
-                .addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .activation(Activation.IDENTITY).nOut(1).build(), "valFC")
-                .setOutputs("advOut", "valOut");
-        return new ComputationGraph(gb.build());
-    }
+	private ComputationGraph buildGraph(int outActions) {
+		ComputationGraphConfiguration conf =
+			new NeuralNetConfiguration.Builder()
+				.seed(123)
+				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+				.updater(new Adam(1e-3))
+				.weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
+				.convolutionMode(ConvolutionMode.Same)
+				.graphBuilder()
+				.addInputs("input")
+				.setInputTypes(InputType.convolutional(k, Factive, 1))
+				// shared conv trunk
+				.addLayer("conv1", new ConvolutionLayer.Builder(3,3)
+						.stride(1,1).nIn(1).nOut(16)
+						.activation(Activation.RELU).build(), "input")
+				.addLayer("conv2", new ConvolutionLayer.Builder(3,1)
+						.stride(1,1).nOut(32)
+						.activation(Activation.RELU).build(), "conv1")
+				.addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
+				.addLayer("dense", new DenseLayer.Builder().nOut(128)
+						.activation(Activation.RELU).build(), "pool")
+				// dueling heads
+				.addLayer("advFC", new DenseLayer.Builder().nOut(64)
+						.activation(Activation.RELU).build(), "dense")
+				.addLayer("valFC", new DenseLayer.Builder().nOut(64)
+						.activation(Activation.RELU).build(), "dense")
+				.addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+						.activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
+				.addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+						.activation(Activation.IDENTITY).nOut(1).build(), "valFC")
+				.setOutputs("advOut", "valOut")
+				.build();
+
+		return new ComputationGraph(conf);
+	}
 
     // -------- Decide --------
     public synchronized int decide(int moteId,
