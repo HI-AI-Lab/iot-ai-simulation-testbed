@@ -382,7 +382,7 @@ public class Agent implements Serializable {
 		logger.println("TRAIN " + line);
 
 		if (logger != null) {
-			logger.printf(Locale.US, "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
+			logger.println(Locale.US, "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
 					phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
 			logger.flush();
 		}
