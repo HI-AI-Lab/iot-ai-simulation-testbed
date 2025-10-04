@@ -376,16 +376,15 @@ public class Agent implements Serializable {
 		double stdQ = Math.sqrt(Math.max(0.0, varQ));
 
 		String line = String.format(Locale.US,
-				"phase=%d,steps=%d,replay=%d,bs=%d,loss=%.6f,mean|td|=%.6f,max|td|=%.6f,meanQ=%.6f,stdQ=%.6f,eps=%.4f,beta=%.4f,dur_ms=%.2f",
+				"TRAIN phase=%d steps=%d replay=%d bs=%d loss=%.6f mean|td|=%.6f max|td|=%.6f meanQ=%.6f stdQ=%.6f eps=%.4f beta=%.4f dur_ms=%.2f",
 				phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
 
-		logger.println("TRAIN " + line);
-
-		if (logger != null) {
-			logger.println(Locale.US, "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
-					phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
-			logger.flush();
-		}
+		logger.println(line);
+		logger.printf(Locale.US,
+				"%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
+				phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
+				meanQ, stdQ, epsilon, perBeta, durMs);
+		logger.flush();
 	}
 
 
