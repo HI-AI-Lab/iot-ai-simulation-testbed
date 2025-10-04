@@ -303,7 +303,7 @@ public class Agent implements Serializable {
 
 			putConvFromFlat(X, i, t.s);
 
-			INDArray[] outCurr = online.output(false, convFromFlat(t.s,1));
+			INDArray[] outCurr = online.output(false, convFromFlat(t.s,bs));
 			double[] A_curr = outCurr[0].toDoubleVector();
 			double V_curr  = outCurr[1].getDouble(0);
 			double meanA   = mean(A_curr);
@@ -321,7 +321,7 @@ public class Agent implements Serializable {
 				double[] Q_online_next = qValues(online, t.s2);
 				int aStar = argmaxMasked(Q_online_next, t.valid2);
 				if (aStar < 0) aStar = 0;
-				INDArray[] outTgt = target.output(false, convFromFlat(t.s2,1));
+				INDArray[] outTgt = target.output(false, convFromFlat(t.s2,bs));
 				double[] A_tgt = outTgt[0].toDoubleVector();
 				double V_tgt   = outTgt[1].getDouble(0);
 				double meanAt  = mean(A_tgt);
