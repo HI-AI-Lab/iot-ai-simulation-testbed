@@ -26,11 +26,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Paper-faithful Double-Dueling DQN with conv front-end + PER + annealing.
+ * Double-Dueling DQN with conv front-end + PER + annealing.
  * - Train every phase: exactly 1 minibatch (size=32), target update every 5.
- * - Replay capacity = 1000, prioritized sampling with IS weights.
+ * - Replay capacity = 1000, prioritized sampling.
  * - Dueling combine: Q = V + (A - mean(A)).
  * - Conv uses SAME padding to support small k / Factive.
+ * - Feature masking is INPUT-ONLY (Factive), no output masks (avoids DL4J mask shape errors).
  */
 public class Agent implements Serializable {
 
@@ -75,19 +76,19 @@ public class Agent implements Serializable {
 
     // -------- Feature indices --------
     private static final int IDX_ETX=0, IDX_HC=1, IDX_RE=2, IDX_QLR=3, IDX_BDI=4, IDX_WR=5,
-                             IDX_CC=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
+            IDX_CC=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
 
     // -------- Hyperparams (paper-aligned) --------
-    private final int k;
-    private final int Ftotal;
-    private final boolean[] featureMask;
-    private final int Factive;
+    private final int k;                    // up to 4 candidate parents
+    private final int Ftotal;               // total features (12)
+    private final boolean[] featureMask;    // length = Ftotal
+    private final int Factive;              // active (true) count
 
     // Annealing over phases
     private int phaseCount = 0;
     private double epsilonStart = 0.30, epsilonEnd = 0.01;    // exploration ε
     private int epsilonAnnealPhases = 500;
-    private double betaStart = 0.40, betaEnd = 1.00;          // PER IS β
+    private double betaStart = 0.40, betaEnd = 1.00;          // PER IS β (not applied to loss; sampling only)
     private int betaAnnealPhases = 500;
 
     private double epsilon = epsilonStart;
@@ -147,41 +148,41 @@ public class Agent implements Serializable {
         hardSyncTarget();
     }
 
-	private ComputationGraph buildGraph(int outActions) {
-		ComputationGraphConfiguration conf =
-			new NeuralNetConfiguration.Builder()
-				.seed(123)
-				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-				.updater(new Adam(1e-3))
-				.weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
-				.convolutionMode(ConvolutionMode.Same)
-				.graphBuilder()
-				.addInputs("input")
-				.setInputTypes(InputType.convolutional(k, Factive, 1))
-				// shared conv trunk
-				.addLayer("conv1", new ConvolutionLayer.Builder(3,3)
-						.stride(1,1).nIn(1).nOut(16)
-						.activation(Activation.RELU).build(), "input")
-				.addLayer("conv2", new ConvolutionLayer.Builder(3,1)
-						.stride(1,1).nOut(32)
-						.activation(Activation.RELU).build(), "conv1")
-				.addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
-				.addLayer("dense", new DenseLayer.Builder().nOut(128)
-						.activation(Activation.RELU).build(), "pool")
-				// dueling heads
-				.addLayer("advFC", new DenseLayer.Builder().nOut(64)
-						.activation(Activation.RELU).build(), "dense")
-				.addLayer("valFC", new DenseLayer.Builder().nOut(64)
-						.activation(Activation.RELU).build(), "dense")
-				.addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-						.activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
-				.addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-						.activation(Activation.IDENTITY).nOut(1).build(), "valFC")
-				.setOutputs("advOut", "valOut")
-				.build();
+    private ComputationGraph buildGraph(int outActions) {
+        ComputationGraphConfiguration conf =
+                new NeuralNetConfiguration.Builder()
+                        .seed(123)
+                        .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                        .updater(new Adam(1e-3))
+                        .weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
+                        .convolutionMode(ConvolutionMode.Same)
+                        .graphBuilder()
+                        .addInputs("input")
+                        .setInputTypes(InputType.convolutional(k, Factive, 1))
+                        // shared conv trunk
+                        .addLayer("conv1", new ConvolutionLayer.Builder(3,3)
+                                .stride(1,1).nIn(1).nOut(16)
+                                .activation(Activation.RELU).build(), "input")
+                        .addLayer("conv2", new ConvolutionLayer.Builder(3,1)
+                                .stride(1,1).nOut(32)
+                                .activation(Activation.RELU).build(), "conv1")
+                        .addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
+                        .addLayer("dense", new DenseLayer.Builder().nOut(128)
+                                .activation(Activation.RELU).build(), "pool")
+                        // dueling heads
+                        .addLayer("advFC", new DenseLayer.Builder().nOut(64)
+                                .activation(Activation.RELU).build(), "dense")
+                        .addLayer("valFC", new DenseLayer.Builder().nOut(64)
+                                .activation(Activation.RELU).build(), "dense")
+                        .addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                                .activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
+                        .addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                                .activation(Activation.IDENTITY).nOut(1).build(), "valFC")
+                        .setOutputs("advOut", "valOut")
+                        .build();
 
-		return new ComputationGraph(conf);
-	}
+        return new ComputationGraph(conf);
+    }
 
     // -------- Decide --------
     public synchronized int decide(int moteId,
@@ -244,165 +245,138 @@ public class Agent implements Serializable {
         perBeta = betaStart + (betaEnd - betaStart) * betaFrac;
     }
 
-	// ===== DROP-IN REPLACEMENT =====
-	private void trainOneBatchPER() {
-		long t0 = System.nanoTime();
+    // ===== FINAL, MASK-ENABLED (INPUT-ONLY) TRAIN FUNCTION =====
+    private void trainOneBatchPER() {
+        long t0 = System.nanoTime();
 
-		final int D  = replay.size();
-		final int bs = Math.min(batchSize, D);
-		if (bs <= 0) return;
+        int D = replay.size();
+        int bs = Math.min(batchSize, D);
+        if (bs <= 0) return;
 
-		// ---- PER sampling (unchanged) ----
-		final Transition[] pool = replay.toArray(new Transition[0]);
-		final double[] pArr = new double[D];
-		double sumP = 0.0;
-		for (int i = 0; i < D; i++) {
-			double p = pri.getOrDefault(pool[i], 1.0);
-			p = Math.pow(Math.max(p, 1e-12), perAlpha);
-			pArr[i] = p; sumP += p;
-		}
-		final double[] pref = new double[D];
-		double c = 0.0; for (int i = 0; i < D; i++) { c += pArr[i]; pref[i] = c; }
-		final double total = c;
+        // ---- PER sampling ----
+        Transition[] pool = replay.toArray(new Transition[0]);
+        double[] pArr = new double[D];
+        double sumP = 0.0;
+        for (int i = 0; i < D; i++) {
+            double p = pri.getOrDefault(pool[i], 1.0);
+            p = Math.pow(Math.max(p, 1e-12), perAlpha);
+            pArr[i] = p; sumP += p;
+        }
+        double[] pref = new double[D];
+        double c = 0.0; for (int i = 0; i < D; i++) { c += pArr[i]; pref[i] = c; }
+        final double total = c;
 
-		final int[] idxs = new int[bs];
-		for (int i = 0; i < bs; i++) {
-			final double u = ((i + rng.nextDouble()) / bs) * total;
-			int lo = 0, hi = D - 1;
-			while (lo < hi) {
-				final int mid = (lo + hi) >>> 1;
-				if (pref[mid] >= u) hi = mid; else lo = mid + 1;
-			}
-			idxs[i] = lo;
-		}
+        int[] idxs = new int[bs];
+        for (int i = 0; i < bs; i++) {
+            double u = ((i + rng.nextDouble()) / bs) * total;
+            int lo = 0, hi = D - 1;
+            while (lo < hi) {
+                int mid = (lo + hi) >>> 1;
+                if (pref[mid] >= u) hi = mid; else lo = mid + 1;
+            }
+            idxs[i] = lo;
+        }
 
-		// ---- IS weights ----
-		final double[] is = new double[bs];
-		double maxW = 1e-12;
-		for (int i = 0; i < bs; i++) {
-			final double Pi = pArr[idxs[i]] / total;
-			final double wi = Math.pow(D * Pi, -perBeta);
-			is[i] = wi; if (wi > maxW) maxW = wi;
-		}
-		for (int i = 0; i < bs; i++) is[i] /= maxW;
+        // ---- Batch tensors (input mask only) ----
+        INDArray X    = Nd4j.create(bs, 1, k, Factive);
+        INDArray Yadv = Nd4j.create(bs, k);
+        INDArray Yval = Nd4j.create(bs, 1);
 
-		// ---- Batch tensors (mask-enabled) ----
-		final INDArray X    = Nd4j.create(bs, 1, k, Factive);
-		final INDArray Yadv = Nd4j.create(bs, k);
-		final INDArray Yval = Nd4j.create(bs, 1);
-		INDArray Madv       = Nd4j.zeros(bs, k);
-		INDArray Mval       = Nd4j.zeros(bs, 1);
+        double[] newPriorities = new double[bs];
+        Transition[] batch = new Transition[bs];
 
-		final double[] newPriorities = new double[bs];
-		final Transition[] batch = new Transition[bs];
+        double sumAbsTd = 0.0, maxAbsTd = 0.0;
+        double sumQ = 0.0, sumQ2 = 0.0; int qCount = 0;
 
-		// ---- Metrics accumulators ----
-		double sumAbsTd = 0.0, maxAbsTd = 0.0;
-		double sumQ = 0.0, sumQ2 = 0.0; int qCount = 0;
+        for (int i = 0; i < bs; i++) {
+            Transition t = pool[idxs[i]];
+            batch[i] = t;
 
-		for (int i = 0; i < bs; i++) {
-			final Transition t = pool[idxs[i]];
-			batch[i] = t;
+            // Fill batch row
+            putConvFromFlat(X, i, t.s);
 
-			// Put this sample into the batch input tensor
-			putConvFromFlat(X, i, t.s);
+            // Per-sample forward for labels/targets
+            INDArray[] outCurr = online.output(false, convFromFlatSingle(t.s));
+            double[] A_curr = outCurr[0].toDoubleVector();   // shape [k]
+            double V_curr   = outCurr[1].getDouble(0);
+            double meanA    = mean(A_curr);
 
-			// Per-sample inference (batch=1) so .toDoubleVector() stays valid
-			final INDArray[] outCurr = online.output(false, convFromFlat(t.s, 1));
-			final double[] A_curr = outCurr[0].toDoubleVector();   // shape [k]
-			final double V_curr   = outCurr[1].getDouble(0);
-			final double meanA    = mean(A_curr);
+            for (int j = 0; j < k; j++) {
+                double qv = V_curr + (A_curr[j] - meanA);
+                sumQ += qv; sumQ2 += qv*qv; qCount++;
+            }
 
-			// Q stats
-			for (int j = 0; j < k; j++) {
-				final double qv = V_curr + (A_curr[j] - meanA);
-				sumQ += qv; sumQ2 += qv*qv; qCount++;
-			}
+            // Double DQN target
+            double targetQ;
+            if (t.done) {
+                targetQ = t.r;
+            } else {
+                double[] Q_online_next = qValues(online, t.s2);
+                int aStar = argmaxMasked(Q_online_next, t.valid2);
+                if (aStar < 0) aStar = 0;
+                INDArray[] outTgt = target.output(false, convFromFlatSingle(t.s2));
+                double[] A_tgt = outTgt[0].toDoubleVector();
+                double V_tgt   = outTgt[1].getDouble(0);
+                double meanAt  = mean(A_tgt);
+                double Qnext   = V_tgt + (A_tgt[aStar] - meanAt);
+                targetQ = t.r + gamma * Qnext;
+            }
 
-			// Double DQN target
-			final double targetQ;
-			if (t.done) {
-				targetQ = t.r;
-			} else {
-				final double[] Q_online_next = qValues(online, t.s2);
-				int aStar = argmaxMasked(Q_online_next, t.valid2);
-				if (aStar < 0) aStar = 0;
-				final INDArray[] outTgt = target.output(false, convFromFlat(t.s2, 1));
-				final double[] A_tgt = outTgt[0].toDoubleVector();
-				final double V_tgt   = outTgt[1].getDouble(0);
-				final double meanAt  = mean(A_tgt);
-				final double Qnext   = V_tgt + (A_tgt[aStar] - meanAt);
-				targetQ = t.r + gamma * Qnext;
-			}
+            int aIdx = clamp(t.a, 0, k - 1);
+            double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
+            double td = targetQ - Q_curr_a;
 
-			final int aIdx = clamp(t.a, 0, k - 1);
-			final double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
-			final double td = targetQ - Q_curr_a;
+            double absTd = Math.abs(td);
+            sumAbsTd += absTd;
+            if (absTd > maxAbsTd) maxAbsTd = absTd;
+            newPriorities[i] = absTd + 1e-3;
 
-			// PER priority from TD
-			final double absTd = Math.abs(td);
-			sumAbsTd += absTd;
-			if (absTd > maxAbsTd) maxAbsTd = absTd;
-			newPriorities[i] = absTd + 1e-3;
+            // Labels (no output masks)
+            double[] A_lbl = Arrays.copyOf(A_curr, k);
+            A_lbl[aIdx] = targetQ - V_curr + meanA;  // target for chosen action
+            Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
 
-			// Labels & masks (per-output masking)
-			final double[] A_lbl = java.util.Arrays.copyOf(A_curr, k);
-			A_lbl[aIdx] = targetQ - V_curr + meanA;        // set chosen action target
-			Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
-			Madv.putScalar(i, aIdx, is[i]);                // mask-weight only at chosen action
+            double V_lbl = targetQ - (A_curr[aIdx] - meanA);
+            Yval.putScalar(i, 0, V_lbl);
+        }
 
-			final double V_lbl = targetQ - (A_curr[aIdx] - meanA);
-			Yval.putScalar(i, 0, V_lbl);
-			Mval.putScalar(i, 0, is[i]);                   // per-example mask (column vector)
-		}
+        // ---- Train ----
+        MultiDataSet mds = new MultiDataSet(new INDArray[]{X}, new INDArray[]{Yadv, Yval});
+        online.fit(mds);
 
-		// Safety: ensure mask shapes == label shapes
-		if (!java.util.Arrays.equals(Madv.shape(), Yadv.shape())) Madv = Madv.reshape(Yadv.shape());
-		if (!java.util.Arrays.equals(Mval.shape(), Yval.shape())) Mval = Mval.reshape(Yval.shape());
+        double loss = 0.0;
+        try { loss = online.score(mds); } catch (Exception ignore) {}
 
-		final MultiDataSet mds = new MultiDataSet(
-				new INDArray[]{ X },
-				new INDArray[]{ Yadv, Yval },
-				null,
-				new INDArray[]{ Madv, Mval }
-		);
+        trainSteps++;
+        if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
 
-		// ---- Train + (optional) score ----
-		online.fit(mds);
+        // Update PER priorities
+        for (int i = 0; i < bs; i++) pri.put(batch[i], newPriorities[i]);
 
-		double loss = 0.0;
-		try { loss = online.score(mds); } catch (Exception ignore) { /* backend mask score quirk */ }
+        // ---- Log ----
+        double durMs = (System.nanoTime() - t0) / 1e6;
+        double meanAbsTd = sumAbsTd / Math.max(1, bs);
+        double meanQ = sumQ / Math.max(1, qCount);
+        double varQ = (sumQ2 / Math.max(1, qCount)) - meanQ * meanQ;
+        double stdQ = Math.sqrt(Math.max(0.0, varQ));
 
-		trainSteps++;
-		if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
+        String line = String.format(Locale.US,
+                "TRAIN phase=%d steps=%d replay=%d bs=%d loss=%.6f mean|td|=%.6f max|td|=%.6f meanQ=%.6f stdQ=%.6f eps=%.4f beta=%.4f dur_ms=%.2f",
+                phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
+                meanQ, stdQ, epsilon, perBeta, durMs);
 
-		// Update PER priorities
-		for (int i = 0; i < bs; i++) pri.put(batch[i], newPriorities[i]);
-
-		// ---- Log ----
-		final double durMs     = (System.nanoTime() - t0) / 1e6;
-		final double meanAbsTd = sumAbsTd / Math.max(1, bs);
-		final double meanQ     = sumQ / Math.max(1, qCount);
-		final double varQ      = (sumQ2 / Math.max(1, qCount)) - meanQ*meanQ;
-		final double stdQ      = Math.sqrt(Math.max(0.0, varQ));
-
-		final String line = String.format(
-				java.util.Locale.US,
-				"TRAIN phase=%d steps=%d replay=%d bs=%d loss=%.6f mean|td|=%.6f max|td|=%.6f meanQ=%.6f stdQ=%.6f eps=%.4f beta=%.4f dur_ms=%.2f",
-				phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs
-		);
-
-		logger.println(line);
-		logger.printf(java.util.Locale.US,
-				"%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
-				phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd, meanQ, stdQ, epsilon, perBeta, durMs);
-		logger.flush();
-	}
-	// ===== END DROP-IN =====
+        logger.println(line);
+        logger.printf(Locale.US,
+                "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
+                phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
+                meanQ, stdQ, epsilon, perBeta, durMs);
+        logger.flush();
+    }
+    // ===== END TRAIN =====
 
     // -------- Q helpers (dueling combine) --------
     private double[] qValues(ComputationGraph net, double[] flat) {
-        INDArray x = convFromFlat(flat, 1);
+        INDArray x = convFromFlatSingle(flat);
         INDArray[] out = net.output(false, x);
         double[] A = out[0].toDoubleVector();
         double V = out[1].getDouble(0);
@@ -459,15 +433,17 @@ public class Agent implements Serializable {
         return out;
     }
 
-    // Conv input tensor from flat [k*Factive]
-    private INDArray convFromFlat(double[] flat, int mb) {
-        INDArray x = Nd4j.create(mb, 1, k, Factive);
+    // Build a single-sample conv input tensor from flat [k*Factive] -> shape [1,1,k,Factive]
+    private INDArray convFromFlatSingle(double[] flat) {
+        INDArray x = Nd4j.create(1, 1, k, Factive);
         int idx = 0;
         for (int i=0;i<k;i++)
             for (int j=0;j<Factive;j++)
                 x.putScalar(0, 0, i, j, (idx < flat.length ? flat[idx++] : 0.0));
         return x;
     }
+
+    // Put one sample into row 'batchIdx' of X (shape [bs,1,k,Factive])
     private void putConvFromFlat(INDArray X, int batchIdx, double[] flat) {
         int idx = 0;
         for (int i=0;i<k;i++)
