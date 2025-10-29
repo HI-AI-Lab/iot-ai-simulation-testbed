@@ -11,6 +11,7 @@
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-neighbor.h"   /* <-- needed */
 #include "net/routing/rpl-lite/rpl-dag.h"
+#include "net/routing/rpl-lite/rpl-mrhof.h"      /* <-- MRHOF_ETX_DIVISOR */
 #include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/nbr-table.h"                       /* <-- needed */
@@ -57,8 +58,8 @@ uint32_t status_parent_switches = 0;
 
 /* Neighbor candidate table (top-K by full path ETX) */
 uint8_t  status_neighbor_ids[MAX_PARENTS_FOR_AGENT];
-uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];       /* FULL path ETX*100 via each candidate */
-int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];   /* RSSI (dBm, 0x7fff unknown) */
+uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];        /* FULL path ETX*100 via each candidate */
+int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];    /* RSSI (dBm, 0x7fff unknown) */
 uint8_t  status_num_neighbors = 0;
 
 /* Agent handshake */
@@ -322,13 +323,19 @@ static void refresh_etx_table(void) {
     const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
     if(!ip) continue;
 
-    /* rank if we chose this neighbor -> convert to FULL path ETX*100 */
-    uint16_t rank_via = rpl_neighbor_rank_via_nbr(dag, nbr);
+    /* rank via this neighbor -> convert to FULL path ETX*100 */
+    uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
     if(rank_via == 0 || rank_via == RPL_INFINITE_RANK) continue;
 
-    uint16_t path_etx_x100 = (uint16_t)(
-      ((uint32_t)rank_via * 100UL + (RPL_DAG_MC_ETX_DIVISOR/2)) / RPL_DAG_MC_ETX_DIVISOR
-    );
+    uint16_t path_etx_x100 = 0;
+    if(rank_via > RPL_ROOT_RANK) {
+      uint32_t delta = (uint32_t)(rank_via - RPL_ROOT_RANK);
+      /* path_etx ≈ (delta * MRHOF_ETX_DIVISOR) / RPL_MIN_HOPRANKINC */
+      uint32_t etx_x100 = (delta * (uint32_t)MRHOF_ETX_DIVISOR * 100UL + (RPL_MIN_HOPRANKINC/2))
+                          / (uint32_t)RPL_MIN_HOPRANKINC;
+      if(etx_x100 > 0xFFFF) etx_x100 = 0xFFFF;
+      path_etx_x100 = (uint16_t)etx_x100;
+    }
 
     const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
     int16_t rssi_dbm = st ? st->rssi : 0x7fff;
