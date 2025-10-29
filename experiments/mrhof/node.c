@@ -11,7 +11,6 @@
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-neighbor.h"   /* <-- needed */
 #include "net/routing/rpl-lite/rpl-dag.h"
-#include "net/routing/rpl-lite/rpl-mrhof.h"      /* <-- MRHOF_ETX_DIVISOR */
 #include "net/routing/routing.h"
 #include "net/netstack.h"
 #include "net/nbr-table.h"                       /* <-- needed */
@@ -23,6 +22,18 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+/* ==== MRHOF / RPL constants (inline safe defaults) ==== */
+#ifndef MRHOF_ETX_DIVISOR
+#define MRHOF_ETX_DIVISOR 128     /* Contiki-NG default */
+#endif
+#ifndef RPL_ROOT_RANK
+#define RPL_ROOT_RANK 256         /* Contiki-NG default */
+#endif
+#ifndef RPL_MIN_HOPRANKINC
+#define RPL_MIN_HOPRANKINC 256    /* Contiki-NG default */
+#endif
+/* ====================================================== */
 
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
