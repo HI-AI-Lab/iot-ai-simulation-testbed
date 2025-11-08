@@ -118,6 +118,7 @@ udp_rx_callback(struct simple_udp_connection *c,
   if(datalen == sizeof(app_packet_t)) {
       app_packet_t pkt;
       memcpy(&pkt, data, sizeof(pkt));
+	  if(pkt.t_sent == 0) { return; }
       uint32_t t_recv = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
       int32_t latency = (int32_t)(t_recv - pkt.t_sent);
       if(latency < 0) latency = 0;
