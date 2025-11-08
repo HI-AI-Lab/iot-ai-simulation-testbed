@@ -423,20 +423,31 @@ public class Agent implements Serializable {
         double v = num / den; return Double.isFinite(v) ? v : 0.0;
     }
 
-    private double[] flattenState(double[][] S) {
-        double[] out = new double[k * Factive];
-        int idx = 0;
-        for (int i=0;i<k;i++) {
-            double[] row = (S != null && i < S.length) ? S[i] : null;
-            for (int j=0;j<Ftotal;j++) {
-                if (featureMask[j]) {
-                    double v = (row != null && j < row.length) ? row[j] : 0.0;
-                    out[idx++] = scaleFeature(j, v);
-                }
-            }
-        }
-        return out;
-    }
+	private double[] flattenState(double[][] S) {
+		// Sanity check: controller rows must be compressed to Factive
+		if (S != null) {
+			for (int i = 0; i < Math.min(k, S.length); i++) {
+				if (S[i] != null && S[i].length != Factive) {
+					log("WARN: row " + i + " length=" + S[i].length + " != Factive=" + Factive);
+				}
+			}
+		}
+
+		// Consume compressed rows sequentially (matches controller mask)
+		double[] out = new double[k * Factive];
+		int p = 0; // write pointer into out
+		for (int i = 0; i < k; i++) {
+			double[] row = (S != null && i < S.length) ? S[i] : null;
+			int pos = 0; // read pointer over compressed row
+			for (int j = 0; j < Ftotal; j++) {
+				if (featureMask[j]) {
+					double v = (row != null && pos < row.length) ? row[pos++] : 0.0;
+					out[p++] = scaleFeature(j, v);
+				}
+			}
+		}
+		return out;
+	}
 
     // Build a single-sample conv input tensor from flat [k*Factive] -> shape [1,1,k,Factive]
     private INDArray convFromFlatSingle(double[] flat) {
