@@ -1,35 +1,39 @@
 // === Load Agent class ===
-var Agent = Java.type('io.testbed.rl.Agent');
-var ByteBuffer = Java.type("java.nio.ByteBuffer");
-var ByteOrder  = Java.type("java.nio.ByteOrder");
+var Agent     = Java.type('io.testbed.rl.Agent');
+var ByteBuffer= Java.type('java.nio.ByteBuffer');
+var ByteOrder = Java.type('java.nio.ByteOrder');
 
 // === Config ===
 var K = 4;
 var INIT_ENERGY = 2000.0;
 
-// === Feature mask (ablation-friendly) ===
-// Index mapping must match mote's status_* fields meaning.
+// === RPL constants (match node.c defaults) ===
+var RPL_ROOT_RANK     = 256;
+var RPL_MIN_HOPRANKINC= 256;
+
+// === Feature mask (aligned with indices below)
+// 0 ETX, 1 HC(hops), 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
+// Enable/disable by flipping booleans here:
 var mask = Java.to(
-  [true,  // 0 ETX
-   true, // 1 HC
-   true, // 2 RE
-   true, // 3 QLR
-   false, // 4 BDI
-   false, // 5 WR
-   false, // 6 CC
-   false, // 7 PC
-   false, // 8 SI   (we map to parent_switches just as placeholder earlier)
-   false, // 9 GEN
-   false, // 10 FWD
-   false  // 11 QLOSS
-  ],
-  "boolean[]"
+  [true,  // 0 ETX   (per-candidate, from requester)
+   true,  // 1 HC    (parent hop-count proxy via rank)
+   true,  // 2 RE    (parent residual energy)
+   true,  // 3 QLR   (parent queue loss ratio)
+   false, // 4 BDI   (parent battery depletion index)
+   false, // 5 WR    (parent write ratio)
+   true,  // 6 RSSI  (per-candidate RSSI from requester -> normalized 0..10)
+   false, // 7 PC    (parent neighbor count)
+   false, // 8 SI    (parent switches)
+   false, // 9 GEN   (parent gen count)
+   false, // 10 FWD  (parent fwd count)
+   false  // 11 QLOSS(parent qloss count)
+  ], "boolean[]"
 );
 
 // === Instantiate Agent ===
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-// === Low-level memory helpers ===
+// === Helpers ===
 function symOf(mote, varname){
   var sym = mote.getMemory().getSymbolMap().get(varname);
   if (sym == null) throw "Variable not found: " + varname + " on mote " + mote.getID();
@@ -43,12 +47,17 @@ function getInt32(mote, varname){
 function getInt16(mote, varname){
   var s = symOf(mote, varname);
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
-  return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF;
+  return (ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF);
+}
+function getI16(mote, varname){ // signed 16-bit
+  var s = symOf(mote, varname);
+  var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
+  return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
 }
 function getByte(mote, varname){
   var s = symOf(mote, varname);
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
-  return bytes[0] & 0xFF;
+  return (bytes[0] & 0xFF);
 }
 function getDouble(mote, varname){
   var s = symOf(mote, varname);
@@ -68,7 +77,7 @@ function setInt8(mote, varname, value){
   mote.getMemory().setMemorySegment(s.addr, buf.array());
 }
 
-// === Array readers for neighbor tables ===
+// Arrays
 function getU8Array(mote, varname, n){
   var s = symOf(mote, varname);
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
@@ -81,10 +90,34 @@ function getU16Array(mote, varname, n){
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
   var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
   var arr = [];
-  for (var i=0; i<n && (i*2+1) < bytes.length; i++){
-    arr.push(bb.getShort(i*2) & 0xFFFF);
-  }
+  for (var i=0; i<n && (i*2+1) < bytes.length; i++) arr.push(bb.getShort(i*2) & 0xFFFF);
   return arr;
+}
+function getI16Array(mote, varname, n){ // signed 16-bit
+  var s = symOf(mote, varname);
+  var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
+  var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+  var arr = [];
+  for (var i=0; i<n && (i*2+1) < bytes.length; i++) arr.push(bb.getShort(i*2));
+  return arr;
+}
+
+// Unsigned coercion for JS (keep 32-bit counters non-negative)
+function u32(x){ return (x >>> 0); }
+
+// RPL rank -> hop-count
+function rankToHops(rank){
+  if (!Number.isFinite(rank) || rank <= 0) return 0;
+  if (rank < RPL_ROOT_RANK) return 0;
+  return Math.max(0, Math.floor((rank - RPL_ROOT_RANK) / RPL_MIN_HOPRANKINC));
+}
+
+// RSSI dBm -> [0..10], 0x7fff (unknown) -> 0
+function rssiTo0to10(dbm){
+  if (dbm === 0x7fff || !Number.isFinite(dbm)) return 0.0;
+  var v = (dbm + 100) / 7.0; // -100 -> 0, ~-30 -> ~10
+  if (v < 0) v = 0; if (v > 10) v = 10;
+  return v;
 }
 
 // === Build candidate features for one mote ===
@@ -92,22 +125,24 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
   var S = [];
   var hcArr = [], reArr = [], qlrArr = [];
 
+  // per-candidate RSSI array from the requester
+  var candRssiI16 = getI16Array(mote, "status_link_rssi_dbm", K);
+
   for (var r = 0; r < candIds.length; r++) {
     var row = [];
     var parentMote = sim.getMoteWithID(candIds[r]);
 
-    // Prepare feature row according to mask
     for (var j = 0; j < mask.length; j++) {
       if (!mask[j]) continue;
       var val = 0.0;
       switch (j) {
-        case 0:  val = candEtx[r]; break;                                   // ETX
-        case 1:  val = parentMote ? getInt16(parentMote, "status_rank") : 0; break;  // HC (rank proxy)
+        case 0:  val = candEtx[r]; break; // ETX (path ETX from requester)
+        case 1:  val = parentMote ? rankToHops(getInt16(parentMote, "status_rank")) : 0; break;
         case 2:  val = parentMote ? getDouble(parentMote, "status_residual_energy") : 0; break;
         case 3:  val = parentMote ? getDouble(parentMote, "status_qlr") : 0; break;
         case 4:  val = parentMote ? getDouble(parentMote, "status_bdi") : 0; break;
         case 5:  val = parentMote ? getDouble(parentMote, "status_wr") : 0; break;
-        case 6:  val = 0.0; break; // CC not wired
+        case 6:  val = rssiTo0to10( (r < candRssiI16.length) ? candRssiI16[r] : 0x7fff ); break;
         case 7:  val = parentMote ? getInt16(parentMote, "status_pc") : 0; break;
         case 8:  val = parentMote ? getInt32(parentMote, "status_parent_switches") : 0; break;
         case 9:  val = parentMote ? getInt32(parentMote, "status_gen_count") : 0; break;
@@ -119,9 +154,9 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
 
     S[r] = Java.to(row, "double[]");
 
-    // ground-truth arrays (for Agent internals)
+    // Ground-truth arrays for reward (from parent snapshot)
     if (parentMote) {
-      hcArr.push(getInt16(parentMote, "status_rank"));
+      hcArr.push(rankToHops(getInt16(parentMote, "status_rank")));
       reArr.push(getDouble(parentMote, "status_residual_energy"));
       qlrArr.push(getDouble(parentMote, "status_qlr"));
     } else {
@@ -139,15 +174,11 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
 
 // === Decide & set parent for a single mote ===
 function decideAndSetParentFor(mote){
-  var id = mote.getID();
-  if (id === 1) return; // never set for sink
+  var mid = mote.getID();
+  if (mid === 1) return; // sink
 
   var nn = getByte(mote, "status_num_neighbors") | 0;
-  if (nn <= 0) {
-    // No neighbors yet → clear waiting and skip
-    setInt8(mote, "agent_waiting", 0);
-    return;
-  }
+  if (nn <= 0) { setInt8(mote, "agent_waiting", 0); return; }
 
   var candIdsU8  = getU8Array(mote, "status_neighbor_ids", K);
   var candEtxU16 = getU16Array(mote, "status_etx_x100",   K);
@@ -159,49 +190,49 @@ function decideAndSetParentFor(mote){
     candIds.push(candIdsU8[i] | 0);
     candEtx.push((candEtxU16[i] | 0) / 100.0);
   }
+  if (candIds.length === 0) { setInt8(mote, "agent_waiting", 0); return; }
 
-  if (candIds.length === 0) {
-    setInt8(mote, "agent_waiting", 0);
-    return;
-  }
-
-  // Build feature matrix for these candidates
+  // Build features
   var mats = buildCandidateMatrixFor(mote, candIds, candEtx);
 
-  // Valid actions (one per listed neighbor)
+  // Valid actions (one per candidate)
   var validBool = [];
   for (var v=0; v<candIds.length; v++) validBool.push(true);
   var valid = Java.to(validBool, "boolean[]");
 
-  // Requesting node counters
+  // Requesting-node counters
   var ctrs = new Agent.Counters();
-  ctrs.generated      = getInt32(mote, "status_gen_count");
-  ctrs.delivered      = getInt32(mote, "status_fwd_count");
-  ctrs.dropped        = getInt32(mote, "status_qloss_count");
+  ctrs.generated      = u32(getInt32(mote, "status_gen_count"));
+  ctrs.delivered      = u32(getInt32(mote, "status_fwd_count"));
+  ctrs.dropped        = u32(getInt32(mote, "status_qloss_count"));
   ctrs.residualEnergy = getDouble(mote, "status_residual_energy");
-  ctrs.etx            = (candEtxU16.length > 0) ? (candEtxU16[0] | 0) : 0;
-  ctrs.hopCount       = getInt16(mote, "status_rank");
-  ctrs.rankViolations = getInt32(mote, "status_parent_switches");
+  ctrs.hopCount       = rankToHops(getInt16(mote, "status_rank"));
+  ctrs.rankViolations = u32(getInt32(mote, "status_parent_switches"));
+  // use minimum path ETX*100 among candidates (0 if none)
+  var minEtx100 = 0;
+  for (var i2=0; i2<nn && i2<candEtxU16.length; i2++){
+    var v = (candEtxU16[i2] | 0);
+    if (i2===0 || v < minEtx100) minEtx100 = v;
+  }
+  ctrs.etx = minEtx100;
 
-  // Decide
+  // Decide (RL)
   var SArr       = mats.SArr;
   var candIdsArr = Java.to(candIds, "int[]");
-  var choice = agent.decide(id, SArr, valid, ctrs,
-                            candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
-
-  var choice = 1;
+  var choice = agent.decide(mid, SArr, valid, ctrs, candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
 
   // Index -> parent ID
   var idx = (typeof choice === "number") ? (choice|0) : 0;
   if (idx < 0 || idx >= candIds.length) idx = 0;
-  var chosenParent = candIds[idx] || 0;
+  var chosenParent = (candIds[idx] | 0);
+  if (!chosenParent) { setInt8(mote, "agent_waiting", 0); return; }
 
   // Write to mote
   setInt16(mote, "agent_parent", chosenParent);
   setInt8(mote, "agent_waiting", 0);
 
-  // Optional log (commented to reduce console noise)
-  // log.log("ASSIGN node=" + id + " parent=" + chosenParent + " cand=" + JSON.stringify(candIds) + "\n");
+  // Debug (optional)
+  // log.log("ASSIGN node=" + mid + " parent=" + chosenParent + " cand=" + JSON.stringify(candIds) + "\n");
 }
 
 // === Global "assign all" ===
@@ -210,14 +241,10 @@ function assignParentsAll(){
   for (var i=0; i<count; i++){
     var m = sim.getMote(i);
     if (!m) continue;
-    var id = m.getID();
-    if (id === 1) continue; // skip sink
-    try {
-      decideAndSetParentFor(m);
-    } catch(e){
-      // Defensive: don't kill controller on one bad mote
-      log.log("ASSIGN_ERROR node=" + id + " err=" + e + "\n");
-    }
+    var mid = m.getID();
+    if (mid === 1) continue; // skip sink
+    try { decideAndSetParentFor(m); }
+    catch(e){ log.log("ASSIGN_ERROR node=" + mid + " err=" + e + "\n"); }
   }
 }
 
@@ -226,19 +253,16 @@ TIMEOUT(6000000, log.testOK());
 
 while (true) {
   YIELD();
-  // ----- Phase control from sink -----
   if (msg.indexOf("ALL_NODES_TRAIN") >= 0) {
-    // Initial assignment at start
     assignParentsAll();
     log.log("CTRL: INIT_ASSIGN done\n");
     continue;
   }
   if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-    // End phase + train + re-assign
     agent.endPhase();
     assignParentsAll();
     continue;
   }
-  // Always keep a raw log line if you want
+  // raw passthrough log (Cooja vars: time,id,msg)
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }

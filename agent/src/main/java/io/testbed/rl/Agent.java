@@ -31,7 +31,10 @@ import java.io.PrintWriter;
  * - Replay capacity = 1000, prioritized sampling.
  * - Dueling combine: Q = V + (A - mean(A)).
  * - Conv uses SAME padding to support small k / Factive.
- * - Feature masking is INPUT-ONLY (Factive), no output masks (avoids DL4J mask shape errors).
+ * - Feature masking is INPUT-ONLY (Factive), no output masks.
+ *
+ * Feature index contract (must match controller.js):
+ * 0 ETX, 1 HC(hops), 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
  */
 public class Agent implements Serializable {
 
@@ -74,11 +77,11 @@ public class Agent implements Serializable {
         }
     }
 
-    // -------- Feature indices --------
+    // -------- Feature indices (aligned with controller) --------
     private static final int IDX_ETX=0, IDX_HC=1, IDX_RE=2, IDX_QLR=3, IDX_BDI=4, IDX_WR=5,
-            IDX_CC=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
+            IDX_RSSI=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
 
-    // -------- Hyperparams (paper-aligned) --------
+    // -------- Hyperparams --------
     private final int k;                    // up to 4 candidate parents
     private final int Ftotal;               // total features (12)
     private final boolean[] featureMask;    // length = Ftotal
@@ -88,7 +91,7 @@ public class Agent implements Serializable {
     private int phaseCount = 0;
     private double epsilonStart = 0.30, epsilonEnd = 0.01;    // exploration ε
     private int epsilonAnnealPhases = 500;
-    private double betaStart = 0.40, betaEnd = 1.00;          // PER IS β (not applied to loss; sampling only)
+    private double betaStart = 0.40, betaEnd = 1.00;          // PER β (sampling only)
     private int betaAnnealPhases = 500;
 
     private double epsilon = epsilonStart;
@@ -113,7 +116,7 @@ public class Agent implements Serializable {
     private final Map<Integer, Episode> open = new HashMap<>();
     private final Random rng = new Random(1234);
 
-    // Dueling networks in a shared-trunk ComputationGraph
+    // Dueling networks
     private final ComputationGraph online;
     private final ComputationGraph target;
 
@@ -245,7 +248,7 @@ public class Agent implements Serializable {
         perBeta = betaStart + (betaEnd - betaStart) * betaFrac;
     }
 
-    // ===== FINAL, MASK-ENABLED (INPUT-ONLY) TRAIN FUNCTION =====
+    // ===== Train (PER) =====
     private void trainOneBatchPER() {
         long t0 = System.nanoTime();
 
@@ -295,7 +298,7 @@ public class Agent implements Serializable {
             // Fill batch row
             putConvFromFlat(X, i, t.s);
 
-            // Per-sample forward for labels/targets
+            // Forward for labels
             INDArray[] outCurr = online.output(false, convFromFlatSingle(t.s));
             double[] A_curr = outCurr[0].toDoubleVector();   // shape [k]
             double V_curr   = outCurr[1].getDouble(0);
@@ -333,7 +336,7 @@ public class Agent implements Serializable {
 
             // Labels (no output masks)
             double[] A_lbl = Arrays.copyOf(A_curr, k);
-            A_lbl[aIdx] = targetQ - V_curr + meanA;  // target for chosen action
+            A_lbl[aIdx] = targetQ - V_curr + meanA;  // target advantage for chosen action
             Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
 
             double V_lbl = targetQ - (A_curr[aIdx] - meanA);
@@ -404,8 +407,10 @@ public class Agent implements Serializable {
 
     // -------- Reward --------
     private double rewardFromRank(double hcTrue, double reTrue, double qlrTrue) {
+        // Energy consumption ratio from residual energy snapshot
         double ecr = 1.0 - safeDiv(reTrue, initialEnergy);
         if (ecr < 0.0) ecr = 0.0; if (ecr > 1.0) ecr = 1.0;
+        // Lower is better for (HC + w1*QLR + w2*ECR)
         double rank = hcTrue + w1_QU * qlrTrue + w2_ECR * ecr;
         if (!Double.isFinite(rank) || rank <= 0.0) rank = 1.0;
         double r = 1.0 / rank;
@@ -456,13 +461,6 @@ public class Agent implements Serializable {
         return Arrays.copyOf(valid, valid.length);
     }
 
-    private static double[] normalizeLen(double[] a, int n) {
-        if (a != null && a.length == n) return a;
-        double[] b = new double[n];
-        if (a != null) System.arraycopy(a, 0, b, 0, Math.min(a.length, n));
-        return b;
-    }
-
     private static int clamp(int x, int lo, int hi) { return Math.max(lo, Math.min(hi, x)); }
 
     private static double valOrZero(double[] arr, int i) {
@@ -490,22 +488,32 @@ public class Agent implements Serializable {
         double s=0; for (double v:a) s+=v; return s/a.length;
     }
 
+    // IMPORTANT: keep these normalizations consistent with controller exports.
     private double scaleFeature(int featIdx, double v) {
         if (!Double.isFinite(v)) return 0.0;
         switch (featIdx) {
-            case IDX_ETX:   return Math.max(1.0, Math.min(10.0, v)) / 10.0;
-            case IDX_HC:    return v / 16.0;
-            case IDX_RE:    return Math.max(0.0, Math.min(1.0, v / initialEnergy));
-            case IDX_QLR:
-            case IDX_BDI:
-            case IDX_WR:    return Math.max(0.0, Math.min(1.0, v));
-            case IDX_CC:
-            case IDX_PC:    return Math.min(v, 10.0) / 10.0;
-            case IDX_SI:    return Math.log1p(Math.max(0.0, v)) / 5.0;
+            case IDX_ETX:   // path ETX (controller: raw ETX, typically 1..10+)
+                return Math.max(1.0, Math.min(10.0, v)) / 10.0;
+            case IDX_HC:    // hop-count (controller: integer hops derived from rank)
+                return v / 16.0;
+            case IDX_RE:    // residual energy absolute (J)
+                return Math.max(0.0, Math.min(1.0, v / initialEnergy));
+            case IDX_QLR:   // 0..1
+            case IDX_BDI:   // 0..1
+            case IDX_WR:    // 0..1
+                return Math.max(0.0, Math.min(1.0, v));
+            case IDX_RSSI:  // controller maps -100..-30 dBm -> 0..10; normalize to 0..1
+                return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
+            case IDX_PC:    // parent’s neighbor count
+                return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
+            case IDX_SI:    // switches (count) — log1p squash
+                return Math.log1p(Math.max(0.0, v)) / 5.0;
             case IDX_GEN:
             case IDX_FWD:
-            case IDX_QLOSS: return Math.log1p(Math.max(0.0, v)) / 10.0;
-            default:        return v;
+            case IDX_QLOSS: // counters — log1p squash
+                return Math.log1p(Math.max(0.0, v)) / 10.0;
+            default:
+                return v;
         }
     }
 
