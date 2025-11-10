@@ -1,39 +1,118 @@
 // === Load Agent class ===
-var Agent     = Java.type('io.testbed.rl.Agent');
-var ByteBuffer= Java.type('java.nio.ByteBuffer');
-var ByteOrder = Java.type('java.nio.ByteOrder');
+var Agent      = Java.type('io.testbed.rl.Agent');
+var ByteBuffer = Java.type('java.nio.ByteBuffer');
+var ByteOrder  = Java.type('java.nio.ByteOrder');
 
-// === Config ===
+// ======== CONFIG ========
 var K = 4;
 var INIT_ENERGY = 2000.0;
 
-// === RPL constants (match node.c defaults) ===
-var RPL_ROOT_RANK     = 256;
-var RPL_MIN_HOPRANKINC= 256;
+// Path to YAML config (change if needed)
+var MASK_PATH = "/workspace/testbed/mask.yaml";
 
-// === Feature mask (aligned with indices below)
-// 0 ETX, 1 HC(hops), 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
-// Enable/disable by flipping booleans here:
-var mask = Java.to(
-  [true,  // 0 ETX   (per-candidate, from requester)
-   true,  // 1 HC    (parent hop-count proxy via rank)
-   true,  // 2 RE    (parent residual energy)
-   true,  // 3 QLR   (parent queue loss ratio)
-   false, // 4 BDI   (parent battery depletion index)
-   false, // 5 WR    (parent write ratio)
-   true,  // 6 RSSI  (per-candidate RSSI from requester -> normalized 0..10)
-   false, // 7 PC    (parent neighbor count)
-   false, // 8 SI    (parent switches)
-   false, // 9 GEN   (parent gen count)
-   false, // 10 FWD  (parent fwd count)
-   false  // 11 QLOSS(parent qloss count)
-  ], "boolean[]"
-);
+// RPL constants (match firmware)
+var RPL_ROOT_RANK      = 256;
+var RPL_MIN_HOPRANKINC = 256;
 
-// === Instantiate Agent ===
-var agent = new Agent(K, mask, INIT_ENERGY);
+// ======== YAML LOADER (minimal, for this schema) ========
+function loadMaskYaml(path) {
+  var Files = Java.type('java.nio.file.Files');
+  var Paths = Java.type('java.nio.file.Paths');
+  var StandardCharsets = Java.type('java.nio.charset.StandardCharsets');
 
-// === Helpers ===
+  var text = null;
+  try {
+    text = new java.lang.String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+  } catch (e) {
+    log.log("MASK: could not read " + path + " (" + e + "). Using fallback mask.\n");
+    return null; // signal fallback
+  }
+
+  // defaults (fallback baseline if something is missing)
+  var cfg = {
+    run: { id: "unspecified", notes: "" },
+    features: {
+      // baseline: turn everything OFF unless overridden
+      all: false,
+      etx:false, hc:false, re:false, qlr:false,
+      bdi:false, wr:false, rssi:false, pc:false, si:false,
+      gen:false, fwd:false, qloss:false
+    }
+  };
+
+  // super-simple YAML parser for our 2-level structure
+  var lines = ("" + text).split(/\r?\n/);
+  var section = null;
+  for (var li = 0; li < lines.length; li++) {
+    var raw = lines[li];
+    var l = raw.replace(/\t/g, "  ");
+    // strip comments (keep '#' in notes by only stripping if a space precedes it)
+    var hash = l.indexOf(" #");
+    if (hash >= 0) l = l.substring(0, hash);
+    l = l.trim();
+    if (!l) continue;
+
+    if (l === "run:" || l === "features:") { section = l.slice(0, -1); continue; }
+
+    var m = l.match(/^([A-Za-z0-9_\-]+)\s*:\s*(.*)$/);
+    if (!m) continue;
+    var key = m[1].toLowerCase();
+    var valRaw = m[2];
+
+    // parse boolean / string
+    var val;
+    if (/^(true|false)$/i.test(valRaw)) {
+      val = /^true$/i.test(valRaw);
+    } else {
+      // strip surrounding quotes for strings if any
+      val = valRaw.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+    }
+
+    if (section === "run") {
+      if (key === "id")    cfg.run.id = "" + val;
+      if (key === "notes") cfg.run.notes = "" + val;
+    } else if (section === "features") {
+      if (key === "all") cfg.features.all = !!val;
+      else if (key in cfg.features) cfg.features[key] = !!val;
+      // unknown keys ignored
+    }
+  }
+
+  // apply "all" baseline then overrides already done
+  return cfg;
+}
+
+function buildMaskFromConfig(cfg) {
+  // feature order MUST match Agent & controller:
+  // 0 ETX, 1 HC, 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
+  var order = ["etx","hc","re","qlr","bdi","wr","rssi","pc","si","gen","fwd","qloss"];
+
+  // start from all=false, unless features.all==true then flip all true, then override with explicit keys
+  var f = {};
+  for (var i=0;i<order.length;i++) f[order[i]] = cfg && cfg.features && cfg.features.all ? true : false;
+  if (cfg && cfg.features) {
+    for (var k in cfg.features) {
+      if (k === "all") continue;
+      if (f.hasOwnProperty(k)) f[k] = !!cfg.features[k];
+    }
+  }
+
+  var maskArr = [];
+  var enabledNames = [];
+  for (var j=0;j<order.length;j++) {
+    var on = !!f[order[j]];
+    maskArr.push(on);
+    if (on) enabledNames.push(order[j]);
+  }
+
+  var rid = cfg ? cfg.run.id : "unspecified";
+  var rnotes = cfg ? cfg.run.notes : "";
+  log.log("MASK_CONFIG run.id=" + rid + " notes=\"" + rnotes + "\" on=" + enabledNames.join(",") + "\n");
+  log.log("MASK_CONFIG effective=" + maskArr.map(function(b){return b?1:0;}).join("") + " (k="+K+")\n");
+  return Java.to(maskArr, "boolean[]");
+}
+
+// ======== Helpers to read/write mote memory ========
 function symOf(mote, varname){
   var sym = mote.getMemory().getSymbolMap().get(varname);
   if (sym == null) throw "Variable not found: " + varname + " on mote " + mote.getID();
@@ -49,7 +128,7 @@ function getInt16(mote, varname){
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
   return (ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF);
 }
-function getI16(mote, varname){ // signed 16-bit
+function getI16(mote, varname){
   var s = symOf(mote, varname);
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
   return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
@@ -93,7 +172,7 @@ function getU16Array(mote, varname, n){
   for (var i=0; i<n && (i*2+1) < bytes.length; i++) arr.push(bb.getShort(i*2) & 0xFFFF);
   return arr;
 }
-function getI16Array(mote, varname, n){ // signed 16-bit
+function getI16Array(mote, varname, n){
   var s = symOf(mote, varname);
   var bytes = mote.getMemory().getMemorySegment(s.addr, s.size);
   var bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
@@ -120,7 +199,7 @@ function rssiTo0to10(dbm){
   return v;
 }
 
-// === Build candidate features for one mote ===
+// ======== Build candidate features for one mote ========
 function buildCandidateMatrixFor(mote, candIds, candEtx){
   var S = [];
   var hcArr = [], reArr = [], qlrArr = [];
@@ -132,6 +211,7 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
     var row = [];
     var parentMote = sim.getMoteWithID(candIds[r]);
 
+    // feature order must match mask / Agent indices
     for (var j = 0; j < mask.length; j++) {
       if (!mask[j]) continue;
       var val = 0.0;
@@ -172,7 +252,7 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
   };
 }
 
-// === Decide & set parent for a single mote ===
+// ======== Decide & set parent for a single mote ========
 function decideAndSetParentFor(mote){
   var mid = mote.getID();
   if (mid === 1) return; // sink
@@ -208,7 +288,8 @@ function decideAndSetParentFor(mote){
   ctrs.residualEnergy = getDouble(mote, "status_residual_energy");
   ctrs.hopCount       = rankToHops(getInt16(mote, "status_rank"));
   ctrs.rankViolations = u32(getInt32(mote, "status_parent_switches"));
-  // use minimum path ETX*100 among candidates (0 if none)
+
+  // min path ETX*100 across candidates (proxy)
   var minEtx100 = 0;
   for (var i2=0; i2<nn && i2<candEtxU16.length; i2++){
     var v = (candEtxU16[i2] | 0);
@@ -219,6 +300,13 @@ function decideAndSetParentFor(mote){
   // Decide (RL)
   var SArr       = mats.SArr;
   var candIdsArr = Java.to(candIds, "int[]");
+
+  // Optional: sanity warn if row lengths deviate from Factive (Agent also warns)
+  if (SArr.length > 0) {
+    var row0 = SArr[0];
+    // (cannot see Factive here; Agent will log exact Factive vs row length)
+  }
+
   var choice = agent.decide(mid, SArr, valid, ctrs, candIdsArr, mats.hcArr, mats.reArr, mats.qlrArr);
 
   // Index -> parent ID
@@ -230,12 +318,9 @@ function decideAndSetParentFor(mote){
   // Write to mote
   setInt16(mote, "agent_parent", chosenParent);
   setInt8(mote, "agent_waiting", 0);
-
-  // Debug (optional)
-  // log.log("ASSIGN node=" + mid + " parent=" + chosenParent + " cand=" + JSON.stringify(candIds) + "\n");
 }
 
-// === Global "assign all" ===
+// ======== Global "assign all" ========
 function assignParentsAll(){
   var count = sim.getMotesCount();
   for (var i=0; i<count; i++){
@@ -248,7 +333,15 @@ function assignParentsAll(){
   }
 }
 
-// === Controller main loop ===
+// ======== Build mask from YAML (with fallback) & start Agent ========
+var cfg = loadMaskYaml(MASK_PATH);
+var mask = cfg ? buildMaskFromConfig(cfg) :
+  // Fallback: ETX+HC+RE+QLR+RSSI (safe default for your heavy-load study)
+  Java.to([true,true,true,true,false,false,true,false,false,false,false,false], "boolean[]");
+
+var agent = new Agent(K, mask, INIT_ENERGY);
+
+// ======== Controller main loop ========
 TIMEOUT(6000000, log.testOK());
 
 while (true) {
@@ -263,6 +356,5 @@ while (true) {
     assignParentsAll();
     continue;
   }
-  // raw passthrough log (Cooja vars: time,id,msg)
   log.log(time + "\t" + id + "\t" + msg + "\n");
 }
