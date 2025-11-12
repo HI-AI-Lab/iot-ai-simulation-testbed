@@ -237,7 +237,7 @@ def run_block(cfg: RunnerConfig, nodes: int, ppm: int, topo_id: str, traffic_see
 
     # Launch (sequential)
     gradlew_path = gradle_root / "gradlew"
-cmd = [str(gradlew_path), "-p", str(gradle_root), "run", "--args", f"--no-gui {csc_path}"]
+    cmd = [str(gradlew_path), "-p", str(gradle_root), "run", "--args", f"--no-gui {csc_path}"]
 
     # Write run_meta.yaml
     meta = {
