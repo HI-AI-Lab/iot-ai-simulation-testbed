@@ -124,7 +124,7 @@ def now_stamp() -> str:
 
 def csc_path_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     """Prefer per-topology CSC; fallback to single CSC if placements absent.
-    Allows fallback only when running a single-topology job (topo_id in {"01","1"}).
+    Fallback is only allowed for a single-topology job (topo_id in {"01","1"}).
     """
     p = ararl_dir / f"placements/N{nodes}/simulation-nodes{nodes}-topo{topo_id}.csc"
     if p.is_file():
@@ -132,10 +132,9 @@ def csc_path_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     p_single = ararl_dir / f"simulation-nodes{nodes}.csc"
     if p_single.is_file():
         if topo_id not in ("01", "1"):
-            die(f"Placements not found for N{nodes} (expected {p}); use --topologies 1 or pre-generate placements.")
+            die(f"Placements not found for N{nodes} (expected {p}); use --topologies 1/--topology-ids 01 or pre-generate placements.")
         return p_single
     die(f"CSC not found for N{nodes}. Expected {p} or {p_single}")
-
 
 def pos_header_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     """Prefer per-topology positions header; fallback to single header if placements absent."""
@@ -145,10 +144,9 @@ def pos_header_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     p_single = ararl_dir / f"positions-simulation-nodes{nodes}.h"
     if p_single.is_file():
         if topo_id not in ("01", "1"):
-            die(f"Placements not found for N{nodes} (expected {p}); use --topologies 1 or pre-generate placements.")
+            die(f"Placements not found for N{nodes} (expected {p}); use --topologies 1/--topology-ids 01 or pre-generate placements.")
         return p_single
     die(f"Positions header not found for N{nodes}. Expected {p} or {p_single}")
-
 
 def makefile_for_ppm(ararl_dir: Path, ppm: int) -> Path:
     return ararl_dir / f"Makefile-ppm{ppm}"
