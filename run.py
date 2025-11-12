@@ -171,7 +171,7 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
     except Exception:
         return (False, stats)
     ok_wrap = (stats["wrapup"] == expected_nodes) or (stats["wrapup"] == expected_nodes - 1)
-ok = ok_wrap and stats["sink_summary"] == 1
+    ok = ok_wrap and stats["sink_summary"] == 1
     return ok, stats
 
 # ------------------------------ Runner core ------------------------------ #
