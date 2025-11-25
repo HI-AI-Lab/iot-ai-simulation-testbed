@@ -19,7 +19,7 @@ declare -a ppm_values=("80")
 
 # Define the base directory for all simulation logs.
 LOGS_BASE_DIR="testbed/logs"
-MRHOF_DIR="testbed/experiments/mrhof"
+ARARL_DIR="testbed/experiments/ararl"
 
 # Check if the base log directory exists, and create it if it doesn't.
 if [ ! -d "${LOGS_BASE_DIR}" ]; then
@@ -39,28 +39,28 @@ do
 		# --- Create a generic simulation file for this node count ---
 		# We copy the specific node count file to a generic name.
 		echo "Creating a generic simulation.csc file from simulation-nodes${node_count}.csc..."
-		cp "/workspace/${MRHOF_DIR}/simulation-nodes${node_count}.csc" "/workspace/${MRHOF_DIR}/simulation.csc"
+		cp "/workspace/${ARARL_DIR}/simulation-nodes${node_count}.csc" "/workspace/${ARARL_DIR}/simulation.csc"
 		# -------------------------------------------------------------
 
 		# --- Copy correct positions header for this node count ---
 		echo "Copying positions header for ${node_count} nodes..."
-		cp "/workspace/${MRHOF_DIR}/positions-simulation-nodes${node_count}.h" \
-		   "/workspace/${MRHOF_DIR}/positions-simulation.h"
+		cp "/workspace/${ARARL_DIR}/positions-simulation-nodes${node_count}.h" \
+		   "/workspace/${ARARL_DIR}/positions-simulation.h"
 		# ----------------------------------------------------------
 		# --- Clean build directories before starting simulation ---
         # This ensures a fresh compilation and prevents issues from previous runs.
         echo "Cleaning build and rpl directories for fresh compilation..."
-        rm -rf "${MRHOF_DIR}/rpl"
-        rm -rf "${MRHOF_DIR}/build"
+        rm -rf "${ARARL_DIR}/rpl"
+        rm -rf "${ARARL_DIR}/build"
 		echo "Running simulation for ${node_count} nodes and ${ppm_value} ppm..."
 
         # --- NEW: Copy the appropriate Makefile for the current PPM value ---
         echo "Copying Makefile for ppm ${ppm_value}..."
-        cp "/workspace/${MRHOF_DIR}/Makefile-ppm${ppm_value}" "/workspace/${MRHOF_DIR}/Makefile"
+        cp "/workspace/${ARARL_DIR}/Makefile-ppm${ppm_value}" "/workspace/${ARARL_DIR}/Makefile"
         # ------------------------------------------------------------------
 
         # Construct the full path to the .csc file.
-        CSC_PATH="/workspace/${MRHOF_DIR}/simulation.csc"
+        CSC_PATH="/workspace/${ARARL_DIR}/simulation.csc"
 
         # Construct the desired output log file name.
         LOG_FILE_NAME="ppm${ppm_value}_nodes${node_count}.testlog"
@@ -82,20 +82,20 @@ do
             echo "Error: The COOJA.testlog file was not created. Skipping file move."
         fi
 		# --- Cleanup temporary files ---
-		if [ -f "${MRHOF_DIR}/Makefile" ]; then
-			rm "${MRHOF_DIR}/Makefile"
+		if [ -f "${ARARL_DIR}/Makefile" ]; then
+			rm "${ARARL_DIR}/Makefile"
 		fi
-		if [ -f "${MRHOF_DIR}/simulation.csc" ]; then
-			rm "${MRHOF_DIR}/simulation.csc"
+		if [ -f "${ARARL_DIR}/simulation.csc" ]; then
+			rm "${ARARL_DIR}/simulation.csc"
 		fi
-		if [ -f "${MRHOF_DIR}/positions-simulation.h" ]; then
-			rm "${MRHOF_DIR}/positions-simulation.h"
+		if [ -f "${ARARL_DIR}/positions-simulation.h" ]; then
+			rm "${ARARL_DIR}/positions-simulation.h"
 		fi
-		if [ -d "${MRHOF_DIR}/rpl" ]; then
-			rm -rf "${MRHOF_DIR}/rpl"
+		if [ -d "${ARARL_DIR}/rpl" ]; then
+			rm -rf "${ARARL_DIR}/rpl"
 		fi
-		if [ -d "${MRHOF_DIR}/build" ]; then
-			rm -rf "${MRHOF_DIR}/build"
+		if [ -d "${ARARL_DIR}/build" ]; then
+			rm -rf "${ARARL_DIR}/build"
 		fi
 		# --- At the end of your simulatin, kill the agent process ---
     done
