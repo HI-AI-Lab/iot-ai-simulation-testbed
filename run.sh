@@ -1,104 +1,118 @@
 #!/bin/bash
-
 # ==============================================================================
-# This script automates running COOJA simulations for a range of node counts
-# and PPM (parts per million) values, organizing the output log files.
-# It is designed to be run from the /workspace directory within the Docker container.
+# Topology-aware COOJA runner for your current directory structure
+# Works with:
+#   /workspace/testbed/experiments/ararl/
+#     ├─ Makefile-ppm80 / Makefile-ppm100 / Makefile-ppm120
+#     ├─ node.c, sink.c, simulation.js
+#     └─ topologies/
+#         ├─ N60/  : simulation-nodes60-topo01.csc , positions-simulation-nodes60-topo01.h , ...
+#         ├─ N80/
+#         └─ N100/
 # ==============================================================================
 
-echo "Starting the COOJA multi-simulations..."
+set -euo pipefail
 
-# Define arrays for the different simulation parameters.
-#declare -a nodes=("60" "80" "100")
-#declare -a ppm_values=("80" "100" "120")
-declare -a nodes=("60")
-declare -a ppm_values=("80")
+# --------- CONFIGURE HERE ---------
+# Arrays for params (you can uncomment/extend as needed)
+# nodes=(60 80 100)
+# ppms=(80 100 120)
+nodes=(60)
+ppms=(80)
+# Topology IDs present in your folders:
+#topo_ids=(01 02 03 04 05 06 07 08 09 10)
+topo_ids=(01)
 
-# Define the base directory for all simulation logs.
+# Paths (relative to /workspace)
 LOGS_BASE_DIR="testbed/logs"
 ARARL_DIR="testbed/experiments/ararl"
+GRADLE_ROOT="contiki-ng/tools/cooja"   # where gradlew lives
 
-# Check if the base log directory exists, and create it if it doesn't.
-if [ ! -d "${LOGS_BASE_DIR}" ]; then
-    echo "Base logs directory ${LOGS_BASE_DIR} does not exist. Creating it."
-    mkdir -p "${LOGS_BASE_DIR}"
-fi
+# ----------------------------------
 
-# Loop through each node count.
-for node_count in "${nodes[@]}"
-do
-		# Loop through each PPM value.
-		for ppm_value in "${ppm_values[@]}"
-		do
-			echo "--------------------------------------------------------"
-		echo "Running simulation with ${node_count} nodes..."
-		# -------------------------------------------------------------
-		# --- Create a generic simulation file for this node count ---
-		# We copy the specific node count file to a generic name.
-		echo "Creating a generic simulation.csc file from simulation-nodes${node_count}.csc..."
-		cp "/workspace/${ARARL_DIR}/simulation-nodes${node_count}.csc" "/workspace/${ARARL_DIR}/simulation.csc"
-		# -------------------------------------------------------------
+echo "Starting COOJA multi-simulations (nodes × ppm × topo)..."
+echo "ARARL_DIR       : /workspace/${ARARL_DIR}"
+echo "LOGS_BASE_DIR   : /workspace/${LOGS_BASE_DIR}"
+echo "Gradle root     : /workspace/${GRADLE_ROOT}"
+echo "Nodes           : ${nodes[*]}"
+echo "PPMs            : ${ppms[*]}"
+echo "Topologies      : ${topo_ids[*]}"
+echo
 
-		# --- Copy correct positions header for this node count ---
-		echo "Copying positions header for ${node_count} nodes..."
-		cp "/workspace/${ARARL_DIR}/positions-simulation-nodes${node_count}.h" \
-		   "/workspace/${ARARL_DIR}/positions-simulation.h"
-		# ----------------------------------------------------------
-		# --- Clean build directories before starting simulation ---
-        # This ensures a fresh compilation and prevents issues from previous runs.
-        echo "Cleaning build and rpl directories for fresh compilation..."
-        rm -rf "${ARARL_DIR}/rpl"
-        rm -rf "${ARARL_DIR}/build"
-		echo "Running simulation for ${node_count} nodes and ${ppm_value} ppm..."
+# Ensure we run from /workspace so COOJA.testlog lands in a known place
+cd /workspace
 
-        # --- NEW: Copy the appropriate Makefile for the current PPM value ---
-        echo "Copying Makefile for ppm ${ppm_value}..."
-        cp "/workspace/${ARARL_DIR}/Makefile-ppm${ppm_value}" "/workspace/${ARARL_DIR}/Makefile"
-        # ------------------------------------------------------------------
+# Ensure logs base exists
+mkdir -p "${LOGS_BASE_DIR}"
 
-        # Construct the full path to the .csc file.
-        CSC_PATH="/workspace/${ARARL_DIR}/simulation.csc"
+runs_total=0
+runs_ok=0
 
-        # Construct the desired output log file name.
-        LOG_FILE_NAME="ppm${ppm_value}_nodes${node_count}.testlog"
-        OUTPUT_LOG_PATH="${LOGS_BASE_DIR}/${LOG_FILE_NAME}"
+for node_count in "${nodes[@]}"; do
+  for ppm_value in "${ppms[@]}"; do
+    # Prepare Makefile for this PPM once per (N,PPM) block
+    makefile_src="/workspace/${ARARL_DIR}/Makefile-ppm${ppm_value}"
+    if [[ ! -f "${makefile_src}" ]]; then
+      echo "[ERROR] Makefile for ppm ${ppm_value} not found at ${makefile_src}"
+      exit 1
+    fi
 
-        # Run the simulation. The output will be named 'COOJA.testlog' by default.
-        # Ensure you are in the correct directory for the gradlew command to work.
-        contiki-ng/tools/cooja/gradlew -p contiki-ng/tools/cooja run --args="--no-gui ${CSC_PATH}"
+    for topo in "${topo_ids[@]}"; do
+      runs_total=$((runs_total+1))
+      echo "----------------------------------------------------------------"
+      echo "RUN ${runs_total}: N=${node_count}  PPM=${ppm_value}  topo=${topo}"
 
-        # Check if the simulation log file was created successfully.
-        if [ -f "COOJA.testlog" ]; then
-            echo "Simulation complete. Renaming and moving log file."
+      # Source files for this topology
+      csc_src="/workspace/${ARARL_DIR}/topologies/N${node_count}/simulation-nodes${node_count}-topo${topo}.csc"
+      pos_src="/workspace/${ARARL_DIR}/topologies/N${node_count}/positions-simulation-nodes${node_count}-topo${topo}.h"
 
-            # Move the log file from the current directory to the new logs directory.
-            mv COOJA.testlog "${OUTPUT_LOG_PATH}"
+      if [[ ! -f "${csc_src}" ]]; then
+        echo "[WARN] CSC not found: ${csc_src}  → skipping this run"
+        continue
+      fi
+      if [[ ! -f "${pos_src}" ]]; then
+        echo "[WARN] Positions header not found: ${pos_src}  → skipping this run"
+        continue
+      fi
 
-            echo "Moved ${LOG_FILE_NAME} to ${LOGS_BASE_DIR}/."
-        else
-            echo "Error: The COOJA.testlog file was not created. Skipping file move."
-        fi
-		# --- Cleanup temporary files ---
-		if [ -f "${ARARL_DIR}/Makefile" ]; then
-			rm "${ARARL_DIR}/Makefile"
-		fi
-		if [ -f "${ARARL_DIR}/simulation.csc" ]; then
-			rm "${ARARL_DIR}/simulation.csc"
-		fi
-		if [ -f "${ARARL_DIR}/positions-simulation.h" ]; then
-			rm "${ARARL_DIR}/positions-simulation.h"
-		fi
-		if [ -d "${ARARL_DIR}/rpl" ]; then
-			rm -rf "${ARARL_DIR}/rpl"
-		fi
-		if [ -d "${ARARL_DIR}/build" ]; then
-			rm -rf "${ARARL_DIR}/build"
-		fi
-		# --- At the end of your simulatin, kill the agent process ---
+      # Clean previous build artifacts for a fresh build
+      rm -rf "/workspace/${ARARL_DIR}/rpl" "/workspace/${ARARL_DIR}/build" || true
+
+      # Drop scenario assets to canonical names expected by your setup
+      cp -f "${csc_src}" "/workspace/${ARARL_DIR}/simulation.csc"
+      cp -f "${pos_src}" "/workspace/${ARARL_DIR}/positions-simulation.h"
+      cp -f "${makefile_src}" "/workspace/${ARARL_DIR}/Makefile"
+
+      # Path to the CSC we just copied
+      CSC_PATH="/workspace/${ARARL_DIR}/simulation.csc"
+
+      # Where to store the output log (structured by N/PPM/topo)
+      OUT_DIR="${LOGS_BASE_DIR}/N${node_count}_PPM${ppm_value}/topo${topo}"
+      mkdir -p "${OUT_DIR}"
+
+      echo "[INFO] Launching COOJA (no GUI) ..."
+      "/workspace/${GRADLE_ROOT}/gradlew" -p "/workspace/${GRADLE_ROOT}" run --args="--no-gui ${CSC_PATH}"
+
+      # COOJA writes COOJA.testlog to the current directory (/workspace)
+      if [[ -f "COOJA.testlog" ]]; then
+        mv -f "COOJA.testlog" "${OUT_DIR}/COOJA.testlog"
+        echo "[OK] Moved log → ${OUT_DIR}/COOJA.testlog"
+        runs_ok=$((runs_ok+1))
+      else
+        echo "[WARN] COOJA.testlog was not created for this run."
+      fi
+
+      # Cleanup temp scenario files and build outputs
+      rm -f "/workspace/${ARARL_DIR}/Makefile" \
+            "/workspace/${ARARL_DIR}/simulation.csc" \
+            "/workspace/${ARARL_DIR}/positions-simulation.h" || true
+      rm -rf "/workspace/${ARARL_DIR}/rpl" "/workspace/${ARARL_DIR}/build" || true
     done
+  done
 done
 
-# Print the final output.
-echo "--------------------------------------------------------"
-echo "All 9 simulations are complete. The log files have been generated and moved to ${LOGS_BASE_DIR}."
-echo "Cleanup complete."
+echo "----------------------------------------------------------------"
+echo "All simulations done."
+echo "Runs attempted : ${runs_total}"
+echo "Logs captured  : ${runs_ok}"
+echo "Logs directory : /workspace/${LOGS_BASE_DIR}"
