@@ -1,33 +1,26 @@
 #!/bin/bash
 # ==============================================================================
-# Topology-aware COOJA runner for your current directory structure
-# Works with:
+# Topology-aware COOJA runner (prints PRR, QLR, E2E, NLT after each run)
+# Directory layout expected:
 #   /workspace/testbed/experiments/ararl/
 #     ├─ Makefile-ppm80 / Makefile-ppm100 / Makefile-ppm120
 #     ├─ node.c, sink.c, simulation.js
-#     └─ topologies/
-#         ├─ N60/  : simulation-nodes60-topo01.csc , positions-simulation-nodes60-topo01.h , ...
-#         ├─ N80/
-#         └─ N100/
+#     └─ topologies/N60|N80|N100/simulation-nodes<NN>-topo<TT>.csc, positions-...-topo<TT>.h
 # ==============================================================================
 
 set -euo pipefail
 
 # --------- CONFIGURE HERE ---------
-# Arrays for params (you can uncomment/extend as needed)
 # nodes=(60 80 100)
 # ppms=(80 100 120)
 nodes=(60)
 ppms=(80)
-# Topology IDs present in your folders:
-#topo_ids=(01 02 03 04 05 06 07 08 09 10)
+# topo_ids=(01 02 03 04 05 06 07 08 09 10)
 topo_ids=(01)
 
-# Paths (relative to /workspace)
 LOGS_BASE_DIR="testbed/logs"
 ARARL_DIR="testbed/experiments/ararl"
 GRADLE_ROOT="contiki-ng/tools/cooja"   # where gradlew lives
-
 # ----------------------------------
 
 echo "Starting COOJA multi-simulations (nodes × ppm × topo)..."
@@ -39,18 +32,19 @@ echo "PPMs            : ${ppms[*]}"
 echo "Topologies      : ${topo_ids[*]}"
 echo
 
-# Ensure we run from /workspace so COOJA.testlog lands in a known place
 cd /workspace
-
-# Ensure logs base exists
 mkdir -p "${LOGS_BASE_DIR}"
+
+SUMMARY_CSV="${LOGS_BASE_DIR}/summary.csv"
+if [[ ! -f "${SUMMARY_CSV}" ]]; then
+  echo "nodes,ppm,topo,prr,qlr,e2e_mean_ms,nlt_first_energy_ms" > "${SUMMARY_CSV}"
+fi
 
 runs_total=0
 runs_ok=0
 
 for node_count in "${nodes[@]}"; do
   for ppm_value in "${ppms[@]}"; do
-    # Prepare Makefile for this PPM once per (N,PPM) block
     makefile_src="/workspace/${ARARL_DIR}/Makefile-ppm${ppm_value}"
     if [[ ! -f "${makefile_src}" ]]; then
       echo "[ERROR] Makefile for ppm ${ppm_value} not found at ${makefile_src}"
@@ -62,7 +56,6 @@ for node_count in "${nodes[@]}"; do
       echo "----------------------------------------------------------------"
       echo "RUN ${runs_total}: N=${node_count}  PPM=${ppm_value}  topo=${topo}"
 
-      # Source files for this topology
       csc_src="/workspace/${ARARL_DIR}/topologies/N${node_count}/simulation-nodes${node_count}-topo${topo}.csc"
       pos_src="/workspace/${ARARL_DIR}/topologies/N${node_count}/positions-simulation-nodes${node_count}-topo${topo}.h"
 
@@ -75,34 +68,78 @@ for node_count in "${nodes[@]}"; do
         continue
       fi
 
-      # Clean previous build artifacts for a fresh build
       rm -rf "/workspace/${ARARL_DIR}/rpl" "/workspace/${ARARL_DIR}/build" || true
-
-      # Drop scenario assets to canonical names expected by your setup
       cp -f "${csc_src}" "/workspace/${ARARL_DIR}/simulation.csc"
       cp -f "${pos_src}" "/workspace/${ARARL_DIR}/positions-simulation.h"
       cp -f "${makefile_src}" "/workspace/${ARARL_DIR}/Makefile"
 
-      # Path to the CSC we just copied
       CSC_PATH="/workspace/${ARARL_DIR}/simulation.csc"
-
-      # Where to store the output log (structured by N/PPM/topo)
       OUT_DIR="${LOGS_BASE_DIR}/N${node_count}_PPM${ppm_value}/topo${topo}"
       mkdir -p "${OUT_DIR}"
 
       echo "[INFO] Launching COOJA (no GUI) ..."
       "/workspace/${GRADLE_ROOT}/gradlew" -p "/workspace/${GRADLE_ROOT}" run --args="--no-gui ${CSC_PATH}"
 
-      # COOJA writes COOJA.testlog to the current directory (/workspace)
       if [[ -f "COOJA.testlog" ]]; then
         mv -f "COOJA.testlog" "${OUT_DIR}/COOJA.testlog"
         echo "[OK] Moved log → ${OUT_DIR}/COOJA.testlog"
         runs_ok=$((runs_ok+1))
+
+        # ---- Print & save metrics (BusyBox-safe AWK) ----
+        MET_FILE="${OUT_DIR}/metrics.txt"
+        awk '
+          BEGIN{first=0; gen=0; ql=0; trecv=0; we=0}
+          $0 ~ /WRAPUP node_id=/ && $0 !~ /node_id=1/ {
+            s=$0
+            if (match(s,/Gen=[0-9]+/))   { t=substr(s,RSTART,RLENGTH); sub(/Gen=/,"",t);   gen+=t+0 }
+            if (match(s,/QLoss=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/QLoss=/,"",t); ql +=t+0 }
+            em=0
+            if (match(s,/end_ms=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/end_ms=/,"",t); em=t+0 }
+            if (s ~ /reason=energy/ && em>0 && (first==0 || em<first)) first=em
+          }
+          $0 ~ /SINK_SUMMARY node=/ {
+            s=$0; r=0; e=0
+            if (match(s,/Recv=[0-9]+/))   { t=substr(s,RSTART,RLENGTH); sub(/Recv=/,"",t);   r=t+0 }
+            if (match(s,/AvgE2E=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/AvgE2E=/,"",t); e=t+0 }
+            trecv+=r; we+=r*e
+          }
+          END{
+            prr = (gen?trecv/gen:0)
+            qlr = (gen?ql/gen:0)
+            e2e = (trecv?we/trecv:0)
+            printf("PRR=%.6f\nQLR=%.9f\nE2E_mean_ms=%.2f\nNLT_first_energy_ms=%d\n", prr, qlr, e2e, first)
+          }
+        ' "${OUT_DIR}/COOJA.testlog" | tee "${MET_FILE}"
+
+        # Append CSV line
+        awk -v N="${node_count}" -v P="${ppm_value}" -v T="topo${topo}" '
+          BEGIN{first=0; gen=0; ql=0; trecv=0; we=0}
+          $0 ~ /WRAPUP node_id=/ && $0 !~ /node_id=1/ {
+            s=$0
+            if (match(s,/Gen=[0-9]+/))   { t=substr(s,RSTART,RLENGTH); sub(/Gen=/,"",t);   gen+=t+0 }
+            if (match(s,/QLoss=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/QLoss=/,"",t); ql +=t+0 }
+            em=0
+            if (match(s,/end_ms=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/end_ms=/,"",t); em=t+0 }
+            if (s ~ /reason=energy/ && em>0 && (first==0 || em<first)) first=em
+          }
+          $0 ~ /SINK_SUMMARY node=/ {
+            s=$0; r=0; e=0
+            if (match(s,/Recv=[0-9]+/))   { t=substr(s,RSTART,RLENGTH); sub(/Recv=/,"",t);   r=t+0 }
+            if (match(s,/AvgE2E=[0-9]+/)) { t=substr(s,RSTART,RLENGTH); sub(/AvgE2E=/,"",t); e=t+0 }
+            trecv+=r; we+=r*e
+          }
+          END{
+            prr = (gen?trecv/gen:0)
+            qlr = (gen?ql/gen:0)
+            e2e = (trecv?we/trecv:0)
+            printf("%d,%d,%s,%.6f,%.9f,%.2f,%d\n", N, P, T, prr, qlr, e2e, first)
+          }
+        ' "${OUT_DIR}/COOJA.testlog" >> "${SUMMARY_CSV}"
+
       else
         echo "[WARN] COOJA.testlog was not created for this run."
       fi
 
-      # Cleanup temp scenario files and build outputs
       rm -f "/workspace/${ARARL_DIR}/Makefile" \
             "/workspace/${ARARL_DIR}/simulation.csc" \
             "/workspace/${ARARL_DIR}/positions-simulation.h" || true
@@ -116,3 +153,4 @@ echo "All simulations done."
 echo "Runs attempted : ${runs_total}"
 echo "Logs captured  : ${runs_ok}"
 echo "Logs directory : /workspace/${LOGS_BASE_DIR}"
+echo "Summary CSV    : /workspace/${SUMMARY_CSV}"
