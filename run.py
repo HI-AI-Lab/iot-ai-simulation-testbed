@@ -38,21 +38,30 @@ Author: (you)
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
+import json
 import os
+import re
 import shutil
+import statistics
 import subprocess
 import sys
 import textwrap
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 try:
     import yaml  # pyyaml
 except Exception as e:
     yaml = None
+
+try:
+    import csv
+except Exception:
+    csv = None
 
 # ------------------------------ Data types ------------------------------ #
 
@@ -152,6 +161,302 @@ def makefile_for_ppm(ararl_dir: Path, ppm: int) -> Path:
     return ararl_dir / f"Makefile-ppm{ppm}"
 
 
+# ------------------------------ Log Parsing ------------------------------ #
+
+@dataclass
+class RunMetrics:
+    """Metrics extracted from a single simulation run."""
+    e2e_latency: List[float] = field(default_factory=list)  # ms, per-node AvgE2E
+    nlt: Optional[float] = None  # ms, network lifetime (first node death time)
+    qlr: List[float] = field(default_factory=list)  # queue loss ratio per node
+    prr: Optional[float] = None  # packet reception ratio (network-wide)
+    
+    # Raw data for debugging
+    total_gen: int = 0
+    total_recv: int = 0
+    total_qloss: int = 0
+    node_count: int = 0
+
+
+def parse_log(log_path: Path) -> Optional[RunMetrics]:
+    """Parse simulation log and extract E2E, NLT, QLR, PRR metrics."""
+    if not log_path.is_file():
+        return None
+    
+    metrics = RunMetrics()
+    node_data: Dict[int, Dict] = {}  # node_id -> {gen, qloss, end_ms, reason, recv, e2e}
+    first_death_ms: Optional[int] = None
+    
+    try:
+        with log_path.open('r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                # Parse WRAPUP lines from nodes
+                # Format: WRAPUP node_id=<id> reason=<reason> end_ms=<ms> Gen=<count> Fwd=<count> QLoss=<count> ...
+                if line.startswith("WRAPUP node_id="):
+                    match = re.search(r'node_id=(\d+)', line)
+                    if match:
+                        node_id = int(match.group(1))
+                        if node_id == 1:  # Skip sink
+                            continue
+                        
+                        if node_id not in node_data:
+                            node_data[node_id] = {}
+                        
+                        # Extract end_ms
+                        match_ms = re.search(r'end_ms=(\d+)', line)
+                        if match_ms:
+                            end_ms = int(match_ms.group(1))
+                            node_data[node_id]['end_ms'] = end_ms
+                        
+                        # Extract reason
+                        match_reason = re.search(r'reason=(\S+)', line)
+                        if match_reason:
+                            reason = match_reason.group(1)
+                            node_data[node_id]['reason'] = reason
+                            # Track first energy death for NLT
+                            if reason == 'END_ENERGY' and (first_death_ms is None or end_ms < first_death_ms):
+                                first_death_ms = end_ms
+                        
+                        # Extract Gen
+                        match_gen = re.search(r'Gen=(\d+)', line)
+                        if match_gen:
+                            node_data[node_id]['gen'] = int(match_gen.group(1))
+                            metrics.total_gen += int(match_gen.group(1))
+                        
+                        # Extract QLoss
+                        match_qloss = re.search(r'QLoss=(\d+)', line)
+                        if match_qloss:
+                            node_data[node_id]['qloss'] = int(match_qloss.group(1))
+                            metrics.total_qloss += int(match_qloss.group(1))
+                
+                # Parse SINK_SUMMARY lines
+                # Format: SINK_SUMMARY node=<id> Recv=<count> AvgE2E=<ms> MinE2E=<ms> MaxE2E=<ms>
+                # Or: SINK_SUMMARY node=<id> Recv=0
+                elif line.startswith("SINK_SUMMARY node="):
+                    match = re.search(r'node=(\d+)', line)
+                    if match:
+                        node_id = int(match.group(1))
+                        if node_id == 1:  # Skip sink
+                            continue
+                        
+                        if node_id not in node_data:
+                            node_data[node_id] = {}
+                        
+                        # Extract Recv
+                        match_recv = re.search(r'Recv=(\d+)', line)
+                        if match_recv:
+                            recv = int(match_recv.group(1))
+                            node_data[node_id]['recv'] = recv
+                            metrics.total_recv += recv
+                            
+                            # Extract AvgE2E if available
+                            match_e2e = re.search(r'AvgE2E=(\d+)ms', line)
+                            if match_e2e:
+                                e2e = float(match_e2e.group(1))
+                                node_data[node_id]['e2e'] = e2e
+                                metrics.e2e_latency.append(e2e)
+    
+    except Exception as e:
+        print(f"[WARN] Failed to parse log {log_path}: {e}")
+        return None
+    
+    # Calculate metrics
+    metrics.node_count = len(node_data)
+    
+    # NLT: First node death time, or simulation end if no deaths
+    if first_death_ms is not None:
+        metrics.nlt = float(first_death_ms)
+    elif node_data:
+        # Use max end_ms as fallback (simulation end time)
+        max_end = max((n.get('end_ms', 0) for n in node_data.values()), default=0)
+        if max_end > 0:
+            metrics.nlt = float(max_end)
+    
+    # QLR: Queue Loss Ratio per node (QLoss / Gen)
+    for node_id, data in node_data.items():
+        gen = data.get('gen', 0)
+        qloss = data.get('qloss', 0)
+        if gen > 0:
+            qlr = qloss / gen
+            metrics.qlr.append(qlr)
+    
+    # PRR: Packet Reception Ratio (total received / total generated)
+    if metrics.total_gen > 0:
+        metrics.prr = metrics.total_recv / metrics.total_gen
+    
+    return metrics
+
+
+@dataclass
+class AggregatedMetrics:
+    """Aggregated statistics across multiple runs."""
+    e2e_mean: Optional[float] = None
+    e2e_std: Optional[float] = None
+    e2e_min: Optional[float] = None
+    e2e_max: Optional[float] = None
+    
+    nlt_mean: Optional[float] = None
+    nlt_std: Optional[float] = None
+    nlt_min: Optional[float] = None
+    nlt_max: Optional[float] = None
+    
+    qlr_mean: Optional[float] = None
+    qlr_std: Optional[float] = None
+    qlr_min: Optional[float] = None
+    qlr_max: Optional[float] = None
+    
+    prr_mean: Optional[float] = None
+    prr_std: Optional[float] = None
+    prr_min: Optional[float] = None
+    prr_max: Optional[float] = None
+    
+    run_count: int = 0
+    valid_runs: int = 0
+
+
+def aggregate_metrics(metrics_list: List[RunMetrics]) -> AggregatedMetrics:
+    """Aggregate metrics across multiple runs."""
+    agg = AggregatedMetrics()
+    agg.run_count = len(metrics_list)
+    agg.valid_runs = len([m for m in metrics_list if m is not None])
+    
+    if agg.valid_runs == 0:
+        return agg
+    
+    # Collect all values
+    e2e_values: List[float] = []
+    nlt_values: List[float] = []
+    qlr_values: List[float] = []
+    prr_values: List[float] = []
+    
+    for m in metrics_list:
+        if m is None:
+            continue
+        
+        # E2E: collect all per-node latencies
+        e2e_values.extend(m.e2e_latency)
+        
+        # NLT: collect network lifetime
+        if m.nlt is not None:
+            nlt_values.append(m.nlt)
+        
+        # QLR: collect all per-node ratios
+        qlr_values.extend(m.qlr)
+        
+        # PRR: collect network-wide ratio
+        if m.prr is not None:
+            prr_values.append(m.prr)
+    
+    # Calculate statistics
+    if e2e_values:
+        agg.e2e_mean = statistics.mean(e2e_values)
+        agg.e2e_std = statistics.stdev(e2e_values) if len(e2e_values) > 1 else 0.0
+        agg.e2e_min = min(e2e_values)
+        agg.e2e_max = max(e2e_values)
+    
+    if nlt_values:
+        agg.nlt_mean = statistics.mean(nlt_values)
+        agg.nlt_std = statistics.stdev(nlt_values) if len(nlt_values) > 1 else 0.0
+        agg.nlt_min = min(nlt_values)
+        agg.nlt_max = max(nlt_values)
+    
+    if qlr_values:
+        agg.qlr_mean = statistics.mean(qlr_values)
+        agg.qlr_std = statistics.stdev(qlr_values) if len(qlr_values) > 1 else 0.0
+        agg.qlr_min = min(qlr_values)
+        agg.qlr_max = max(qlr_values)
+    
+    if prr_values:
+        agg.prr_mean = statistics.mean(prr_values)
+        agg.prr_std = statistics.stdev(prr_values) if len(prr_values) > 1 else 0.0
+        agg.prr_min = min(prr_values)
+        agg.prr_max = max(prr_values)
+    
+    return agg
+
+
+def write_aggregated_csv(agg: AggregatedMetrics, output_path: Path, mask_name: str, nodes: int, ppm: int) -> None:
+    """Write aggregated metrics to CSV file."""
+    ensure_dir(output_path.parent)
+    
+    with output_path.open('w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Metric', 'Mean', 'Std', 'Min', 'Max', 'Unit'])
+        
+        if agg.e2e_mean is not None:
+            writer.writerow(['E2E', f'{agg.e2e_mean:.2f}', f'{agg.e2e_std:.2f}', 
+                           f'{agg.e2e_min:.2f}', f'{agg.e2e_max:.2f}', 'ms'])
+        
+        if agg.nlt_mean is not None:
+            writer.writerow(['NLT', f'{agg.nlt_mean:.2f}', f'{agg.nlt_std:.2f}', 
+                           f'{agg.nlt_min:.2f}', f'{agg.nlt_max:.2f}', 'ms'])
+        
+        if agg.qlr_mean is not None:
+            writer.writerow(['QLR', f'{agg.qlr_mean:.4f}', f'{agg.qlr_std:.4f}', 
+                           f'{agg.qlr_min:.4f}', f'{agg.qlr_max:.4f}', 'ratio'])
+        
+        if agg.prr_mean is not None:
+            writer.writerow(['PRR', f'{agg.prr_mean:.4f}', f'{agg.prr_std:.4f}', 
+                           f'{agg.prr_min:.4f}', f'{agg.prr_max:.4f}', 'ratio'])
+        
+        writer.writerow([])
+        writer.writerow(['Runs', agg.run_count, 'Valid', agg.valid_runs, '', ''])
+
+
+def write_aggregated_json(agg: AggregatedMetrics, output_path: Path, mask_name: str, nodes: int, ppm: int) -> None:
+    """Write aggregated metrics to JSON file."""
+    ensure_dir(output_path.parent)
+    
+    data = {
+        'mask': mask_name,
+        'nodes': nodes,
+        'ppm': ppm,
+        'runs': {
+            'total': agg.run_count,
+            'valid': agg.valid_runs
+        },
+        'metrics': {}
+    }
+    
+    if agg.e2e_mean is not None:
+        data['metrics']['E2E'] = {
+            'mean': agg.e2e_mean,
+            'std': agg.e2e_std,
+            'min': agg.e2e_min,
+            'max': agg.e2e_max,
+            'unit': 'ms'
+        }
+    
+    if agg.nlt_mean is not None:
+        data['metrics']['NLT'] = {
+            'mean': agg.nlt_mean,
+            'std': agg.nlt_std,
+            'min': agg.nlt_min,
+            'max': agg.nlt_max,
+            'unit': 'ms'
+        }
+    
+    if agg.qlr_mean is not None:
+        data['metrics']['QLR'] = {
+            'mean': agg.qlr_mean,
+            'std': agg.qlr_std,
+            'min': agg.qlr_min,
+            'max': agg.qlr_max,
+            'unit': 'ratio'
+        }
+    
+    if agg.prr_mean is not None:
+        data['metrics']['PRR'] = {
+            'mean': agg.prr_mean,
+            'std': agg.prr_std,
+            'min': agg.prr_min,
+            'max': agg.prr_max,
+            'unit': 'ratio'
+        }
+    
+    output_path.write_text(json.dumps(data, indent=2), encoding='utf-8')
+
+
 # ------------------------------ Health checks ------------------------------ #
 
 def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[str, int]]:
@@ -171,6 +476,301 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
     ok_wrap = (stats["wrapup"] == expected_nodes) or (stats["wrapup"] == expected_nodes - 1)
     ok = ok_wrap and stats["sink_summary"] == 1
     return ok, stats
+
+# ------------------------------ Log Parsing ------------------------------ #
+
+@dataclass
+class RunMetrics:
+    """Metrics extracted from a single simulation run."""
+    e2e_latency: List[float] = field(default_factory=list)  # ms, per-node AvgE2E
+    nlt: Optional[float] = None  # ms, network lifetime (first node death time)
+    qlr: List[float] = field(default_factory=list)  # queue loss ratio per node
+    prr: Optional[float] = None  # packet reception ratio (network-wide)
+    
+    # Raw data for debugging
+    total_gen: int = 0
+    total_recv: int = 0
+    total_qloss: int = 0
+    node_count: int = 0
+
+
+def parse_log(log_path: Path) -> Optional[RunMetrics]:
+    """Parse simulation log and extract E2E, NLT, QLR, PRR metrics."""
+    if not log_path.is_file():
+        return None
+    
+    metrics = RunMetrics()
+    node_data: Dict[int, Dict] = {}  # node_id -> {gen, qloss, end_ms, reason, recv, e2e}
+    first_death_ms: Optional[int] = None
+    
+    try:
+        with log_path.open('r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                # Parse WRAPUP lines from nodes
+                # Format: WRAPUP node_id=<id> reason=<reason> end_ms=<ms> Gen=<count> Fwd=<count> QLoss=<count> ...
+                if line.startswith("WRAPUP node_id="):
+                    match = re.search(r'node_id=(\d+)', line)
+                    if match:
+                        node_id = int(match.group(1))
+                        if node_id == 1:  # Skip sink
+                            continue
+                        
+                        if node_id not in node_data:
+                            node_data[node_id] = {}
+                        
+                        # Extract end_ms
+                        match_ms = re.search(r'end_ms=(\d+)', line)
+                        if match_ms:
+                            end_ms = int(match_ms.group(1))
+                            node_data[node_id]['end_ms'] = end_ms
+                        
+                        # Extract reason
+                        match_reason = re.search(r'reason=(\S+)', line)
+                        if match_reason:
+                            reason = match_reason.group(1)
+                            node_data[node_id]['reason'] = reason
+                            # Track first energy death for NLT
+                            if reason == 'END_ENERGY' and (first_death_ms is None or end_ms < first_death_ms):
+                                first_death_ms = end_ms
+                        
+                        # Extract Gen
+                        match_gen = re.search(r'Gen=(\d+)', line)
+                        if match_gen:
+                            node_data[node_id]['gen'] = int(match_gen.group(1))
+                            metrics.total_gen += int(match_gen.group(1))
+                        
+                        # Extract QLoss
+                        match_qloss = re.search(r'QLoss=(\d+)', line)
+                        if match_qloss:
+                            node_data[node_id]['qloss'] = int(match_qloss.group(1))
+                            metrics.total_qloss += int(match_qloss.group(1))
+                
+                # Parse SINK_SUMMARY lines
+                # Format: SINK_SUMMARY node=<id> Recv=<count> AvgE2E=<ms> MinE2E=<ms> MaxE2E=<ms>
+                # Or: SINK_SUMMARY node=<id> Recv=0
+                elif line.startswith("SINK_SUMMARY node="):
+                    match = re.search(r'node=(\d+)', line)
+                    if match:
+                        node_id = int(match.group(1))
+                        if node_id == 1:  # Skip sink
+                            continue
+                        
+                        if node_id not in node_data:
+                            node_data[node_id] = {}
+                        
+                        # Extract Recv
+                        match_recv = re.search(r'Recv=(\d+)', line)
+                        if match_recv:
+                            recv = int(match_recv.group(1))
+                            node_data[node_id]['recv'] = recv
+                            metrics.total_recv += recv
+                            
+                            # Extract AvgE2E if available
+                            match_e2e = re.search(r'AvgE2E=(\d+)ms', line)
+                            if match_e2e:
+                                e2e = float(match_e2e.group(1))
+                                node_data[node_id]['e2e'] = e2e
+                                metrics.e2e_latency.append(e2e)
+    
+    except Exception as e:
+        print(f"[WARN] Failed to parse log {log_path}: {e}")
+        return None
+    
+    # Calculate metrics
+    metrics.node_count = len(node_data)
+    
+    # NLT: First node death time, or simulation end if no deaths
+    if first_death_ms is not None:
+        metrics.nlt = float(first_death_ms)
+    elif node_data:
+        # Use max end_ms as fallback (simulation end time)
+        max_end = max((n.get('end_ms', 0) for n in node_data.values()), default=0)
+        if max_end > 0:
+            metrics.nlt = float(max_end)
+    
+    # QLR: Queue Loss Ratio per node (QLoss / Gen)
+    for node_id, data in node_data.items():
+        gen = data.get('gen', 0)
+        qloss = data.get('qloss', 0)
+        if gen > 0:
+            qlr = qloss / gen
+            metrics.qlr.append(qlr)
+    
+    # PRR: Packet Reception Ratio (total received / total generated)
+    if metrics.total_gen > 0:
+        metrics.prr = metrics.total_recv / metrics.total_gen
+    
+    return metrics
+
+
+@dataclass
+class AggregatedMetrics:
+    """Aggregated statistics across multiple runs."""
+    e2e_mean: Optional[float] = None
+    e2e_std: Optional[float] = None
+    e2e_min: Optional[float] = None
+    e2e_max: Optional[float] = None
+    
+    nlt_mean: Optional[float] = None
+    nlt_std: Optional[float] = None
+    nlt_min: Optional[float] = None
+    nlt_max: Optional[float] = None
+    
+    qlr_mean: Optional[float] = None
+    qlr_std: Optional[float] = None
+    qlr_min: Optional[float] = None
+    qlr_max: Optional[float] = None
+    
+    prr_mean: Optional[float] = None
+    prr_std: Optional[float] = None
+    prr_min: Optional[float] = None
+    prr_max: Optional[float] = None
+    
+    run_count: int = 0
+    valid_runs: int = 0
+
+
+def aggregate_metrics(metrics_list: List[RunMetrics]) -> AggregatedMetrics:
+    """Aggregate metrics across multiple runs."""
+    agg = AggregatedMetrics()
+    agg.run_count = len(metrics_list)
+    agg.valid_runs = len([m for m in metrics_list if m is not None])
+    
+    if agg.valid_runs == 0:
+        return agg
+    
+    # Collect all values
+    e2e_values: List[float] = []
+    nlt_values: List[float] = []
+    qlr_values: List[float] = []
+    prr_values: List[float] = []
+    
+    for m in metrics_list:
+        if m is None:
+            continue
+        
+        # E2E: collect all per-node latencies
+        e2e_values.extend(m.e2e_latency)
+        
+        # NLT: collect network lifetime
+        if m.nlt is not None:
+            nlt_values.append(m.nlt)
+        
+        # QLR: collect all per-node ratios
+        qlr_values.extend(m.qlr)
+        
+        # PRR: collect network-wide ratio
+        if m.prr is not None:
+            prr_values.append(m.prr)
+    
+    # Calculate statistics
+    if e2e_values:
+        agg.e2e_mean = statistics.mean(e2e_values)
+        agg.e2e_std = statistics.stdev(e2e_values) if len(e2e_values) > 1 else 0.0
+        agg.e2e_min = min(e2e_values)
+        agg.e2e_max = max(e2e_values)
+    
+    if nlt_values:
+        agg.nlt_mean = statistics.mean(nlt_values)
+        agg.nlt_std = statistics.stdev(nlt_values) if len(nlt_values) > 1 else 0.0
+        agg.nlt_min = min(nlt_values)
+        agg.nlt_max = max(nlt_values)
+    
+    if qlr_values:
+        agg.qlr_mean = statistics.mean(qlr_values)
+        agg.qlr_std = statistics.stdev(qlr_values) if len(qlr_values) > 1 else 0.0
+        agg.qlr_min = min(qlr_values)
+        agg.qlr_max = max(qlr_values)
+    
+    if prr_values:
+        agg.prr_mean = statistics.mean(prr_values)
+        agg.prr_std = statistics.stdev(prr_values) if len(prr_values) > 1 else 0.0
+        agg.prr_min = min(prr_values)
+        agg.prr_max = max(prr_values)
+    
+    return agg
+
+
+def write_aggregated_csv(agg: AggregatedMetrics, output_path: Path, mask_name: str, nodes: int, ppm: int) -> None:
+    """Write aggregated metrics to CSV file."""
+    ensure_dir(output_path.parent)
+    
+    with output_path.open('w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Metric', 'Mean', 'Std', 'Min', 'Max', 'Unit'])
+        
+        if agg.e2e_mean is not None:
+            writer.writerow(['E2E', f'{agg.e2e_mean:.2f}', f'{agg.e2e_std:.2f}', 
+                           f'{agg.e2e_min:.2f}', f'{agg.e2e_max:.2f}', 'ms'])
+        
+        if agg.nlt_mean is not None:
+            writer.writerow(['NLT', f'{agg.nlt_mean:.2f}', f'{agg.nlt_std:.2f}', 
+                           f'{agg.nlt_min:.2f}', f'{agg.nlt_max:.2f}', 'ms'])
+        
+        if agg.qlr_mean is not None:
+            writer.writerow(['QLR', f'{agg.qlr_mean:.4f}', f'{agg.qlr_std:.4f}', 
+                           f'{agg.qlr_min:.4f}', f'{agg.qlr_max:.4f}', 'ratio'])
+        
+        if agg.prr_mean is not None:
+            writer.writerow(['PRR', f'{agg.prr_mean:.4f}', f'{agg.prr_std:.4f}', 
+                           f'{agg.prr_min:.4f}', f'{agg.prr_max:.4f}', 'ratio'])
+        
+        writer.writerow([])
+        writer.writerow(['Runs', agg.run_count, 'Valid', agg.valid_runs, '', ''])
+
+
+def write_aggregated_json(agg: AggregatedMetrics, output_path: Path, mask_name: str, nodes: int, ppm: int) -> None:
+    """Write aggregated metrics to JSON file."""
+    ensure_dir(output_path.parent)
+    
+    data = {
+        'mask': mask_name,
+        'nodes': nodes,
+        'ppm': ppm,
+        'runs': {
+            'total': agg.run_count,
+            'valid': agg.valid_runs
+        },
+        'metrics': {}
+    }
+    
+    if agg.e2e_mean is not None:
+        data['metrics']['E2E'] = {
+            'mean': agg.e2e_mean,
+            'std': agg.e2e_std,
+            'min': agg.e2e_min,
+            'max': agg.e2e_max,
+            'unit': 'ms'
+        }
+    
+    if agg.nlt_mean is not None:
+        data['metrics']['NLT'] = {
+            'mean': agg.nlt_mean,
+            'std': agg.nlt_std,
+            'min': agg.nlt_min,
+            'max': agg.nlt_max,
+            'unit': 'ms'
+        }
+    
+    if agg.qlr_mean is not None:
+        data['metrics']['QLR'] = {
+            'mean': agg.qlr_mean,
+            'std': agg.qlr_std,
+            'min': agg.qlr_min,
+            'max': agg.qlr_max,
+            'unit': 'ratio'
+        }
+    
+    if agg.prr_mean is not None:
+        data['metrics']['PRR'] = {
+            'mean': agg.prr_mean,
+            'std': agg.prr_std,
+            'min': agg.prr_min,
+            'max': agg.prr_max,
+            'unit': 'ratio'
+        }
+    
+    output_path.write_text(json.dumps(data, indent=2), encoding='utf-8')
 
 # ------------------------------ Runner core ------------------------------ #
 
@@ -382,6 +982,10 @@ def main() -> None:
 
     total = 0
     ok_count = 0
+    
+    # Collect metrics per mask for aggregation
+    mask_metrics: Dict[Tuple[int, int, str], Dict[str, List[RunMetrics]]] = {}
+    # Structure: (nodes, ppm, mask) -> {topo: [metrics...]}
 
     for n in cfg.nodes:
         for ppm in cfg.ppms:
@@ -397,9 +1001,63 @@ def main() -> None:
                         print(f"Completed: success={success} → {rdir}")
                         if success:
                             ok_count += 1
+                            
+                            # Parse log and collect metrics
+                            log_path = Path(rdir) / "COOJA.testlog"
+                            metrics = parse_log(log_path)
+                            if metrics:
+                                key = (n, ppm, mask)
+                                if key not in mask_metrics:
+                                    mask_metrics[key] = {}
+                                if topo not in mask_metrics[key]:
+                                    mask_metrics[key][topo] = []
+                                mask_metrics[key][topo].append(metrics)
+                            else:
+                                print(f"[WARN] Failed to parse metrics from {log_path}")
+
+    # Aggregate and write results per mask
+    print("\n" + "=" * 78)
+    print("AGGREGATING RESULTS...")
+    print("=" * 78)
+    
+    for (n, ppm, mask), topo_data in mask_metrics.items():
+        # Collect all metrics across topologies and seeds
+        all_metrics: List[RunMetrics] = []
+        for topo, metrics_list in topo_data.items():
+            all_metrics.extend(metrics_list)
+        
+        if not all_metrics:
+            print(f"[WARN] No valid metrics for N={n} PPM={ppm} mask={mask}")
+            continue
+        
+        # Aggregate
+        agg = aggregate_metrics(all_metrics)
+        
+        # Write results
+        base_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / mask
+        ensure_dir(base_dir)
+        
+        csv_path = base_dir / "aggregated_results.csv"
+        json_path = base_dir / "aggregated_results.json"
+        
+        write_aggregated_csv(agg, csv_path, mask, n, ppm)
+        write_aggregated_json(agg, json_path, mask, n, ppm)
+        
+        # Print summary
+        print(f"\nMask: {mask} | Nodes: {n} | PPM: {ppm}")
+        print(f"  Runs: {agg.valid_runs}/{agg.run_count} valid")
+        if agg.e2e_mean is not None:
+            print(f"  E2E:  {agg.e2e_mean:.2f} ± {agg.e2e_std:.2f} ms (min={agg.e2e_min:.2f}, max={agg.e2e_max:.2f})")
+        if agg.nlt_mean is not None:
+            print(f"  NLT:  {agg.nlt_mean:.2f} ± {agg.nlt_std:.2f} ms (min={agg.nlt_min:.2f}, max={agg.nlt_max:.2f})")
+        if agg.qlr_mean is not None:
+            print(f"  QLR:  {agg.qlr_mean:.4f} ± {agg.qlr_std:.4f} (min={agg.qlr_min:.4f}, max={agg.qlr_max:.4f})")
+        if agg.prr_mean is not None:
+            print(f"  PRR:  {agg.prr_mean:.4f} ± {agg.prr_std:.4f} (min={agg.prr_min:.4f}, max={agg.prr_max:.4f})")
+        print(f"  Results saved to: {base_dir}")
 
     dt = datetime.now() - t0
-    print("=" * 78)
+    print("\n" + "=" * 78)
     print(f"DONE. Runs attempted: {total}, passed basic health: {ok_count}. Elapsed: {dt}.")
 
 
