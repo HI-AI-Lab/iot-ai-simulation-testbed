@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cooja Runner (v1.1) — matches /topologies/N*/ layout and real log lines
+Cooja Runner (v1.1.1) — matches /topologies/N*/ layout and real log lines
 
 - Looks up CSC/positions in: {ARARL_DIR}/topologies/N{nodes}/simulation-nodes{nodes}-topo{XX}.csc
                             and positions-simulation-nodes{nodes}-topo{XX}.h
@@ -11,25 +11,10 @@ Cooja Runner (v1.1) — matches /topologies/N*/ layout and real log lines
 - Parses log to compute per-run PRR, QLR, E2E (recv-weighted), NLT (first energy death)
 - Appends per-run metrics to logs/summary.csv
 - Aggregates per (N, PPM, mask) across all topologies/seeds → aggregated_results.csv / .json
-
-Usage (example):
-  python cooja_runner_v1.py \
-    --ararl-dir testbed/experiments/ararl \
-    --logs-dir  testbed/logs \
-    --nodes 60 80 100 \
-    --ppm 80 100 120 \
-    --topologies 10 \
-    --masks baseline \
-    --mask-files baseline:masks/mask-etx.yaml \
-    --duration-sf 180 --warmup-sf 12 \
-    --sim-seed 67890 --agent-seed 12345 \
-    --traffic-seeds 1 \
-    [--gradle-root contiki-ng/tools/cooja] \
-    [--dry-run]
 """
 from __future__ import annotations
 
-import argparse, csv, hashlib, json, os, re, shutil, statistics, subprocess, sys
+import argparse, csv, json, os, re, shutil, statistics, subprocess, sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -89,10 +74,8 @@ def now_stamp() -> str:
 # ------------------------------ Discovery (ADAPTED) ------------------------------ #
 
 def csc_path_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
-    # Your real structure: testbed/experiments/ararl/topologies/N60/simulation-nodes60-topo01.csc
     p = ararl_dir / f"topologies/N{nodes}/simulation-nodes{nodes}-topo{topo_id}.csc"
     if p.is_file(): return p
-    # Fallback (single CSC per N)
     p_single = ararl_dir / f"simulation-nodes{nodes}.csc"
     if p_single.is_file():
         if topo_id not in ("01","1"):
@@ -147,9 +130,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
     try:
         with log_path.open('r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                # Real lines look like:
-                # 5520940000  1 [INFO: App] SINK_SUMMARY node=2 Recv=123 AvgE2E=4005ms ...
-                # 460623000   16 [INFO: App] WRAPUP node_id=16 reason=energy end_ms=... Gen=... QLoss=...
+                # WRAPUP lines
                 if "WRAPUP node_id=" in line:
                     nid_m = re.search(r'node_id=(\d+)', line)
                     if not nid_m: continue
@@ -158,12 +139,10 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         continue
                     node_seen.setdefault(nid, {})
 
-                    # end_ms
                     ms_m = re.search(r'end_ms=(\d+)', line)
                     if ms_m:
                         node_seen[nid]['end_ms'] = int(ms_m.group(1))
 
-                    # reason
                     rs_m = re.search(r'reason=([A-Za-z_]+)', line)
                     if rs_m:
                         node_seen[nid]['reason'] = rs_m.group(1).lower()
@@ -172,7 +151,6 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                             if ems is not None and (first_energy_ms is None or ems < first_energy_ms):
                                 first_energy_ms = ems
 
-                    # Gen / QLoss
                     g_m = re.search(r'Gen=(\d+)', line)
                     if g_m:
                         g = int(g_m.group(1)); node_seen[nid]['gen'] = g; m.total_gen += g
@@ -180,6 +158,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                     if ql_m:
                         ql = int(ql_m.group(1)); node_seen[nid]['qloss'] = ql; m.total_qloss += ql
 
+                # SINK_SUMMARY lines
                 elif "SINK_SUMMARY node=" in line:
                     nid_m = re.search(r'node=(\d+)', line)
                     if not nid_m: continue
@@ -194,7 +173,8 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         node_seen[nid]['recv'] = recv
                         m.total_recv += recv
 
-                    e2e_m = re.search(r'AvgE2E=(\d+)ms', line)
+                    # Accept integer or decimal; optional 'ms'
+                    e2e_m = re.search(r'AvgE2E=(\d+(?:\.\d+)?)(?:ms)?', line)
                     if e2e_m:
                         e2e = float(e2e_m.group(1))
                         node_seen[nid]['e2e'] = e2e
@@ -212,7 +192,6 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
     if first_energy_ms is not None:
         m.nlt = float(first_energy_ms)
     else:
-        # fallback: latest end_ms (sim end)
         max_end = 0
         for nd in node_seen.values():
             max_end = max(max_end, int(nd.get('end_ms', 0)))
@@ -230,7 +209,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
 
     return m
 
-# ------------------------------ Health checks (FIXED) ------------------------------ #
+# ------------------------------ Health checks ------------------------------ #
 
 def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[str, int]]:
     stats = {"wrapup": 0, "sink_summary": 0}
@@ -242,8 +221,6 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
                 if "SINK_SUMMARY node=" in line: stats["sink_summary"] += 1
     except Exception:
         return (False, stats)
-    # Expect roughly: wrapup == expected_nodes (incl. sink? your WRAPUP skips sink)
-    # and sink summaries ~= expected_nodes - 1. Be lenient.
     ok_wrap = (stats["wrapup"] >= expected_nodes - 5)
     ok_sink = (stats["sink_summary"] >= expected_nodes - 5)
     return (ok_wrap and ok_sink), stats
@@ -402,9 +379,9 @@ def run_block(cfg: RunnerConfig, nodes: int, ppm: int, topo_id: str, traffic_see
     }
     (run_dir / "run_meta.yaml").write_text(yaml_dump(meta), encoding="utf-8")
 
-    # command
+    # command (NOTE: Gradle requires --args=... as a single token)
     gradlew = cfg.gradle_root / "gradlew"
-    cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", "--args", f"--no-gui {sim_csc}"]
+    cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", f"--args=--no-gui {sim_csc}"]
 
     if cfg.dry_run:
         print(f"[DRY-RUN] {' '.join(cmd)}"); return True, str(run_dir)
@@ -436,7 +413,7 @@ def run_block(cfg: RunnerConfig, nodes: int, ppm: int, topo_id: str, traffic_see
 
 def parse_args() -> RunnerConfig:
     ap = argparse.ArgumentParser(
-        description="Run Cooja simulations for (nodes×ppm×topology×seed×mask), sequential v1.1",
+        description="Run Cooja simulations for (nodes×ppm×topology×seed×mask), sequential v1.1.1",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     ap.add_argument("--ararl-dir", type=Path, required=True)
@@ -500,7 +477,7 @@ def parse_args() -> RunnerConfig:
 
 def main() -> None:
     cfg = parse_args()
-    print("== Cooja Runner v1.1 ==")
+    print("== Cooja Runner v1.1.1 ==")
     print(f"ARARL dir  : {cfg.ararl_dir}")
     print(f"Logs dir   : {cfg.logs_dir}")
     print(f"Gradle root: {cfg.gradle_root}")
@@ -535,7 +512,6 @@ def main() -> None:
                             ok_count += 1
                             append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask, rm)
                             bucket.setdefault((n,ppm,mask), []).append(rm)
-                            # brief per-run print
                             prr = rm.prr if rm.prr is not None else 0.0
                             qlr = statistics.mean(rm.qlr) if rm.qlr else 0.0
                             e2e = rm.e2e_mean if rm.e2e_mean is not None else 0.0
