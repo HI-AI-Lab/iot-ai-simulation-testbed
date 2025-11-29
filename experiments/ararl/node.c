@@ -5,15 +5,16 @@
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6-nbr.h"
 #include "net/ipv6/uip-ds6.h"
+#include "net/ipv6/uip-ds6-route.h"   /* <-- added */
 #include "net/link-stats.h"
 #include "net/mac/mac.h"
 #include "net/packetbuf.h"
 #include "net/routing/rpl-lite/rpl.h"
-#include "net/routing/rpl-lite/rpl-neighbor.h"   /* <-- needed */
+#include "net/routing/rpl-lite/rpl-neighbor.h"
 #include "net/routing/rpl-lite/rpl-dag.h"
 #include "net/routing/routing.h"
 #include "net/netstack.h"
-#include "net/nbr-table.h"                       /* <-- needed */
+#include "net/nbr-table.h"
 #include "node-id.h"
 #include "positions-simulation.h"
 #include "random.h"
@@ -25,13 +26,13 @@
 
 /* ==== MRHOF / RPL constants (inline safe defaults) ==== */
 #ifndef MRHOF_ETX_DIVISOR
-#define MRHOF_ETX_DIVISOR 128     /* Contiki-NG default */
+#define MRHOF_ETX_DIVISOR 128
 #endif
 #ifndef RPL_ROOT_RANK
-#define RPL_ROOT_RANK 256         /* Contiki-NG default */
+#define RPL_ROOT_RANK 256
 #endif
 #ifndef RPL_MIN_HOPRANKINC
-#define RPL_MIN_HOPRANKINC 256    /* Contiki-NG default */
+#define RPL_MIN_HOPRANKINC 256
 #endif
 /* ====================================================== */
 
@@ -69,13 +70,13 @@ uint32_t status_parent_switches = 0;
 
 /* Neighbor candidate table (top-K by full path ETX) */
 uint8_t  status_neighbor_ids[MAX_PARENTS_FOR_AGENT];
-uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];        /* FULL path ETX*100 via each candidate */
-int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];    /* RSSI (dBm, 0x7fff unknown) */
+uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];
+int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];
 uint8_t  status_num_neighbors = 0;
 
 /* Agent handshake */
-uint8_t  agent_waiting = 0;    /* 1 while waiting for controller */
-uint16_t agent_parent  = 0;    /* controller writes chosen parent ID */
+uint8_t  agent_waiting = 0;
+uint16_t agent_parent  = 0;
 
 /* === app payload === */
 typedef enum {
@@ -188,7 +189,7 @@ static void topk_insert(uint8_t *ids, uint16_t *etx, int16_t *rssi,
 
 static clock_time_t poisson_next_delay_ticks(void) {
   float u = ((float)random_rand() + 1.0f) / ((float)RANDOM_RAND_MAX + 1.0f);
-  unsigned ppm = state.ppm ? state.ppm : 1; /* never 0 */
+  unsigned ppm = state.ppm ? state.ppm : 1;
   float mean_sec = 60.0f / (float)ppm;
   float x_sec = -mean_sec * logf(u);
   clock_time_t ticks = (clock_time_t)(x_sec * (float)CLOCK_SECOND);
@@ -209,6 +210,29 @@ static unsigned get_parent_id(void) {
   return (unsigned)-1;
 }
 
+/* ---- route pinning helper (no Contiki patch) ---- */
+static void pin_route_to_root_via(const uip_ipaddr_t *nh)
+{
+  if(!nh) return;
+
+  uip_ipaddr_t root;
+  if(!NETSTACK_ROUTING.get_root_ipaddr(&root)) return;
+
+  uip_ds6_route_t *r = uip_ds6_route_lookup(&root);
+  if(r) {
+    if(uip_ipaddr_cmp(&r->nexthop, nh)) {
+      return; /* already pinned to this parent */
+    }
+    uip_ds6_route_rm(r);
+  }
+#ifdef UIP_DS6_INFINITE_LIFETIME
+  uip_ds6_route_add(&root, 128, nh, UIP_DS6_INFINITE_LIFETIME);
+#else
+  uip_ds6_route_add(&root, 128, nh, 3600); /* long enough for a run */
+#endif
+  LOG_INFO("PIN route /128 to root via parent %u\n", (unsigned)UIP_HTONS(nh->u16[7]));
+}
+
 /* Fast/safe preferred-parent enforcement for agent_parent */
 static void enforce_agent_parent_if_needed(void) {
   if(agent_parent == 0) return;
@@ -218,7 +242,11 @@ static void enforce_agent_parent_if_needed(void) {
 
   if(dag->preferred_parent) {
     const uip_ipaddr_t *curr_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
-    if(curr_ip && ip_to_nodeid(curr_ip) == agent_parent) return; /* already set */
+    if(curr_ip && ip_to_nodeid(curr_ip) == agent_parent) {
+      /* ensure route stays pinned even if parent is already set */
+      pin_route_to_root_via(curr_ip);
+      return;
+    }
   }
 
   for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
@@ -227,6 +255,7 @@ static void enforce_agent_parent_if_needed(void) {
     const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
     if(ip && ip_to_nodeid(ip) == agent_parent) {
       rpl_neighbor_set_preferred_parent(nbr);
+      pin_route_to_root_via(ip); /* <-- key line */
       if(state.last_parent_id != agent_parent) {
         state.parent_switches++;
         state.last_parent_id = agent_parent;
@@ -265,10 +294,9 @@ static void send_a_packet(struct simple_udp_connection *udp_conn) {
     return;
   }
 
-  /* Enforce controller's parent before each packet (fast path) */
+  /* Enforce controller's parent before each packet */
   enforce_agent_parent_if_needed();
 
-  /* Normal packet generation */
   app_packet_t pkt;
   pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
   pkt.origin_id = node_id;
@@ -289,7 +317,6 @@ static void sniff_output(int mac_status) {
 
   switch(mac_status) {
     case MAC_TX_QUEUE_FULL:
-      /* never left queue */
       state.q_loss_count++;
       return;
 
@@ -299,14 +326,12 @@ static void sniff_output(int mac_status) {
       return;
 
     default:
-      /* attempted but failed (NOACK/COLLISION/ERR/...) — still burns TX energy */
       if(parent_id != (unsigned)-1 && len) consume_energy(tx_energy(d, (uint32_t)len * 8U));
       return;
   }
 }
 
 /* ===== neighbor features ===== */
-/* Export top-4 potential parents by FULL path ETX (MRHOF) + RSSI */
 static void refresh_etx_table(void) {
   status_num_neighbors = 0;
 
@@ -327,21 +352,18 @@ static void refresh_etx_table(void) {
       nbr != NULL;
       nbr = nbr_table_next(rpl_neighbors, nbr)) {
 
-    /* consider only fresh & acceptable parents */
     if(!rpl_neighbor_is_fresh(nbr)) continue;
     if(!rpl_neighbor_is_acceptable_parent(nbr)) continue;
 
     const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
     if(!ip) continue;
 
-    /* rank via this neighbor -> convert to FULL path ETX*100 */
     uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
     if(rank_via == 0 || rank_via == RPL_INFINITE_RANK) continue;
 
     uint16_t path_etx_x100 = 0;
     if(rank_via > RPL_ROOT_RANK) {
       uint32_t delta = (uint32_t)(rank_via - RPL_ROOT_RANK);
-      /* path_etx ≈ (delta * MRHOF_ETX_DIVISOR) / RPL_MIN_HOPRANKINC */
       uint32_t etx_x100 = (delta * (uint32_t)MRHOF_ETX_DIVISOR * 100UL + (RPL_MIN_HOPRANKINC/2))
                           / (uint32_t)RPL_MIN_HOPRANKINC;
       if(etx_x100 > 0xFFFF) etx_x100 = 0xFFFF;
@@ -357,8 +379,8 @@ static void refresh_etx_table(void) {
 
   for(uint8_t i = 0; i < k; i++) {
     status_neighbor_ids[i]  = best_id[i];
-    status_etx_x100[i]      = best_etx[i];        /* FULL path ETX*100 */
-    status_link_rssi_dbm[i] = best_rssi[i];       /* dBm */
+    status_etx_x100[i]      = best_etx[i];
+    status_link_rssi_dbm[i] = best_rssi[i];
   }
   for(uint8_t i = k; i < MAX_PARENTS_FOR_AGENT; i++) {
     status_neighbor_ids[i]  = 0;
@@ -378,23 +400,19 @@ static void refresh_status(void) {
   rpl_dag_t *dag = rpl_get_any_dag();
   status_rank = dag ? dag->rank : 0;
 
-  /* clamp residual & compute BDI */
   if(status_residual_energy > INIT_ENERGY_J) status_residual_energy = INIT_ENERGY_J;
   if(status_residual_energy < 0) status_residual_energy = 0;
   status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
   if(status_bdi < 0) status_bdi = 0; else if(status_bdi > 1) status_bdi = 1;
 
-  /* QLR = qloss / (qloss + fwd) */
   {
     uint32_t attempts = status_fwd_count + status_qloss_count;
     status_qlr = (attempts > 0) ? ((double)status_qloss_count / (double)attempts) : 0.0;
   }
 
-  /* WR = fwd / gen */
   status_wr  = (status_gen_count > 0) ?
                ((double)status_fwd_count / (double)status_gen_count) : 0.0;
 
-  /* PC = neighbors in table (unfiltered) */
   status_pc = 0;
   for(rpl_nbr_t *n = nbr_table_head(rpl_neighbors); n != NULL; n = nbr_table_next(rpl_neighbors, n)) {
     status_pc++;
@@ -418,7 +436,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   PROCESS_BEGIN();
   netstack_sniffer_add(&my_sniffer);
   simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
-  if(state.ppm == 0) state.ppm = 1; /* guard: never 0 PPM */
+  if(state.ppm == 0) state.ppm = 1;
   etimer_set(&gen_timer, poisson_next_delay_ticks());
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
@@ -426,7 +444,7 @@ PROCESS_THREAD(packet_generator_process, ev, data)
       wrapup();
       PROCESS_EXIT();
     }
-    /* if(agent_parent != 0) */ send_a_packet(&udp_conn);
+    send_a_packet(&udp_conn);
     etimer_set(&gen_timer, poisson_next_delay_ticks());
   }
   PROCESS_END();
@@ -441,7 +459,10 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     sec_counter++;
-    if(sec_counter % 10 == 9) refresh_status();
+    if(sec_counter % 10 == 9) {
+      refresh_status();
+      enforce_agent_parent_if_needed(); /* keep it sticky */
+    }
     etimer_reset(&t);
   }
   PROCESS_END();
