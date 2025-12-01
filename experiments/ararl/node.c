@@ -218,19 +218,21 @@ static void pin_route_to_root_via(const uip_ipaddr_t *nh)
   uip_ipaddr_t root;
   if(!NETSTACK_ROUTING.get_root_ipaddr(&root)) return;
 
+  /* If a route to the root exists and already uses this next hop, keep it. */
   uip_ds6_route_t *r = uip_ds6_route_lookup(&root);
   if(r) {
-    if(uip_ipaddr_cmp(&r->nexthop, nh)) {
+    const uip_ipaddr_t *curr_nh = uip_ds6_route_nexthop(r);
+    if(curr_nh && uip_ipaddr_cmp(curr_nh, nh)) {
       return; /* already pinned to this parent */
     }
     uip_ds6_route_rm(r);
   }
-#ifdef UIP_DS6_INFINITE_LIFETIME
-  uip_ds6_route_add(&root, 128, nh, UIP_DS6_INFINITE_LIFETIME);
-#else
-  uip_ds6_route_add(&root, 128, nh, 3600); /* long enough for a run */
-#endif
-  LOG_INFO("PIN route /128 to root via parent %u\n", (unsigned)UIP_HTONS(nh->u16[7]));
+
+  /* Add a /128 host route to root via the chosen parent (3-arg API). */
+  (void)uip_ds6_route_add(&root, 128, nh);
+
+  LOG_INFO("PIN route /128 to root via parent %u\n",
+           (unsigned)UIP_HTONS(nh->u16[7]));
 }
 
 /* Fast/safe preferred-parent enforcement for agent_parent */
