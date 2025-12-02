@@ -27,19 +27,20 @@ import java.io.PrintWriter;
 
 /**
  * Double-Dueling DQN with conv front-end + PER + annealing.
- * - Train every phase: exactly 1 minibatch (size=32), target update every 5.
- * - Replay capacity = 1000, prioritized sampling.
+ * - Train each phase: 1 minibatch (size=32), target update every 5.
+ * - Replay capacity = 1000, prioritized sampling (no IS re-weighting).
  * - Dueling combine: Q = V + (A - mean(A)).
- * - Conv uses SAME padding to support small k / Factive.
+ * - SAME padding conv to support small k/Factive.
  * - Feature masking is INPUT-ONLY (Factive), no output masks.
  *
- * Feature index contract (must match controller.js):
- * 0 ETX, 1 HC(hops), 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
+ * Feature order (must match controller.js):
+ * 0 ETX, 1 HC, 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
  */
 public class Agent implements Serializable {
 
     private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
     private static PrintWriter logger;
+    private static boolean csvHeaderWritten = false;
     static {
         try {
             logger = new PrintWriter(new FileWriter(LOG_PATH, true), true);
@@ -77,21 +78,21 @@ public class Agent implements Serializable {
         }
     }
 
-    // -------- Feature indices (aligned with controller) --------
+    // -------- Feature indices --------
     private static final int IDX_ETX=0, IDX_HC=1, IDX_RE=2, IDX_QLR=3, IDX_BDI=4, IDX_WR=5,
             IDX_RSSI=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
 
     // -------- Hyperparams --------
-    private final int k;                    // up to 4 candidate parents
-    private final int Ftotal;               // total features (12)
-    private final boolean[] featureMask;    // length = Ftotal
-    private final int Factive;              // active (true) count
+    private final int k;                 // max candidate parents (K)
+    private final int Ftotal;            // total possible features (12)
+    private final boolean[] featureMask; // length = Ftotal
+    private final int Factive;           // active features count
 
     // Annealing over phases
     private int phaseCount = 0;
-    private double epsilonStart = 0.30, epsilonEnd = 0.01;    // exploration ε
+    private double epsilonStart = 0.30, epsilonEnd = 0.01;
     private int epsilonAnnealPhases = 500;
-    private double betaStart = 0.40, betaEnd = 1.00;          // PER β (sampling only)
+    private double betaStart = 0.40, betaEnd = 1.00; // PER β (sampling only)
     private int betaAnnealPhases = 500;
 
     private double epsilon = epsilonStart;
@@ -101,8 +102,9 @@ public class Agent implements Serializable {
     private int batchSize  = 32;
     private int targetUpdateEvery = 5;
 
-    private double w1_QU = 1.0;
-    private double w2_ECR = 1.0;
+    // Reward weights
+    private double w1_QU = 1.0; // weight for QLR term
+    private double w2_ECR = 1.0; // weight for Energy Consumption Ratio term
 
     private final double initialEnergy;
 
@@ -122,6 +124,9 @@ public class Agent implements Serializable {
 
     private long trainSteps = 0;
     private final Map<Integer, Integer> activePos = new HashMap<>();
+
+    // Reward normalization
+    private static final double HOP_NORM = 16.0; // expected max hops (adjust to topology)
 
     // -------- Construction --------
     public Agent(int k, boolean[] mask, double initialEnergyJ) {
@@ -161,10 +166,10 @@ public class Agent implements Serializable {
                         .convolutionMode(ConvolutionMode.Same)
                         .graphBuilder()
                         .addInputs("input")
-                        .setInputTypes(InputType.convolutional(k, Factive, 1))
+                        .setInputTypes(InputType.convolutional(k, Factive, 1)) // H x W x C
                         // shared conv trunk
                         .addLayer("conv1", new ConvolutionLayer.Builder(3,3)
-                                .stride(1,1).nIn(1).nOut(16)
+                                .stride(1,1).nOut(16)
                                 .activation(Activation.RELU).build(), "input")
                         .addLayer("conv2", new ConvolutionLayer.Builder(3,1)
                                 .stride(1,1).nOut(32)
@@ -302,11 +307,12 @@ public class Agent implements Serializable {
             INDArray[] outCurr = online.output(false, convFromFlatSingle(t.s));
             double[] A_curr = outCurr[0].toDoubleVector();   // shape [k]
             double V_curr   = outCurr[1].getDouble(0);
+            if (!Double.isFinite(V_curr)) V_curr = 0.0;
             double meanA    = mean(A_curr);
 
             for (int j = 0; j < k; j++) {
                 double qv = V_curr + (A_curr[j] - meanA);
-                sumQ += qv; sumQ2 += qv*qv; qCount++;
+                if (Double.isFinite(qv)) { sumQ += qv; sumQ2 += qv*qv; qCount++; }
             }
 
             // Double DQN target
@@ -320,6 +326,7 @@ public class Agent implements Serializable {
                 INDArray[] outTgt = target.output(false, convFromFlatSingle(t.s2));
                 double[] A_tgt = outTgt[0].toDoubleVector();
                 double V_tgt   = outTgt[1].getDouble(0);
+                if (!Double.isFinite(V_tgt)) V_tgt = 0.0;
                 double meanAt  = mean(A_tgt);
                 double Qnext   = V_tgt + (A_tgt[aStar] - meanAt);
                 targetQ = t.r + gamma * Qnext;
@@ -330,11 +337,12 @@ public class Agent implements Serializable {
             double td = targetQ - Q_curr_a;
 
             double absTd = Math.abs(td);
+            if (!Double.isFinite(absTd)) absTd = 0.0;
             sumAbsTd += absTd;
             if (absTd > maxAbsTd) maxAbsTd = absTd;
             newPriorities[i] = absTd + 1e-3;
 
-            // Labels (no output masks)
+            // Labels (keep others unchanged to avoid gradients on invalids)
             double[] A_lbl = Arrays.copyOf(A_curr, k);
             A_lbl[aIdx] = targetQ - V_curr + meanA;  // target advantage for chosen action
             Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
@@ -369,6 +377,11 @@ public class Agent implements Serializable {
                 meanQ, stdQ, epsilon, perBeta, durMs);
 
         logger.println(line);
+
+        if (!csvHeaderWritten) {
+            logger.println("phase,steps,replay,bs,loss,meanAbsTd,maxAbsTd,meanQ,stdQ,epsilon,beta,dur_ms");
+            csvHeaderWritten = true;
+        }
         logger.printf(Locale.US,
                 "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
                 phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
@@ -383,9 +396,13 @@ public class Agent implements Serializable {
         INDArray[] out = net.output(false, x);
         double[] A = out[0].toDoubleVector();
         double V = out[1].getDouble(0);
+        if (!Double.isFinite(V)) V = 0.0;
         double m = mean(A);
         double[] Q = new double[k];
-        for (int i=0;i<k;i++) Q[i] = V + (A[i] - m);
+        for (int i=0;i<k;i++) {
+            double qi = V + (A[i] - m);
+            Q[i] = Double.isFinite(qi) ? qi : 0.0;
+        }
         return Q;
     }
 
@@ -405,52 +422,64 @@ public class Agent implements Serializable {
         pri.put(t, maxP + 1e-3);
     }
 
-    // -------- Reward --------
+    // -------- Reward (RARL-like, normalized & bounded) --------
+    private static final double EPS = 1e-9;
+
+    private double rewardRARL(double hcTrue, double reTrue, double qlrTrue) {
+        double ecr = 1.0 - safeDiv(reTrue, initialEnergy); // [0,1]
+        if (!Double.isFinite(ecr)) ecr = 0.0;
+        if (ecr < 0.0) ecr = 0.0; else if (ecr > 1.0) ecr = 1.0;
+
+        double hcN = hcTrue / HOP_NORM;                      // [0,1] approx
+        if (!Double.isFinite(hcN)) hcN = 0.0;
+        if (hcN < 0.0) hcN = 0.0; else if (hcN > 1.0) hcN = 1.0;
+
+        double qlr = qlrTrue;
+        if (!Double.isFinite(qlr)) qlr = 0.0;
+        if (qlr < 0.0) qlr = 0.0; else if (qlr > 1.0) qlr = 1.0;
+
+        double rank = hcN + w1_QU * qlr + w2_ECR * ecr;     // lower is better
+        if (!Double.isFinite(rank) || rank < 0.0) rank = 0.0;
+
+        return 1.0 / (1.0 + rank + EPS);                    // (0,1], smooth & bounded
+    }
+
     private double rewardFromRank(double hcTrue, double reTrue, double qlrTrue) {
-        // Energy consumption ratio from residual energy snapshot
-        double ecr = 1.0 - safeDiv(reTrue, initialEnergy);
-        if (ecr < 0.0) ecr = 0.0; if (ecr > 1.0) ecr = 1.0;
-        // Lower is better for (HC + w1*QLR + w2*ECR)
-        double rank = hcTrue + w1_QU * qlrTrue + w2_ECR * ecr;
-        if (!Double.isFinite(rank) || rank <= 0.0) rank = 1.0;
-        double r = 1.0 / rank;
-        return Double.isFinite(r) ? r : 0.0;
+        return rewardRARL(hcTrue, reTrue, qlrTrue);
     }
 
     // -------- Utilities --------
     private static double safeDiv(double num, double den) {
-        if (!Double.isFinite(num) || !Double.isFinite(den) || den == 0.0) return 0.0;
+        if (!Double.isFinite(num) || !Double.isFinite(den) || Math.abs(den) < EPS) return 0.0;
         double v = num / den; return Double.isFinite(v) ? v : 0.0;
     }
 
-	// put this exact version (also keeps your sanity check)
-	private double[] flattenState(double[][] S) {
-		// Agent.java — inside decide(...) as the first lines of the method
-		if (S != null) {
-			for (int i = 0; i < Math.min(k, S.length); i++) {
-				if (S[i] != null && S[i].length != Factive) {
-					log("WARN: row " + i + " length=" + S[i].length + " != Factive=" + Factive);
-				}
-			}
-		}
+    // keep exact contract with controller-produced rows
+    private double[] flattenState(double[][] S) {
+        if (S != null) {
+            for (int i = 0; i < Math.min(k, S.length); i++) {
+                if (S[i] != null && S[i].length != Factive) {
+                    log("WARN: row " + i + " length=" + S[i].length + " != Factive=" + Factive);
+                }
+            }
+        }
 
-		double[] out = new double[k * Factive];
-		int p = 0; // write ptr
-		for (int i = 0; i < k; i++) {
-			double[] row = (S != null && i < S.length) ? S[i] : null;
-			int pos = 0; // read ptr across compressed row
-			for (int j = 0; j < Ftotal; j++) {
-				if (featureMask[j]) {
-					double v = (row != null && pos < row.length) ? row[pos++] : 0.0;
-					out[p++] = scaleFeature(j, v);
-				}
-			}
-		}
-		return out;
-	}
+        double[] out = new double[k * Factive];
+        int p = 0; // write ptr
+        for (int i = 0; i < k; i++) {
+            double[] row = (S != null && i < S.length) ? S[i] : null;
+            int pos = 0; // read ptr across compressed row
+            for (int j = 0; j < Ftotal; j++) {
+                if (featureMask[j]) {
+                    double v = (row != null && pos < row.length) ? row[pos++] : 0.0;
+                    out[p++] = scaleFeature(j, v);
+                }
+            }
+        }
+        return out;
+    }
 
-
-    // Build a single-sample conv input tensor from flat [k*Factive] -> shape [1,1,k,Factive]
+    // Build a single-sample conv input tensor from flat [k*Factive] -> [1,1,k,Factive]
     private INDArray convFromFlatSingle(double[] flat) {
         INDArray x = Nd4j.create(1, 1, k, Factive);
         int idx = 0;
@@ -460,7 +489,7 @@ public class Agent implements Serializable {
         return x;
     }
 
-    // Put one sample into row 'batchIdx' of X (shape [bs,1,k,Factive])
+    // Put one sample into row 'batchIdx' of X ([bs,1,k,Factive])
     private void putConvFromFlat(INDArray X, int batchIdx, double[] flat) {
         int idx = 0;
         for (int i=0;i<k;i++)
@@ -481,13 +510,18 @@ public class Agent implements Serializable {
 
     private static int argmaxMasked(double[] q, boolean[] valid) {
         int best = -1; double bestVal = Double.NEGATIVE_INFINITY;
-        if (valid == null) { for (int i=0;i<q.length;i++) if (q[i]>bestVal){bestVal=q[i]; best=i;} return best; }
+        if (q == null || q.length == 0) return 0;
+        if (valid == null) {
+            for (int i=0;i<q.length;i++) if (q[i]>bestVal){bestVal=q[i]; best=i;}
+            return best >= 0 ? best : 0;
+        }
         int lim = Math.min(q.length, valid.length);
         for (int i=0;i<lim;i++) if (valid[i] && q[i] > bestVal) { bestVal = q[i]; best = i; }
         return best;
     }
 
     private int randomValid(boolean[] valid, int k) {
+        if (k <= 0) return 0;
         if (valid == null) return rng.nextInt(Math.max(1, k));
         List<Integer> idxs = new ArrayList<>();
         for (int i=0;i<Math.min(k, valid.length); i++) if (valid[i]) idxs.add(i);
@@ -497,26 +531,28 @@ public class Agent implements Serializable {
 
     private static double mean(double[] a) {
         if (a == null || a.length == 0) return 0.0;
-        double s=0; for (double v:a) s+=v; return s/a.length;
+        double s=0; int n=0;
+        for (double v:a) { if (Double.isFinite(v)) { s+=v; n++; } }
+        return n>0 ? s/n : 0.0;
     }
 
-    // IMPORTANT: keep these normalizations consistent with controller exports.
+    // Keep these normalizations consistent with controller exports.
     private double scaleFeature(int featIdx, double v) {
         if (!Double.isFinite(v)) return 0.0;
         switch (featIdx) {
-            case IDX_ETX:   // path ETX (controller: raw ETX, typically 1..10+)
+            case IDX_ETX:   // 1..10+ -> [0.1..1.0]
                 return Math.max(1.0, Math.min(10.0, v)) / 10.0;
-            case IDX_HC:    // hop-count (controller: integer hops derived from rank)
-                return v / 16.0;
-            case IDX_RE:    // residual energy absolute (J)
+            case IDX_HC:    // hop-count
+                return v / HOP_NORM;
+            case IDX_RE:    // residual energy absolute (J) -> [0,1]
                 return Math.max(0.0, Math.min(1.0, v / initialEnergy));
-            case IDX_QLR:   // 0..1
-            case IDX_BDI:   // 0..1
-            case IDX_WR:    // 0..1
+            case IDX_QLR:   // [0,1]
+            case IDX_BDI:   // [0,1]
+            case IDX_WR:    // [0,1]
                 return Math.max(0.0, Math.min(1.0, v));
-            case IDX_RSSI:  // controller maps -100..-30 dBm -> 0..10; normalize to 0..1
+            case IDX_RSSI:  // -100..-30 mapped to 0..10 in controller -> [0,1]
                 return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
-            case IDX_PC:    // parent’s neighbor count
+            case IDX_PC:    // [0..10] -> [0,1]
                 return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
             case IDX_SI:    // switches (count) — log1p squash
                 return Math.log1p(Math.max(0.0, v)) / 5.0;
