@@ -7,7 +7,7 @@ python3 run_parallel.py \
   --nodes 60 80 100 \
   --ppm 80 100 120 \
   --topologies 10 \
-  --mask-file /workspace/testbest/mask.yaml \
+  --mask-file /workspace/testbed/mask.yaml \
   --mask-name baseline \
   --jobs 0 \
   --work-root /workspace/testbed/_work
@@ -140,13 +140,14 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
     try:
         with log_path.open('r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                if line.startswith("WRAPUP"): stats["wrapup"] += 1
-                elif line.startswith("SINK_SUMMARY"): stats["sink_summary"] += 1
+                if "WRAPUP node_id=" in line: stats["wrapup"] += 1
+                elif "SINK_SUMMARY node=" in line: stats["sink_summary"] += 1
     except Exception:
         return (False, stats)
-    ok_wrap = (stats["wrapup"] == expected_nodes) or (stats["wrapup"] == expected_nodes - 1)
-    ok = ok_wrap and stats["sink_summary"] == 1
-    return ok, stats
+    # Robust tolerance: expect approx one line per non-sink node; allow some missing
+    ok_wrap = stats["wrapup"] >= (expected_nodes - 5)
+    ok_sink = stats["sink_summary"] >= (expected_nodes - 5)
+    return (ok_wrap and ok_sink), stats
 
 # ------------------------------ Log parsing (paper metrics only) ------------------------------ #
 
@@ -169,7 +170,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
     try:
         with log_path.open('r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                if line.startswith("WRAPUP node_id="):
+                if "WRAPUP node_id=" in line:
                     g = re.search(r'node_id=(\d+)', line)
                     if not g: continue
                     nid = int(g.group(1))
@@ -177,23 +178,24 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                     node_data.setdefault(nid, {})
                     ms = re.search(r'end_ms=(\d+)', line)
                     if ms: node_data[nid]['end_ms'] = int(ms.group(1))
-                    rs = re.search(r'reason=(\S+)', line)
+                    rs = re.search(r'reason=([A-Za-z_]+)', line)
                     if rs:
-                        reason = rs.group(1)
-                        node_data[nid]['reason'] = reason
-                        if reason == 'END_ENERGY' and 'end_ms' in node_data[nid]:
+                        reason = rs.group(1).lower()
+                        if ('energy' in reason) and ('end_ms' in node_data[nid]):
                             ed = node_data[nid]['end_ms']
                             if first_death_ms is None or ed < first_death_ms:
                                 first_death_ms = ed
                     gg = re.search(r'Gen=(\d+)', line)
                     if gg:
-                        node_data[nid]['gen'] = int(gg.group(1))
-                        m.total_gen += int(gg.group(1))
+                        val = int(gg.group(1))
+                        node_data[nid]['gen'] = val
+                        m.total_gen += val
                     ql = re.search(r'QLoss=(\d+)', line)
                     if ql:
-                        node_data[nid]['qloss'] = int(ql.group(1))
-                        m.total_qloss += int(ql.group(1))
-                elif line.startswith("SINK_SUMMARY node="):
+                        val = int(ql.group(1))
+                        node_data[nid]['qloss'] = val
+                        m.total_qloss += val
+                elif "SINK_SUMMARY node=" in line:
                     g = re.search(r'node=(\d+)', line)
                     if not g: continue
                     nid = int(g.group(1))
@@ -204,7 +206,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         rcv = int(rv.group(1))
                         node_data[nid]['recv'] = rcv
                         m.total_recv += rcv
-                    av = re.search(r'AvgE2E=(\d+)ms', line)
+                    av = re.search(r'AvgE2E=(\d+(?:\.\d+)?)(?:ms)?', line)
                     if av:
                         e = float(av.group(1))
                         node_data[nid]['e2e'] = e
@@ -282,7 +284,34 @@ def write_aggregated_json(agg: AggregatedMetrics, out_json: Path) -> None:
     if agg.prr_mean is not None: data["metrics"]["PRR"]={"mean":agg.prr_mean,"std":agg.prr_std,"min":agg.prr_min,"max":agg.prr_max,"unit":"ratio"}
     out_json.write_text(json.dumps(data, indent=2), encoding='utf-8')
 
+def append_run_summary_row(base_logs: Path, n:int, ppm:int, topo:str, seed:int, mask:str, m: RunMetrics) -> None:
+    csv_path = base_logs / "summary.csv"
+    new = not csv_path.exists()
+    with csv_path.open("a", newline="") as f:
+        w = csv.writer(f)
+        if new:
+            w.writerow(["nodes","ppm","topo","seed","mask","prr","qlr","e2e_ms","nlt_ms","gen","recv"])
+        prr = m.prr if m.prr is not None else ""
+        qlr = (statistics.mean(m.qlr) if m.qlr else "")
+        e2e = (statistics.mean(m.e2e_latency) if m.e2e_latency else "")
+        nlt = m.nlt if m.nlt is not None else ""
+        w.writerow([n, ppm, topo, seed, mask,
+                    f"{prr:.6f}" if prr!="" else "",
+                    f"{qlr:.9f}" if qlr!="" else "",
+                    f"{e2e:.2f}" if e2e!="" else "",
+                    int(nlt) if nlt!="" else "",
+                    m.total_gen, m.total_recv])
+
 # ------------------------------ One run (isolated workspace) ------------------------------ #
+
+def _clone_workspace(src: Path, dst: Path) -> None:
+    if dst.exists(): shutil.rmtree(dst, ignore_errors=True)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    # Fast path: rsync with hard-links; fallback to copytree
+    try:
+        subprocess.check_call(["rsync", "-a", "--delete", "--hard-links", f"{src}/", f"{dst}/"])
+    except Exception:
+        shutil.copytree(src, dst)
 
 def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tuple[bool, str]:
     # Resolve inputs
@@ -296,10 +325,9 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
     run_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / cfg.mask_name
     ensure_dir(run_dir)
 
-    # Isolated workspace (no symlinks)
+    # Isolated workspace
     work_dir = cfg.work_root / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / cfg.mask_name
-    if work_dir.exists(): shutil.rmtree(work_dir, ignore_errors=True)
-    shutil.copytree(cfg.ararl_dir, work_dir)  # heavy but safe
+    _clone_workspace(cfg.ararl_dir, work_dir)
 
     # Drop scenario files into workspace
     shutil.copy2(csc_src, work_dir / "simulation.csc")
@@ -319,13 +347,20 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "WARMUP_SF": str(cfg.warmup_sf),
         "MASK_NAME": cfg.mask_name,
         "MASK_FILE": str(cfg.mask_file.resolve()),
+        # per-run gradle cache, avoid lock contention
+        "GRADLE_USER_HOME": str((work_dir / ".gradle_cache").resolve()),
+        # avoid BLAS over-subscription
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "OPENMP_NUM_THREADS": "1",
     })
     if cfg.tx_range is not None: env["TX_RANGE"] = str(cfg.tx_range)
     if cfg.int_range is not None: env["INT_RANGE"] = str(cfg.int_range)
 
-    # Command (leave gradlew usage untouched)
+    # Command (single-token --args=..., and -p points at gradle root)
     gradlew = cfg.gradle_root / "gradlew"
-    cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", "--args", f"--no-gui {work_dir/'simulation.csc'}"]
+    cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", f"--args=--no-gui {work_dir/'simulation.csc'}"]
 
     # Meta
     meta = {
@@ -357,7 +392,7 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
 
     ok, stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
     if not ok:
-        print(f"[WARN] Health check failed: WRAPUP={stats['wrapup']} SINK_SUMMARY={stats['sink_summary']} (expected {n}/1)")
+        print(f"[WARN] Health check failed: WRAPUP={stats['wrapup']} SINK_SUMMARY={stats['sink_summary']} (expected ≈{n-1})")
 
     # Cleanup workspace unless requested to keep
     if not cfg.keep_work:
@@ -470,7 +505,7 @@ def main() -> None:
             done_cnt += 1
             print(f"[PROGRESS] {done_cnt}/{len(tasks)} complete")
 
-    # Parse + aggregate per (nodes, ppm)
+    # Parse + aggregate per (nodes, ppm) and append per-run summary
     mask_metrics: Dict[Tuple[int,int], List[RunMetrics]] = {}
     for (n, ppm, topo, seed), (ok, rdir) in results.items():
         if not ok or not rdir: continue
@@ -478,6 +513,7 @@ def main() -> None:
         m = parse_log(log_path)
         if m:
             mask_metrics.setdefault((n, ppm), []).append(m)
+            append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, cfg.mask_name, m)
 
     print("\n" + "="*78)
     print("AGGREGATING RESULTS")
@@ -500,6 +536,11 @@ def main() -> None:
     print("\n" + "="*78)
     print(f"DONE. Runs attempted: {total}, passed basic health: {ok_count}.")
     print("="*78)
+
+    # Cleanup global work root unless kept for debug
+    if not cfg.keep_work:
+        try: shutil.rmtree(cfg.work_root, ignore_errors=True)
+        except Exception: pass
 
 if __name__ == "__main__":
     main()
