@@ -12,6 +12,9 @@ Cooja Runner (v1.1.1) — matches /topologies/N*/ layout and real log lines
 - Appends per-run metrics to logs/summary.csv
 - Aggregates per (N, PPM, mask) across all topologies/seeds → aggregated_results.csv / .json
 """
+"""
+python3 testbed/run.py --ararl-dir testbed/experiments/ararl --logs-dir testbed/logs --gradle-root contiki-ng/tools/cooja --nodes 60 --ppm 80 --topology-ids 01 --masks baseline --mask-files baseline:testbed/mask.yaml --duration-sf 180 --warmup-sf 12 --sim-seed 67890 --agent-seed 12345 --traffic-seeds 1
+"""
 from __future__ import annotations
 
 import argparse, csv, json, os, re, shutil, statistics, subprocess, sys
