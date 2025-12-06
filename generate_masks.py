@@ -1,19 +1,35 @@
+#!/usr/bin/env python3
 import yaml, os
 
-params = [
-    "etx","rssi","pfi",
-    "re","bdi","qo","qlr","hc","si","tv","pc",
-    "wr","str"
+# All metrics exactly as your system expects
+METRICS = [
+    "etx", "rssi", "pfi",
+    "re", "bdi", "qo", "qlr", "hc", "si", "tv", "pc",
+    "wr", "str"
 ]
 
-base = {p: False for p in params}
+OUT_DIR = "testbed/masks"
+os.makedirs(OUT_DIR, exist_ok=True)
 
-os.makedirs("testbed/masks", exist_ok=True)
+for metric in METRICS:
+    mask = {
+        "run": {
+            "id": f"mask-{metric}",
+            "notes": f"Only {metric.upper()} enabled",
+        },
+        "features": {
+            "all": False
+        }
+    }
 
-for p in params:
-    d = base.copy()
-    d[p] = True   # only this parameter ON
-    path = f"testbed/masks/mask-{p}.yaml"
-    with open(path, "w") as f:
-        yaml.dump(d, f, sort_keys=False)
-    print("Created", path)
+    # all metrics false
+    for m in METRICS:
+        mask["features"][m] = (m == metric)
+
+    out_path = os.path.join(OUT_DIR, f"mask-{metric}.yaml")
+    with open(out_path, "w") as f:
+        yaml.dump(mask, f, sort_keys=False)
+
+    print(f"Created {out_path}")
+
+print("\nAll masks generated successfully.")
