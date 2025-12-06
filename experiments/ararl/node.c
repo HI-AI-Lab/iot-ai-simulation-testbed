@@ -360,21 +360,18 @@ static void refresh_status(void)
               (double)status_fwd_count / status_gen_count : 0.0;
 
   /* PC — number of children */
-  status_pc = 0;
-  {
-    uip_ipaddr_t buf;
-    NETSTACK_ROUTING.get_root_ipaddr(&buf);
-    root = &buf;
-
-    /* Count all routes whose nexthop == this node */
-    uip_ds6_route_t *r = uip_ds6_route_head();
-    while(r) {
-      const uip_ipaddr_t *nh = uip_ds6_route_nexthop(r);
-      if(nh && ip_to_nodeid(nh) == node_id)
-        status_pc++;
-      r = uip_ds6_route_next(r);
-    }
-  }
+	status_pc = 0;
+	{
+		/* Count all routes whose nexthop == this node */
+		uip_ds6_route_t *r = uip_ds6_route_head();
+		while(r) {
+		  const uip_ipaddr_t *nh = uip_ds6_route_nexthop(r);
+		  if(nh && ip_to_nodeid(nh) == node_id) {
+			status_pc++;
+		  }
+		  r = uip_ds6_route_next(r);
+		}
+	}
 
   /* SI — stability */
   status_si = 1.0 / (1.0 + (double)state.parent_switches);
