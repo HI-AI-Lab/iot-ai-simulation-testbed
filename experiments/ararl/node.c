@@ -362,7 +362,6 @@ static void refresh_status(void)
   /* PC — number of children */
   status_pc = 0;
   {
-    const uip_ipaddr_t *root;
     uip_ipaddr_t buf;
     NETSTACK_ROUTING.get_root_ipaddr(&buf);
     root = &buf;
