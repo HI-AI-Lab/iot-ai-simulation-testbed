@@ -5,7 +5,7 @@
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6-nbr.h"
 #include "net/ipv6/uip-ds6.h"
-#include "net/ipv6/uip-ds6-route.h"   /* <-- added */
+#include "net/ipv6/uip-ds6-route.h"
 #include "net/link-stats.h"
 #include "net/mac/mac.h"
 #include "net/packetbuf.h"
@@ -24,7 +24,10 @@
 #include <stdio.h>
 #include <string.h>
 
-/* ==== MRHOF / RPL constants (inline safe defaults) ==== */
+#define LOG_MODULE "App"
+#define LOG_LEVEL LOG_LEVEL_INFO
+
+/* ==== RPL constants ==== */
 #ifndef MRHOF_ETX_DIVISOR
 #define MRHOF_ETX_DIVISOR 128
 #endif
@@ -34,51 +37,65 @@
 #ifndef RPL_MIN_HOPRANKINC
 #define RPL_MIN_HOPRANKINC 256
 #endif
-/* ====================================================== */
 
-#define LOG_MODULE "App"
-#define LOG_LEVEL LOG_LEVEL_INFO
-
+/* ==== Simulation ==== */
 #define UDP_CLIENT_PORT  8765
 #define UDP_SERVER_PORT  5678
+#define SIM_END_MS       5000000UL
 
-#define SIM_END_MS       5000000UL   /* total runtime ms */
-
-/* === Energy Model (Lei & Liu 2024) === */
+/* ==== Energy Model ==== */
 #define INIT_ENERGY_J   2000.0
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
 #define EPS_MP          10e-12
-#define PKT_BITS        (64*8)
-/* ===================================== */
+#define PKT_BITS       (64*8)
 
+/* ==== Parent table ==== */
 #define MAX_PARENTS_FOR_AGENT 4
 
-/* Raw counters/state (exported for ScriptRunner) */
+/* ============================================================
+ *  STATUS EXPORT VARIABLES (READ BY CONTROLLER)
+ *  DO NOT TOUCH NAMES (your scripts depend on these)
+ * ============================================================*/
+
+/* raw counters */
 uint32_t status_gen_count       = 0;
 uint32_t status_fwd_count       = 0;
 uint32_t status_qloss_count     = 0;
 double   status_residual_energy = INIT_ENERGY_J;
 uint16_t status_rank            = 0;
 
-/* Derived metrics */
+/* derived metrics */
 double   status_bdi             = 0.0;
 double   status_qlr             = 0.0;
 double   status_wr              = 0.0;
 uint16_t status_pc              = 0;
 uint32_t status_parent_switches = 0;
 
-/* Neighbor candidate table (top-K by full path ETX) */
+/* new metrics */
+double   status_si              = 0.0;   /* Stability Index */
+double   status_tv              = 0.0;   /* Trust Value */
+double   status_str             = 0.0;   /* Stretch of Rank */
+uint32_t status_qo              = 0;     /* Queue occupancy snapshot */
+
+/* PFI counters */
+static uint32_t parent_tx_ok[256];
+static uint32_t parent_tx_attempts[256];
+double   status_pfi[MAX_PARENTS_FOR_AGENT];
+
+/* neighbor candidates */
 uint8_t  status_neighbor_ids[MAX_PARENTS_FOR_AGENT];
 uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];
 int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];
 uint8_t  status_num_neighbors = 0;
 
-/* Agent handshake */
+/* agent control */
 uint8_t  agent_waiting = 0;
 uint16_t agent_parent  = 0;
 
-/* === app payload === */
+/* ============================================================
+ * APP PACKET
+ * ============================================================*/
 typedef enum {
   END_NONE   = 0,
   END_ENERGY = 1,
@@ -112,11 +129,302 @@ static mote_state_t state = {
   .residual_energy = INIT_ENERGY_J,
   .end_reason = END_NONE,
   .end_time_ms = 0,
-  .ppm = (SEND_INTERVAL_MS > 0) ? (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
+  .ppm = (SEND_INTERVAL_MS > 0) ?
+         (60000UL / (unsigned long)SEND_INTERVAL_MS) : 0,
   .last_parent_id = 0,
   .parent_switches = 0
 };
 
+/* ============================================================
+ * ENERGY HELPERS
+ * ============================================================*/
+static inline double distance_nodes(unsigned id1, unsigned id2) {
+  double dx = node_pos_x[id1] - node_pos_x[id2];
+  double dy = node_pos_y[id1] - node_pos_y[id2];
+  return sqrt(dx*dx + dy*dy);
+}
+
+static inline double tx_energy(double d, uint32_t bits) {
+  double dth = sqrt(EPS_FS / EPS_MP);
+  return (bits * (E_ELEC + (d <= dth ? EPS_FS*d*d : EPS_MP*d*d*d*d)));
+}
+
+static inline double rx_energy(uint32_t bits) {
+  return bits * E_ELEC;
+}
+
+static inline void consume_energy(double dj) {
+  state.residual_energy -= dj;
+  if(state.residual_energy < 0) state.residual_energy = 0;
+}
+
+/* ============================================================
+ * PARENT PINNING (unchanged)
+ * ============================================================*/
+static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
+  return (unsigned)UIP_HTONS(ip->u16[7]);
+}
+
+static unsigned get_parent_id(void) {
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(dag && dag->preferred_parent) {
+    return ip_to_nodeid(rpl_parent_get_ipaddr(dag->preferred_parent));
+  }
+  return (unsigned)-1;
+}
+
+static void pin_route_to_root_via(const uip_ipaddr_t *nh)
+{
+  if(!nh) return;
+  uip_ipaddr_t root;
+  if(!NETSTACK_ROUTING.get_root_ipaddr(&root)) return;
+
+  uip_ds6_route_t *r = uip_ds6_route_lookup(&root);
+  if(r) {
+    if(uip_ipaddr_cmp(uip_ds6_route_nexthop(r), nh)) return;
+    uip_ds6_route_rm(r);
+  }
+  (void)uip_ds6_route_add(&root, 128, nh);
+}
+
+static void enforce_agent_parent_if_needed(void) {
+  if(agent_parent == 0) return;
+
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(!dag) return;
+
+  /* If already correct */
+  if(dag->preferred_parent) {
+    const uip_ipaddr_t *curr = rpl_parent_get_ipaddr(dag->preferred_parent);
+    if(curr && ip_to_nodeid(curr) == agent_parent) {
+      pin_route_to_root_via(curr);
+      return;
+    }
+  }
+
+  /* Search neighbors */
+  for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
+      nbr != NULL; nbr = nbr_table_next(rpl_neighbors, nbr)) {
+
+    const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
+    if(ip && ip_to_nodeid(ip) == agent_parent) {
+
+      rpl_neighbor_set_preferred_parent(nbr);
+      pin_route_to_root_via(ip);
+
+      if(state.last_parent_id != agent_parent) {
+        state.parent_switches++;
+        state.last_parent_id = agent_parent;
+      }
+      return;
+    }
+  }
+}
+
+/* ============================================================
+ * PACKET SNIFFERS — QLR, ENERGY, PFI
+ * ============================================================*/
+static void sniff_input(void) {
+  uint16_t len = packetbuf_datalen();
+  if(len) consume_energy(rx_energy(len*8));
+}
+
+static void sniff_output(int mac_status) {
+  uint16_t len = packetbuf_datalen();
+  unsigned parent_id = get_parent_id();
+
+  if(parent_id < 256) parent_tx_attempts[parent_id]++;
+
+  double d = 0.0;
+  if(parent_id != (unsigned)-1)
+    d = distance_nodes(node_id, parent_id);
+
+  switch(mac_status) {
+    case MAC_TX_QUEUE_FULL:
+      state.q_loss_count++;
+      return;
+
+    case MAC_TX_OK:
+      if(parent_id < 256) parent_tx_ok[parent_id]++;
+      if(len) consume_energy(tx_energy(d, len*8));
+      state.fwd_count++;
+      return;
+
+    default:
+      if(len) consume_energy(tx_energy(d, len*8));
+      return;
+  }
+}
+
+/* ============================================================
+ * TOP-K NEIGHBORS BY ETX
+ * ============================================================*/
+static void topk_insert(uint8_t *ids, uint16_t *etx, int16_t *rssi,
+                        uint8_t *k, uint8_t K,
+                        uint8_t nid, uint16_t ex, int16_t r)
+{
+  uint8_t pos = 0;
+  while(pos < *k) {
+    if(ex < etx[pos] || (ex == etx[pos] && nid < ids[pos])) break;
+    pos++;
+  }
+  if(*k < K) {
+    for(uint8_t j = *k; j > pos; j--) {
+      ids[j]=ids[j-1]; etx[j]=etx[j-1]; rssi[j]=rssi[j-1];
+    }
+    ids[pos]=nid; etx[pos]=ex; rssi[pos]=r; (*k)++;
+  } else if(pos < K) {
+    for(uint8_t j = K-1; j > pos; j--) {
+      ids[j]=ids[j-1]; etx[j]=etx[j-1]; rssi[j]=rssi[j-1];
+    }
+    ids[pos]=nid; etx[pos]=ex; rssi[pos]=r;
+  }
+}
+
+static void refresh_etx_table(void) {
+  status_num_neighbors = 0;
+  uint8_t  tids[MAX_PARENTS_FOR_AGENT]={0};
+  uint16_t tetx[MAX_PARENTS_FOR_AGENT]={0};
+  int16_t  trssi[MAX_PARENTS_FOR_AGENT]={0};
+  uint8_t  k=0;
+
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if(!dag) goto clear;
+
+  for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
+      nbr != NULL; nbr = nbr_table_next(rpl_neighbors, nbr)) {
+
+    if(!rpl_neighbor_is_fresh(nbr)) continue;
+    if(!rpl_neighbor_is_acceptable_parent(nbr)) continue;
+
+    const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
+    if(!ip) continue;
+
+    uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
+    if(rank_via == 0 || rank_via == RPL_INFINITE_RANK) continue;
+
+    uint32_t delta = (rank_via > RPL_ROOT_RANK)
+                     ? (rank_via - RPL_ROOT_RANK) : 0;
+
+    uint32_t ex = (delta * MRHOF_ETX_DIVISOR * 100UL + (RPL_MIN_HOPRANKINC/2)) /
+                  RPL_MIN_HOPRANKINC;
+
+    if(ex > 0xFFFF) ex = 0xFFFF;
+
+    const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
+    int16_t rssi = st ? st->rssi : 0;
+
+    topk_insert(tids, tetx, trssi, &k, MAX_PARENTS_FOR_AGENT,
+                (uint8_t)ip_to_nodeid(ip), (uint16_t)ex, rssi);
+  }
+
+clear:
+  for(uint8_t i=0;i<MAX_PARENTS_FOR_AGENT;i++){
+    status_neighbor_ids[i]  = (i<k)?tids[i]:0;
+    status_etx_x100[i]      = (i<k)?tetx[i]:0;
+    status_link_rssi_dbm[i] = (i<k)?trssi[i]:0;
+  }
+  status_num_neighbors = k;
+}
+
+/* ============================================================
+ * STATUS REFRESH — ALL METRICS UPDATED HERE
+ * (LOGGING REMAINS UNCHANGED)
+ * ============================================================*/
+static void refresh_status(void)
+{
+  /* raw */
+  status_gen_count       = state.gen_count;
+  status_fwd_count       = state.fwd_count;
+  status_qloss_count     = state.q_loss_count;
+  status_residual_energy = state.residual_energy;
+
+  rpl_dag_t *dag = rpl_get_any_dag();
+  status_rank = dag ? dag->rank : 0;
+
+  /* QO — queue occupancy snapshot */
+  status_qo = QUEUEBUF_CONF_NUM;
+
+  /* BDI */
+  status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
+  if(status_bdi < 0) status_bdi=0;
+  if(status_bdi > 1) status_bdi=1;
+
+  /* QLR */
+  uint32_t attempts = status_fwd_count + status_qloss_count;
+  status_qlr = (attempts>0) ?
+               (double)status_qloss_count / attempts : 0.0;
+
+  /* WR */
+  status_wr = (status_gen_count>0) ?
+              (double)status_fwd_count / status_gen_count : 0.0;
+
+  /* PC — number of children */
+  status_pc = 0;
+  {
+    const uip_ipaddr_t *root;
+    uip_ipaddr_t buf;
+    NETSTACK_ROUTING.get_root_ipaddr(&buf);
+    root = &buf;
+
+    /* Count all routes whose nexthop == this node */
+    uip_ds6_route_t *r = uip_ds6_route_head();
+    while(r) {
+      const uip_ipaddr_t *nh = uip_ds6_route_nexthop(r);
+      if(nh && ip_to_nodeid(nh) == node_id)
+        status_pc++;
+      r = uip_ds6_route_next(r);
+    }
+  }
+
+  /* SI — stability */
+  status_si = 1.0 / (1.0 + (double)state.parent_switches);
+
+  /* TV — trust */
+  uint32_t total = status_fwd_count + status_qloss_count;
+  status_tv = (total>0) ?
+              (double)status_fwd_count / total : 1.0;
+
+  /* STR — stretch of rank */
+  status_str = (status_rank >= RPL_ROOT_RANK) ?
+               (double)(status_rank - RPL_ROOT_RANK) : 0;
+
+  /* PFI — per top-K parent */
+  for(uint8_t i=0;i<MAX_PARENTS_FOR_AGENT;i++){
+    uint8_t pid = status_neighbor_ids[i];
+    uint32_t a = parent_tx_attempts[pid];
+    uint32_t s = parent_tx_ok[pid];
+    status_pfi[i] = (a>0)?((double)s/a):0.0;
+  }
+
+  /* rebuild parent table */
+  refresh_etx_table();
+}
+
+/* ============================================================
+ * APP I/O
+ * ============================================================*/
+static void send_a_packet(struct simple_udp_connection *udp_conn) {
+  uip_ipaddr_t dest_ipaddr;
+
+  if(!NETSTACK_ROUTING.node_is_reachable() ||
+     !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr))
+    return;
+
+  enforce_agent_parent_if_needed();
+
+  app_packet_t pkt;
+  pkt.t_sent   = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
+  pkt.origin_id= node_id;
+  memset(pkt.padding,0,sizeof(pkt.padding));
+
+  simple_udp_sendto(udp_conn,&pkt,sizeof(pkt),&dest_ipaddr);
+  state.gen_count++;
+}
+
+/* ============================================================
+ * WRAPUP (unchanged)
+ * ============================================================*/
 static const char *end_reason_str(end_reason_t r) {
   switch(r) {
     case END_ENERGY: return "energy";
@@ -126,10 +434,10 @@ static const char *end_reason_str(end_reason_t r) {
 }
 
 static void wrapup(void) {
-  LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%" PRIu32 " "
-           "Gen=%" PRIu32 " Fwd=%" PRIu32 " QLoss=%" PRIu32 " qsize=%" PRIu32 " "
-           "residual=%.6fJ ppm=%" PRIu32 " parent=%u switches=%" PRIu32 "\n",
-           (unsigned)node_id,
+  LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%"PRIu32" "
+           "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" qsize=%"PRIu32" "
+           "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32"\n",
+           node_id,
            end_reason_str(state.end_reason),
            state.end_time_ms,
            state.gen_count,
@@ -142,137 +450,14 @@ static void wrapup(void) {
            state.parent_switches);
 }
 
-/* ===== helpers ===== */
-static inline double distance_nodes(unsigned id1, unsigned id2) {
-  double dx = (double)node_pos_x[id1] - (double)node_pos_x[id2];
-  double dy = (double)node_pos_y[id1] - (double)node_pos_y[id2];
-  return sqrt(dx*dx + dy*dy);
-}
-
-static inline double tx_energy(double d, uint32_t bits) {
-  double dth = sqrt(EPS_FS / EPS_MP);
-  if(d <= dth) {
-    return (double)bits * (E_ELEC + EPS_FS * d * d);
-  } else {
-    return (double)bits * (E_ELEC + EPS_MP * d * d * d * d);
-  }
-}
-
-static inline double rx_energy(uint32_t bits) {
-  return (double)bits * E_ELEC;
-}
-
-/* Clamp-subtract energy */
-static inline void consume_energy(double dj) {
-  state.residual_energy -= dj;
-  if(state.residual_energy < 0) state.residual_energy = 0;
-}
-
-/* Keep a running top-K sorted by ETX asc (tie: node id asc) */
-static void topk_insert(uint8_t *ids, uint16_t *etx, int16_t *rssi,
-                        uint8_t *k, uint8_t K,
-                        uint8_t nid, uint16_t etx_x100, int16_t rssi_dbm)
-{
-  uint8_t pos = 0;
-  while(pos < *k) {
-    if(etx_x100 < etx[pos] || (etx_x100 == etx[pos] && nid < ids[pos])) break;
-    pos++;
-  }
-  if(*k < K) {
-    for(uint8_t j = *k; j > pos; j--) { ids[j]=ids[j-1]; etx[j]=etx[j-1]; rssi[j]=rssi[j-1]; }
-    ids[pos]=nid; etx[pos]=etx_x100; rssi[pos]=rssi_dbm; (*k)++;
-  } else if(pos < K) {
-    for(uint8_t j = K-1; j > pos; j--) { ids[j]=ids[j-1]; etx[j]=etx[j-1]; rssi[j]=rssi[j-1]; }
-    ids[pos]=nid; etx[pos]=etx_x100; rssi[pos]=rssi_dbm;
-  }
-}
-
-static clock_time_t poisson_next_delay_ticks(void) {
-  float u = ((float)random_rand() + 1.0f) / ((float)RANDOM_RAND_MAX + 1.0f);
-  unsigned ppm = state.ppm ? state.ppm : 1;
-  float mean_sec = 60.0f / (float)ppm;
-  float x_sec = -mean_sec * logf(u);
-  clock_time_t ticks = (clock_time_t)(x_sec * (float)CLOCK_SECOND);
-  if(ticks < 1) ticks = 1;
-  return ticks;
-}
-
-static unsigned ip_to_nodeid(const uip_ipaddr_t *ip) {
-  return (unsigned)UIP_HTONS(ip->u16[7]);
-}
-
-static unsigned get_parent_id(void) {
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(dag && dag->preferred_parent) {
-    const uip_ipaddr_t *p_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
-    return ip_to_nodeid(p_ip);
-  }
-  return (unsigned)-1;
-}
-
-/* ---- route pinning helper (no Contiki patch) ---- */
-static void pin_route_to_root_via(const uip_ipaddr_t *nh)
-{
-  if(!nh) return;
-
-  uip_ipaddr_t root;
-  if(!NETSTACK_ROUTING.get_root_ipaddr(&root)) return;
-
-  /* If a route to the root exists and already uses this next hop, keep it. */
-  uip_ds6_route_t *r = uip_ds6_route_lookup(&root);
-  if(r) {
-    const uip_ipaddr_t *curr_nh = uip_ds6_route_nexthop(r);
-    if(curr_nh && uip_ipaddr_cmp(curr_nh, nh)) {
-      return; /* already pinned to this parent */
-    }
-    uip_ds6_route_rm(r);
-  }
-
-  /* Add a /128 host route to root via the chosen parent (3-arg API). */
-  (void)uip_ds6_route_add(&root, 128, nh);
-
-  LOG_INFO("PIN route /128 to root via parent %u\n",
-           (unsigned)UIP_HTONS(nh->u16[7]));
-}
-
-/* Fast/safe preferred-parent enforcement for agent_parent */
-static void enforce_agent_parent_if_needed(void) {
-  if(agent_parent == 0) return;
-
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(!dag) return;
-
-  if(dag->preferred_parent) {
-    const uip_ipaddr_t *curr_ip = rpl_parent_get_ipaddr(dag->preferred_parent);
-    if(curr_ip && ip_to_nodeid(curr_ip) == agent_parent) {
-      /* ensure route stays pinned even if parent is already set */
-      pin_route_to_root_via(curr_ip);
-      return;
-    }
-  }
-
-  for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
-      nbr != NULL;
-      nbr = nbr_table_next(rpl_neighbors, nbr)) {
-    const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
-    if(ip && ip_to_nodeid(ip) == agent_parent) {
-      rpl_neighbor_set_preferred_parent(nbr);
-      pin_route_to_root_via(ip); /* <-- key line */
-      if(state.last_parent_id != agent_parent) {
-        state.parent_switches++;
-        state.last_parent_id = agent_parent;
-      }
-      return;
-    }
-  }
-  /* requested parent not (yet) in table -> no-op */
-}
-
+/* ============================================================
+ * TERMINATION CHECKS
+ * ============================================================*/
 static int is_simulation_time_over(void) {
-  uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-  if(now_ms >= SIM_END_MS) {
+  uint32_t now = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
+  if(now >= SIM_END_MS) {
     state.end_reason = END_TIME;
-    state.end_time_ms = now_ms;
+    state.end_time_ms = now;
     return 1;
   }
   return 0;
@@ -282,186 +467,66 @@ static int is_energy_depleted(void) {
   if(state.residual_energy <= 0) {
     state.residual_energy = 0;
     state.end_reason = END_ENERGY;
-    state.end_time_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
+    state.end_time_ms = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
     return 1;
   }
   return 0;
 }
 
-/* ===== app I/O ===== */
-static void send_a_packet(struct simple_udp_connection *udp_conn) {
-  uip_ipaddr_t dest_ipaddr;
-  if(!NETSTACK_ROUTING.node_is_reachable() ||
-     !NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
-    return;
-  }
-
-  /* Enforce controller's parent before each packet */
-  enforce_agent_parent_if_needed();
-
-  app_packet_t pkt;
-  pkt.t_sent = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
-  pkt.origin_id = node_id;
-  memset(pkt.padding, 0, sizeof(pkt.padding));
-  simple_udp_sendto(udp_conn, &pkt, sizeof(pkt), &dest_ipaddr);
-  state.gen_count++;
-}
-
-static void sniff_input(void) {
-  uint16_t len = packetbuf_datalen();
-  if(len) consume_energy(rx_energy((uint32_t)len * 8U));
-}
-
-static void sniff_output(int mac_status) {
-  uint16_t len = packetbuf_datalen();
-  unsigned parent_id = get_parent_id();
-  double d = (parent_id != (unsigned)-1) ? distance_nodes(node_id, parent_id) : 0.0;
-
-  switch(mac_status) {
-    case MAC_TX_QUEUE_FULL:
-      state.q_loss_count++;
-      return;
-
-    case MAC_TX_OK:
-      if(parent_id != (unsigned)-1 && len) consume_energy(tx_energy(d, (uint32_t)len * 8U));
-      state.fwd_count++;
-      return;
-
-    default:
-      if(parent_id != (unsigned)-1 && len) consume_energy(tx_energy(d, (uint32_t)len * 8U));
-      return;
-  }
-}
-
-/* ===== neighbor features ===== */
-static void refresh_etx_table(void) {
-  status_num_neighbors = 0;
-
-  rpl_dag_t *dag = rpl_get_any_dag();
-  if(!dag) {
-    for(uint8_t i=0;i<MAX_PARENTS_FOR_AGENT;i++){
-      status_neighbor_ids[i]=0; status_etx_x100[i]=0; status_link_rssi_dbm[i]=0;
-    }
-    return;
-  }
-
-  uint8_t  best_id  [MAX_PARENTS_FOR_AGENT] = {0};
-  uint16_t best_etx [MAX_PARENTS_FOR_AGENT] = {0};
-  int16_t  best_rssi[MAX_PARENTS_FOR_AGENT] = {0};
-  uint8_t  k = 0;
-
-  for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
-      nbr != NULL;
-      nbr = nbr_table_next(rpl_neighbors, nbr)) {
-
-    if(!rpl_neighbor_is_fresh(nbr)) continue;
-    if(!rpl_neighbor_is_acceptable_parent(nbr)) continue;
-
-    const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
-    if(!ip) continue;
-
-    uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
-    if(rank_via == 0 || rank_via == RPL_INFINITE_RANK) continue;
-
-    uint16_t path_etx_x100 = 0;
-    if(rank_via > RPL_ROOT_RANK) {
-      uint32_t delta = (uint32_t)(rank_via - RPL_ROOT_RANK);
-      uint32_t etx_x100 = (delta * (uint32_t)MRHOF_ETX_DIVISOR * 100UL + (RPL_MIN_HOPRANKINC/2))
-                          / (uint32_t)RPL_MIN_HOPRANKINC;
-      if(etx_x100 > 0xFFFF) etx_x100 = 0xFFFF;
-      path_etx_x100 = (uint16_t)etx_x100;
-    }
-
-    const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
-    int16_t rssi_dbm = st ? st->rssi : 0x7fff;
-
-    topk_insert(best_id, best_etx, best_rssi, &k, MAX_PARENTS_FOR_AGENT,
-                (uint8_t)ip_to_nodeid(ip), path_etx_x100, rssi_dbm);
-  }
-
-  for(uint8_t i = 0; i < k; i++) {
-    status_neighbor_ids[i]  = best_id[i];
-    status_etx_x100[i]      = best_etx[i];
-    status_link_rssi_dbm[i] = best_rssi[i];
-  }
-  for(uint8_t i = k; i < MAX_PARENTS_FOR_AGENT; i++) {
-    status_neighbor_ids[i]  = 0;
-    status_etx_x100[i]      = 0;
-    status_link_rssi_dbm[i] = 0;
-  }
-  status_num_neighbors = k;
-}
-
-static void refresh_status(void) {
-  status_parent_switches = state.parent_switches;
-  status_gen_count       = state.gen_count;
-  status_fwd_count       = state.fwd_count;
-  status_qloss_count     = state.q_loss_count;
-  status_residual_energy = state.residual_energy;
-
-  rpl_dag_t *dag = rpl_get_any_dag();
-  status_rank = dag ? dag->rank : 0;
-
-  if(status_residual_energy > INIT_ENERGY_J) status_residual_energy = INIT_ENERGY_J;
-  if(status_residual_energy < 0) status_residual_energy = 0;
-  status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
-  if(status_bdi < 0) status_bdi = 0; else if(status_bdi > 1) status_bdi = 1;
-
-  {
-    uint32_t attempts = status_fwd_count + status_qloss_count;
-    status_qlr = (attempts > 0) ? ((double)status_qloss_count / (double)attempts) : 0.0;
-  }
-
-  status_wr  = (status_gen_count > 0) ?
-               ((double)status_fwd_count / (double)status_gen_count) : 0.0;
-
-  status_pc = 0;
-  for(rpl_nbr_t *n = nbr_table_head(rpl_neighbors); n != NULL; n = nbr_table_next(rpl_neighbors, n)) {
-    status_pc++;
-  }
-
-  refresh_etx_table();
-}
-
-/* ===== sniffer & UDP ===== */
+/* ============================================================
+ * PROCESSES
+ * ============================================================*/
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 static struct simple_udp_connection udp_conn;
 
-/* ===== processes ===== */
-PROCESS(packet_generator_process, "Packet Generator");
-PROCESS(status_refresher_process, "Status Refresher");
-AUTOSTART_PROCESSES(&packet_generator_process, &status_refresher_process);
+PROCESS(packet_generator_process,"Packet Generator");
+PROCESS(status_refresher_process,"Status Refresher");
 
-PROCESS_THREAD(packet_generator_process, ev, data)
+AUTOSTART_PROCESSES(&packet_generator_process,
+                    &status_refresher_process);
+
+/* generator */
+PROCESS_THREAD(packet_generator_process,ev,data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
+
   netstack_sniffer_add(&my_sniffer);
-  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL, UDP_SERVER_PORT, NULL);
-  if(state.ppm == 0) state.ppm = 1;
-  etimer_set(&gen_timer, poisson_next_delay_ticks());
-  while(1) {
+  simple_udp_register(&udp_conn,UDP_CLIENT_PORT,NULL,
+                      UDP_SERVER_PORT,NULL);
+
+  if(state.ppm==0) state.ppm=1;
+  etimer_set(&gen_timer,random_rand()%CLOCK_SECOND);
+
+  while(1){
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
+
     if(is_energy_depleted() || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
     }
+
     send_a_packet(&udp_conn);
-    etimer_set(&gen_timer, poisson_next_delay_ticks());
+    etimer_set(&gen_timer,random_rand()%CLOCK_SECOND);
   }
+
   PROCESS_END();
 }
 
-PROCESS_THREAD(status_refresher_process, ev, data)
+/* metrics refresh */
+PROCESS_THREAD(status_refresher_process,ev,data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
-  etimer_set(&t, CLOCK_SECOND);
-  while(1) {
+
+  etimer_set(&t,CLOCK_SECOND);
+
+  while(1){
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
     refresh_status();
-    enforce_agent_parent_if_needed(); /* keep it sticky */
+    enforce_agent_parent_if_needed();
     etimer_reset(&t);
   }
+
   PROCESS_END();
 }

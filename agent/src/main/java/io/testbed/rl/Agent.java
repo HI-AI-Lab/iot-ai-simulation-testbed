@@ -11,6 +11,7 @@ import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.MultiDataSet;
@@ -18,134 +19,159 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 /**
- * Double-Dueling DQN with conv front-end + PER + annealing.
- * - Train each phase: 1 minibatch (size=32), target update every 5.
- * - Replay capacity = 1000, prioritized sampling (no IS re-weighting).
- * - Dueling combine: Q = V + (A - mean(A)).
- * - SAME padding conv to support small k/Factive.
- * - Feature masking is INPUT-ONLY (Factive), no output masks.
+ * FINAL — Lei & Liu (2024) CNN-based Double Dueling DQN
+ * Inputs: K × Factive matrix of selected RPL metrics.
  *
- * Feature order (must match controller.js):
- * 0 ETX, 1 HC, 2 RE, 3 QLR, 4 BDI, 5 WR, 6 RSSI, 7 PC, 8 SI, 9 GEN, 10 FWD, 11 QLOSS
+ * FINAL FIXED FEATURE ORDER (matches controller.js + node.c):
+ *
+ * 0 ETX
+ * 1 RSSI
+ * 2 PFI
+ * 3 RE
+ * 4 BDI
+ * 5 QO
+ * 6 QLR
+ * 7 HC
+ * 8 SI
+ * 9 TV
+ * 10 PC
+ * 11 WR
+ * 12 STR
  */
 public class Agent implements Serializable {
 
     private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
     private static PrintWriter logger;
     private static boolean csvHeaderWritten = false;
+
     static {
         try {
             logger = new PrintWriter(new FileWriter(LOG_PATH, true), true);
             logger.println("=== Agent started ===");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             logger = new PrintWriter(System.err, true);
         }
     }
+
     private static void log(String msg) {
-        if (logger != null) { logger.println(System.currentTimeMillis() + " " + msg); logger.flush(); }
+        logger.println(System.currentTimeMillis() + " " + msg);
+        logger.flush();
     }
 
-    // -------- Controller inputs --------
+    // -------------------------------------------------------------------
+    // FINAL 13 FEATURE INDICES
+    // -------------------------------------------------------------------
+    private static final int IDX_ETX = 0;
+    private static final int IDX_RSSI = 1;
+    private static final int IDX_PFI = 2;
+
+    private static final int IDX_RE = 3;
+    private static final int IDX_BDI = 4;
+    private static final int IDX_QO = 5;
+    private static final int IDX_QLR = 6;
+    private static final int IDX_HC = 7;
+    private static final int IDX_SI = 8;
+    private static final int IDX_TV = 9;
+    private static final int IDX_PC = 10;
+
+    private static final int IDX_WR = 11;
+    private static final int IDX_STR = 12;
+
+    private static final int FTOTAL = 13;
+
+    // -------------------------------------------------------------------
     public static class Counters {
         public int generated, delivered, dropped;
         public double residualEnergy;
         public int etx, hopCount, rankViolations;
     }
 
-    // -------- Episode & Replay --------
     private static class Episode {
-        final double[] sFlat; final int a; final int parentId;
-        final double hcSnap, reSnap, qlrSnap;
-        Episode(double[] sFlat, int a, int parentId, double hcSnap, double reSnap, double qlrSnap) {
-            this.sFlat = sFlat; this.a = a; this.parentId = parentId;
-            this.hcSnap = hcSnap; this.reSnap = reSnap; this.qlrSnap = qlrSnap;
+        final double[] sFlat;
+        final int a;
+        final int parentId;
+        final double hcSnap, reSnap, qlSnap;
+
+        Episode(double[] s, int a, int pid, double hc, double re, double ql) {
+            this.sFlat = s; this.a = a;
+            this.parentId = pid;
+            this.hcSnap = hc; this.reSnap = re; this.qlSnap = ql;
         }
     }
+
     private static class Transition {
-        final double[] s; final int a; final double r;
-        final double[] s2; final boolean done; final boolean[] valid2;
+        final double[] s;
+        final int a;
+        final double r;
+        final double[] s2;
+        final boolean done;
+        final boolean[] valid2;
+
         Transition(double[] s, int a, double r, double[] s2, boolean done, boolean[] valid2) {
-            this.s = s; this.a = a; this.r = r; this.s2 = s2; this.done = done; this.valid2 = valid2;
+            this.s = s; this.a = a; this.r = r;
+            this.s2 = s2; this.done = done; this.valid2 = valid2;
         }
     }
 
-    // -------- Feature indices --------
-    private static final int IDX_ETX=0, IDX_HC=1, IDX_RE=2, IDX_QLR=3, IDX_BDI=4, IDX_WR=5,
-            IDX_RSSI=6, IDX_PC=7, IDX_SI=8, IDX_GEN=9, IDX_FWD=10, IDX_QLOSS=11;
-
-    // -------- Hyperparams --------
-    private final int k;                 // max candidate parents (K)
-    private final int Ftotal;            // total possible features (12)
-    private final boolean[] featureMask; // length = Ftotal
-    private final int Factive;           // active features count
-
-    // Annealing over phases
-    private int phaseCount = 0;
-    private double epsilonStart = 0.30, epsilonEnd = 0.01;
-    private int epsilonAnnealPhases = 500;
-    private double betaStart = 0.40, betaEnd = 1.00; // PER β (sampling only)
-    private int betaAnnealPhases = 500;
-
-    private double epsilon = epsilonStart;
-    private double perBeta = betaStart;
-
-    private double gamma   = 0.90;
-    private int batchSize  = 32;
-    private int targetUpdateEvery = 5;
-
-    // Reward weights
-    private double w1_QU = 1.0; // weight for QLR term
-    private double w2_ECR = 1.0; // weight for Energy Consumption Ratio term
-
+    // -------------------------------------------------------------------
+    private final int k;
+    private final boolean[] mask;
+    private final int Factive;
     private final double initialEnergy;
 
-    // PER
-    private static final int REPLAY_CAPACITY = 1_000;
-    private final Deque<Transition> replay = new ArrayDeque<>(REPLAY_CAPACITY);
-    private final Map<Transition, Double> pri = new IdentityHashMap<>();
-    private double perAlpha = 0.6;   // priority exponent
-
-    // -------- State --------
     private final Map<Integer, Episode> open = new HashMap<>();
-    private final Random rng = new Random(1234);
+    private final Map<Integer,Integer> posMap = new HashMap<>();
 
-    // Dueling networks
+    private double epsilonStart = 0.30, epsilonEnd = 0.01;
+    private int epsilonAnneal = 500;
+    private double epsilon = epsilonStart;
+
+    private double betaStart = 0.40, betaEnd = 1.00;
+    private int betaAnneal = 500;
+    private double perBeta = betaStart;
+
+    private double gamma = 0.90;
+    private int batchSize = 32;
+    private int targetUpdate = 5;
+
+    private int phase = 0;
+    private long trainSteps = 0;
+
+    // PER
+    private static final int CAP = 1000;
+    private final Deque<Transition> replay = new ArrayDeque<>(CAP);
+    private final Map<Transition,Double> pri = new IdentityHashMap<>();
+    private double perAlpha = 0.6;
+
+    private double w_qlr = 1.0;
+    private double w_ecr = 1.0;
+
+    private final Random rnd = new Random(1234);
+
     private final ComputationGraph online;
     private final ComputationGraph target;
 
-    private long trainSteps = 0;
-    private final Map<Integer, Integer> activePos = new HashMap<>();
+    private static final double HOP_NORM = 16.0;
+    private static final double EPS = 1e-9;
 
-    // Reward normalization
-    private static final double HOP_NORM = 16.0; // expected max hops (adjust to topology)
+    // -------------------------------------------------------------------
+    public Agent(int k, boolean[] mask, double initialEnergy) {
 
-    // -------- Construction --------
-    public Agent(int k, boolean[] mask, double initialEnergyJ) {
-        if (k <= 0) throw new IllegalArgumentException("k must be > 0");
-        if (mask == null || mask.length == 0) throw new IllegalArgumentException("mask must be non-empty");
         this.k = k;
-        this.Ftotal = mask.length;
-        this.featureMask = Arrays.copyOf(mask, mask.length);
-        this.initialEnergy = initialEnergyJ > 0 ? initialEnergyJ : 1.0;
+        this.mask = Arrays.copyOf(mask, mask.length);
+        this.initialEnergy = initialEnergy;
 
-        int cnt = 0;
-        for (int j=0; j<mask.length; j++) if (mask[j]) { activePos.put(j, cnt); cnt++; }
-        if (cnt == 0) throw new IllegalArgumentException("featureMask has no active features");
-        this.Factive = cnt;
+        int c = 0;
+        for (int i=0; i < mask.length; i++)
+            if (mask[i]) posMap.put(i, c++);
 
-        if (k < 1 || Factive < 1) {
-            throw new IllegalStateException("Invalid conv input: k=" + k + " Factive=" + Factive);
-        }
-        log("DNN input grid: k=" + k + " x Factive=" + Factive);
+        if (c == 0) throw new RuntimeException("Mask activates 0 features!");
+        this.Factive = c;
 
         Nd4j.getRandom().setSeed(123);
 
@@ -153,454 +179,387 @@ public class Agent implements Serializable {
         this.target = buildGraph(k);
         this.online.init();
         this.target.init();
-        hardSyncTarget();
+        syncTarget();
+
+        log("INIT Agent: K=" + k + " Factive=" + Factive);
     }
 
-    private ComputationGraph buildGraph(int outActions) {
+    // -------------------------------------------------------------------
+    // CNN ARCHITECTURE (Lei & Liu 2024)
+    // -------------------------------------------------------------------
+    private ComputationGraph buildGraph(int outK) {
         ComputationGraphConfiguration conf =
-                new NeuralNetConfiguration.Builder()
-                        .seed(123)
-                        .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                        .updater(new Adam(1e-3))
-                        .weightInit(org.deeplearning4j.nn.weights.WeightInit.XAVIER)
-                        .convolutionMode(ConvolutionMode.Same)
-                        .graphBuilder()
-                        .addInputs("input")
-                        .setInputTypes(InputType.convolutional(k, Factive, 1)) // H x W x C
-                        // shared conv trunk
-                        .addLayer("conv1", new ConvolutionLayer.Builder(3,3)
-                                .stride(1,1).nOut(16)
-                                .activation(Activation.RELU).build(), "input")
-                        .addLayer("conv2", new ConvolutionLayer.Builder(3,1)
-                                .stride(1,1).nOut(32)
-                                .activation(Activation.RELU).build(), "conv1")
-                        .addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "conv2")
-                        .addLayer("dense", new DenseLayer.Builder().nOut(128)
-                                .activation(Activation.RELU).build(), "pool")
-                        // dueling heads
-                        .addLayer("advFC", new DenseLayer.Builder().nOut(64)
-                                .activation(Activation.RELU).build(), "dense")
-                        .addLayer("valFC", new DenseLayer.Builder().nOut(64)
-                                .activation(Activation.RELU).build(), "dense")
-                        .addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                                .activation(Activation.IDENTITY).nOut(outActions).build(), "advFC")
-                        .addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                                .activation(Activation.IDENTITY).nOut(1).build(), "valFC")
-                        .setOutputs("advOut", "valOut")
-                        .build();
+            new NeuralNetConfiguration.Builder()
+                .seed(123)
+                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .updater(new Adam(1e-3))
+                .convolutionMode(ConvolutionMode.Same)
+                .graphBuilder()
+                .addInputs("input")
+                .setInputTypes(InputType.convolutional(k, Factive, 1))
+                .addLayer("conv1", new ConvolutionLayer.Builder(3,3)
+                        .stride(1,1).nOut(16)
+                        .activation(Activation.RELU).build(), "input")
+                .addLayer("conv2", new ConvolutionLayer.Builder(3,1)
+                        .stride(1,1).nOut(32)
+                        .activation(Activation.RELU).build(), "conv1")
+                .addLayer("pool", new GlobalPoolingLayer.Builder(PoolingType.AVG)
+                        .build(), "conv2")
+                .addLayer("dense", new DenseLayer.Builder()
+                        .nOut(128).activation(Activation.RELU)
+                        .build(), "pool")
+                .addLayer("advFC", new DenseLayer.Builder()
+                        .nOut(64).activation(Activation.RELU)
+                        .build(), "dense")
+                .addLayer("valFC", new DenseLayer.Builder()
+                        .nOut(64).activation(Activation.RELU)
+                        .build(), "dense")
+                .addLayer("advOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .nOut(outK).activation(Activation.IDENTITY)
+                        .build(), "advFC")
+                .addLayer("valOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .nOut(1).activation(Activation.IDENTITY)
+                        .build(), "valFC")
+                .setOutputs("advOut","valOut")
+                .build();
 
         return new ComputationGraph(conf);
     }
 
-    // -------- Decide --------
-    public synchronized int decide(int moteId,
-                                   double[][] S,
-                                   boolean[] valid,
-                                   Counters countersNow,
-                                   int[] candIds,
-                                   double[] hcArr,
-                                   double[] reArr,
-                                   double[] qlrArr) {
+    private void syncTarget() { target.setParams(online.params().dup()); }
 
-        double[] flat = flattenState(S);
+    // -------------------------------------------------------------------
+    // DECISION STEP
+    // -------------------------------------------------------------------
+    public synchronized int decide(
+            int moteId,
+            double[][] S,
+            boolean[] valid,
+            Counters ctrs,
+            int[] candIds,
+            double[] hcArr,
+            double[] reArr,
+            double[] qlrArr)
+    {
+        double[] flat = flatten(S);
 
-        // Close previous episode -> transition
         Episode prev = open.remove(moteId);
         if (prev != null) {
-            double rPrev = computeRewardForPrevious(prev, candIds, hcArr, reArr, qlrArr);
-            addReplay(new Transition(prev.sFlat, prev.a, rPrev, flat, false, copyOrAllValid(valid)));
+            double r = computeReward(prev, candIds, hcArr, reArr, qlrArr);
+            addReplay(new Transition(prev.sFlat, prev.a, r, flat, false, copyValid(valid)));
         }
 
-        // ε-greedy over dueling Q
         double[] q = qValues(online, flat);
         int greedy = argmaxMasked(q, valid);
-        if (greedy < 0) greedy = 0;
-        int a = (rng.nextDouble() < epsilon) ? randomValid(valid, k) : greedy;
+        int action = (rnd.nextDouble() < epsilon)
+                ? randomValid(valid)
+                : greedy;
 
-        // Snapshot chosen parent's metrics
-        int chosenParentId = 0; double hcSnap=0, reSnap=0, qlSnap=0;
-        if (a >= 0 && candIds != null && a < candIds.length) {
-            chosenParentId = candIds[a];
-            hcSnap = valOrZero(hcArr, a);
-            reSnap = valOrZero(reArr, a);
-            qlSnap = valOrZero(qlrArr, a);
+        int pid = 0;
+        double hc = 0, re = 0, ql = 0;
+
+        if (action >= 0 && action < candIds.length) {
+            pid = candIds[action];
+            hc = safe(hcArr, action);
+            re = safe(reArr, action);
+            ql = safe(qlrArr, action);
         }
 
-        open.put(moteId, new Episode(flat, a, chosenParentId, hcSnap, reSnap, qlSnap));
-        return a;
+        open.put(moteId, new Episode(flat, action, pid, hc, re, ql));
+        return action;
     }
 
-    // -------- End Phase (train every phase: one mini-batch) --------
+    // -------------------------------------------------------------------
+    // END PHASE
+    // -------------------------------------------------------------------
     public synchronized void endPhase() {
-        // Close open episodes
-        for (Map.Entry<Integer, Episode> e : open.entrySet()) {
-            Episode ep = e.getValue();
-            double r = rewardFromRank(ep.hcSnap, ep.reSnap, ep.qlrSnap);
+
+        for (Episode ep : open.values()) {
+            double r = reward(ep.hcSnap, ep.reSnap, ep.qlSnap);
             addReplay(new Transition(ep.sFlat, ep.a, r, ep.sFlat, true, null));
         }
         open.clear();
 
-        // Train exactly ONE mini-batch per phase
-        if (!replay.isEmpty()) {
-            trainOneBatchPER();
-        }
+        if (!replay.isEmpty()) trainOneBatch();
 
-        // Phase-based annealing
-        phaseCount++;
-        double epsFrac  = Math.min(1.0, phaseCount / (double)Math.max(1, epsilonAnnealPhases));
-        epsilon = epsilonStart + (epsilonEnd - epsilonStart) * epsFrac;
-        double betaFrac = Math.min(1.0, phaseCount / (double)Math.max(1, betaAnnealPhases));
-        perBeta = betaStart + (betaEnd - betaStart) * betaFrac;
+        phase++;
+
+        epsilon = epsilonStart + (epsilonEnd - epsilonStart)
+                * Math.min(1.0, (double) phase / epsilonAnneal);
+
+        perBeta = betaStart + (betaEnd - betaStart)
+                * Math.min(1.0, (double) phase / betaAnneal);
     }
 
-    // ===== Train (PER) =====
-    private void trainOneBatchPER() {
-        long t0 = System.nanoTime();
+    // -------------------------------------------------------------------
+    // TRAINING STEP (PER)
+    // -------------------------------------------------------------------
+    private void trainOneBatch() {
 
         int D = replay.size();
         int bs = Math.min(batchSize, D);
         if (bs <= 0) return;
 
-        // ---- PER sampling ----
         Transition[] pool = replay.toArray(new Transition[0]);
-        double[] pArr = new double[D];
-        double sumP = 0.0;
+
+        double[] p = new double[D];
+        double total = 0;
         for (int i = 0; i < D; i++) {
-            double p = pri.getOrDefault(pool[i], 1.0);
-            p = Math.pow(Math.max(p, 1e-12), perAlpha);
-            pArr[i] = p; sumP += p;
+            double w = pri.getOrDefault(pool[i], 1.0);
+            w = Math.pow(w, perAlpha);
+            p[i] = w; total += w;
         }
+
         double[] pref = new double[D];
-        double c = 0.0; for (int i = 0; i < D; i++) { c += pArr[i]; pref[i] = c; }
-        final double total = c;
+        double c = 0;
+        for (int i=0;i<D;i++){ c += p[i]; pref[i] = c; }
 
-        int[] idxs = new int[bs];
-        for (int i = 0; i < bs; i++) {
-            double u = ((i + rng.nextDouble()) / bs) * total;
-            int lo = 0, hi = D - 1;
-            while (lo < hi) {
-                int mid = (lo + hi) >>> 1;
-                if (pref[mid] >= u) hi = mid; else lo = mid + 1;
-            }
-            idxs[i] = lo;
+        int[] idx = new int[bs];
+        for (int i=0;i<bs;i++) {
+            double u = ((i + rnd.nextDouble()) / bs) * c;
+            idx[i] = lowerBound(pref, u);
         }
 
-        // ---- Batch tensors (input mask only) ----
         INDArray X    = Nd4j.create(bs, 1, k, Factive);
         INDArray Yadv = Nd4j.create(bs, k);
         INDArray Yval = Nd4j.create(bs, 1);
 
-        double[] newPriorities = new double[bs];
         Transition[] batch = new Transition[bs];
+        double[] newP = new double[bs];
 
-        double sumAbsTd = 0.0, maxAbsTd = 0.0;
-        double sumQ = 0.0, sumQ2 = 0.0; int qCount = 0;
+        for (int i=0;i<bs;i++) {
 
-        for (int i = 0; i < bs; i++) {
-            Transition t = pool[idxs[i]];
+            Transition t = pool[idx[i]];
             batch[i] = t;
 
-            // Fill batch row
-            putConvFromFlat(X, i, t.s);
+            putConv(X, i, t.s);
 
-            // Forward for labels
-            INDArray[] outCurr = online.output(false, convFromFlatSingle(t.s));
-            double[] A_curr = outCurr[0].toDoubleVector();   // shape [k]
-            double V_curr   = outCurr[1].getDouble(0);
-            if (!Double.isFinite(V_curr)) V_curr = 0.0;
-            double meanA    = mean(A_curr);
+            INDArray[] out = online.output(false, conv(t.s));
+            double[] A = out[0].toDoubleVector();
+            double V  = out[1].getDouble(0);
 
-            for (int j = 0; j < k; j++) {
-                double qv = V_curr + (A_curr[j] - meanA);
-                if (Double.isFinite(qv)) { sumQ += qv; sumQ2 += qv*qv; qCount++; }
-            }
+            double meanA = mean(A);
 
-            // Double DQN target
             double targetQ;
             if (t.done) {
                 targetQ = t.r;
             } else {
-                double[] Q_online_next = qValues(online, t.s2);
-                int aStar = argmaxMasked(Q_online_next, t.valid2);
-                if (aStar < 0) aStar = 0;
-                INDArray[] outTgt = target.output(false, convFromFlatSingle(t.s2));
-                double[] A_tgt = outTgt[0].toDoubleVector();
-                double V_tgt   = outTgt[1].getDouble(0);
-                if (!Double.isFinite(V_tgt)) V_tgt = 0.0;
-                double meanAt  = mean(A_tgt);
-                double Qnext   = V_tgt + (A_tgt[aStar] - meanAt);
+                double[] Qn = qValues(online, t.s2);
+                int aStar = argmaxMasked(Qn, t.valid2);
+
+                INDArray[] outT = target.output(false, conv(t.s2));
+                double[] At = outT[0].toDoubleVector();
+                double Vt = outT[1].getDouble(0);
+                double meanAt = mean(At);
+
+                double Qnext = Vt + (At[aStar] - meanAt);
                 targetQ = t.r + gamma * Qnext;
             }
 
-            int aIdx = clamp(t.a, 0, k - 1);
-            double Q_curr_a = V_curr + (A_curr[aIdx] - meanA);
-            double td = targetQ - Q_curr_a;
+            int a = t.a;
+            double Qcurr = V + (A[a] - meanA);
+            double td = targetQ - Qcurr;
 
-            double absTd = Math.abs(td);
-            if (!Double.isFinite(absTd)) absTd = 0.0;
-            sumAbsTd += absTd;
-            if (absTd > maxAbsTd) maxAbsTd = absTd;
-            newPriorities[i] = absTd + 1e-3;
+            newP[i] = Math.abs(td) + 1e-3;
 
-            // Labels (keep others unchanged to avoid gradients on invalids)
-            double[] A_lbl = Arrays.copyOf(A_curr, k);
-            A_lbl[aIdx] = targetQ - V_curr + meanA;  // target advantage for chosen action
-            Yadv.getRow(i).assign(Nd4j.createFromArray(A_lbl));
+            double[] A_lbl = Arrays.copyOf(A, k);
+            A_lbl[a] = targetQ - V + meanA;
+            Yadv.getRow(i).assign(Nd4j.create(A_lbl));
 
-            double V_lbl = targetQ - (A_curr[aIdx] - meanA);
+            double V_lbl = targetQ - (A[a] - meanA);
             Yval.putScalar(i, 0, V_lbl);
         }
 
-        // ---- Train ----
-        MultiDataSet mds = new MultiDataSet(new INDArray[]{X}, new INDArray[]{Yadv, Yval});
+        MultiDataSet mds = new MultiDataSet(
+                new INDArray[]{X}, new INDArray[]{Yadv, Yval});
         online.fit(mds);
 
-        double loss = 0.0;
-        try { loss = online.score(mds); } catch (Exception ignore) {}
-
         trainSteps++;
-        if (trainSteps % Math.max(1, targetUpdateEvery) == 0) hardSyncTarget();
+        if (trainSteps % targetUpdate == 0) syncTarget();
 
-        // Update PER priorities
-        for (int i = 0; i < bs; i++) pri.put(batch[i], newPriorities[i]);
-
-        // ---- Log ----
-        double durMs = (System.nanoTime() - t0) / 1e6;
-        double meanAbsTd = sumAbsTd / Math.max(1, bs);
-        double meanQ = sumQ / Math.max(1, qCount);
-        double varQ = (sumQ2 / Math.max(1, qCount)) - meanQ * meanQ;
-        double stdQ = Math.sqrt(Math.max(0.0, varQ));
-
-        String line = String.format(Locale.US,
-                "TRAIN phase=%d steps=%d replay=%d bs=%d loss=%.6f mean|td|=%.6f max|td|=%.6f meanQ=%.6f stdQ=%.6f eps=%.4f beta=%.4f dur_ms=%.2f",
-                phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
-                meanQ, stdQ, epsilon, perBeta, durMs);
-
-        logger.println(line);
-
-        if (!csvHeaderWritten) {
-            logger.println("phase,steps,replay,bs,loss,meanAbsTd,maxAbsTd,meanQ,stdQ,epsilon,beta,dur_ms");
-            csvHeaderWritten = true;
-        }
-        logger.printf(Locale.US,
-                "%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.4f,%.2f%n",
-                phaseCount, trainSteps, replay.size(), bs, loss, meanAbsTd, maxAbsTd,
-                meanQ, stdQ, epsilon, perBeta, durMs);
-        logger.flush();
+        for (int i = 0; i < bs; i++)
+            pri.put(batch[i], newP[i]);
     }
-    // ===== END TRAIN =====
 
-    // -------- Q helpers (dueling combine) --------
+    // -------------------------------------------------------------------
     private double[] qValues(ComputationGraph net, double[] flat) {
-        INDArray x = convFromFlatSingle(flat);
+        INDArray x = conv(flat);
         INDArray[] out = net.output(false, x);
+
         double[] A = out[0].toDoubleVector();
-        double V = out[1].getDouble(0);
-        if (!Double.isFinite(V)) V = 0.0;
-        double m = mean(A);
+        double V   = out[1].getDouble(0);
+        double m   = mean(A);
+
         double[] Q = new double[k];
-        for (int i=0;i<k;i++) {
-            double qi = V + (A[i] - m);
-            Q[i] = Double.isFinite(qi) ? qi : 0.0;
-        }
+        for (int i=0;i<k;i++) Q[i] = V + (A[i] - m);
+
         return Q;
     }
 
-    private void hardSyncTarget() { target.setParams(online.params().dup()); }
-
-    // -------- Replay / PER --------
-    private void addReplay(Transition t) {
-        if (t == null) return;
-        while (replay.size() >= REPLAY_CAPACITY) {
-            Transition old = replay.pollFirst();
-            if (old != null) pri.remove(old);
-        }
-        replay.addLast(t);
-        // New samples get max priority
-        double maxP = 1.0;
-        for (Double p : pri.values()) if (p != null && p > maxP) maxP = p;
-        pri.put(t, maxP + 1e-3);
-    }
-
-    // -------- Reward (RARL-like, normalized & bounded) --------
-    private static final double EPS = 1e-9;
-
-    private double rewardRARL(double hcTrue, double reTrue, double qlrTrue) {
-        double ecr = 1.0 - safeDiv(reTrue, initialEnergy); // [0,1]
-        if (!Double.isFinite(ecr)) ecr = 0.0;
-        if (ecr < 0.0) ecr = 0.0; else if (ecr > 1.0) ecr = 1.0;
-
-        double hcN = hcTrue / HOP_NORM;                      // [0,1] approx
-        if (!Double.isFinite(hcN)) hcN = 0.0;
-        if (hcN < 0.0) hcN = 0.0; else if (hcN > 1.0) hcN = 1.0;
-
-        double qlr = qlrTrue;
-        if (!Double.isFinite(qlr)) qlr = 0.0;
-        if (qlr < 0.0) qlr = 0.0; else if (qlr > 1.0) qlr = 1.0;
-
-        double rank = hcN + w1_QU * qlr + w2_ECR * ecr;     // lower is better
-        if (!Double.isFinite(rank) || rank < 0.0) rank = 0.0;
-
-        return 1.0 / (1.0 + rank + EPS);                    // (0,1], smooth & bounded
-    }
-
-    private double rewardFromRank(double hcTrue, double reTrue, double qlrTrue) {
-        return rewardRARL(hcTrue, reTrue, qlrTrue);
-    }
-
-    // -------- Utilities --------
-    private static double safeDiv(double num, double den) {
-        if (!Double.isFinite(num) || !Double.isFinite(den) || Math.abs(den) < EPS) return 0.0;
-        double v = num / den; return Double.isFinite(v) ? v : 0.0;
-    }
-
-    // keep exact contract with controller-produced rows
-    private double[] flattenState(double[][] S) {
-        if (S != null) {
-            for (int i = 0; i < Math.min(k, S.length); i++) {
-                if (S[i] != null && S[i].length != Factive) {
-                    log("WARN: row " + i + " length=" + S[i].length + " != Factive=" + Factive);
-                }
-            }
-        }
+    // -------------------------------------------------------------------
+    // STATE FLATTENING WITH FIXED SCALING
+    // -------------------------------------------------------------------
+    private double[] flatten(double[][] S) {
 
         double[] out = new double[k * Factive];
-        int p = 0; // write ptr
+        int p = 0;
+
         for (int i = 0; i < k; i++) {
+
             double[] row = (S != null && i < S.length) ? S[i] : null;
-            int pos = 0; // read ptr across compressed row
-            for (int j = 0; j < Ftotal; j++) {
-                if (featureMask[j]) {
+            int pos = 0;
+
+            for (int f = 0; f < FTOTAL; f++) {
+                if (mask[f]) {
                     double v = (row != null && pos < row.length) ? row[pos++] : 0.0;
-                    out[p++] = scaleFeature(j, v);
+                    out[p++] = scale(f, v);
                 }
             }
         }
         return out;
     }
 
-    // Build a single-sample conv input tensor from flat [k*Factive] -> [1,1,k,Factive]
-    private INDArray convFromFlatSingle(double[] flat) {
-        INDArray x = Nd4j.create(1, 1, k, Factive);
-        int idx = 0;
+    // -------------------------------------------------------------------
+    private INDArray conv(double[] flat) {
+        INDArray x = Nd4j.create(1,1,k,Factive);
+        int idx=0;
         for (int i=0;i<k;i++)
             for (int j=0;j<Factive;j++)
-                x.putScalar(0, 0, i, j, (idx < flat.length ? flat[idx++] : 0.0));
+                x.putScalar(0,0,i,j, flat[idx++]);
         return x;
     }
 
-    // Put one sample into row 'batchIdx' of X ([bs,1,k,Factive])
-    private void putConvFromFlat(INDArray X, int batchIdx, double[] flat) {
-        int idx = 0;
+    private void putConv(INDArray X, int row, double[] flat) {
+        int idx=0;
         for (int i=0;i<k;i++)
             for (int j=0;j<Factive;j++)
-                X.putScalar(batchIdx, 0, i, j, (idx < flat.length ? flat[idx++] : 0.0));
+                X.putScalar(row,0,i,j, flat[idx++]);
     }
 
-    private static boolean[] copyOrAllValid(boolean[] valid) {
-        if (valid == null) return null;
-        return Arrays.copyOf(valid, valid.length);
-    }
-
-    private static int clamp(int x, int lo, int hi) { return Math.max(lo, Math.min(hi, x)); }
-
-    private static double valOrZero(double[] arr, int i) {
-        return (arr != null && i >= 0 && i < arr.length && Double.isFinite(arr[i])) ? arr[i] : 0.0;
-    }
-
-    private static int argmaxMasked(double[] q, boolean[] valid) {
-        int best = -1; double bestVal = Double.NEGATIVE_INFINITY;
-        if (q == null || q.length == 0) return 0;
-        if (valid == null) {
-            for (int i=0;i<q.length;i++) if (q[i]>bestVal){bestVal=q[i]; best=i;}
-            return best >= 0 ? best : 0;
+    // -------------------------------------------------------------------
+    private void addReplay(Transition t) {
+        if (replay.size() >= CAP) {
+            Transition old = replay.pollFirst();
+            pri.remove(old);
         }
-        int lim = Math.min(q.length, valid.length);
-        for (int i=0;i<lim;i++) if (valid[i] && q[i] > bestVal) { bestVal = q[i]; best = i; }
-        return best;
+        replay.addLast(t);
+
+        double mx = pri.values().stream()
+                .mapToDouble(v -> v)
+                .max().orElse(1.0);
+
+        pri.put(t, mx + 1e-3);
     }
 
-    private int randomValid(boolean[] valid, int k) {
-        if (k <= 0) return 0;
-        if (valid == null) return rng.nextInt(Math.max(1, k));
-        List<Integer> idxs = new ArrayList<>();
-        for (int i=0;i<Math.min(k, valid.length); i++) if (valid[i]) idxs.add(i);
-        if (idxs.isEmpty()) return 0;
-        return idxs.get(rng.nextInt(idxs.size()));
+    // -------------------------------------------------------------------
+    private double reward(double hc, double re, double qlr) {
+
+        double ecr = 1.0 - Math.max(0.0, Math.min(1.0, re / initialEnergy));
+        double hcN = Math.max(0.0, Math.min(1.0, hc / HOP_NORM));
+        double q = Math.max(0.0, Math.min(1.0, qlr));
+
+        double R = hcN + w_qlr*q + w_ecr*ecr;
+        return 1.0 / (1.0 + R + EPS);
     }
 
-    private static double mean(double[] a) {
-        if (a == null || a.length == 0) return 0.0;
-        double s=0; int n=0;
-        for (double v:a) { if (Double.isFinite(v)) { s+=v; n++; } }
-        return n>0 ? s/n : 0.0;
-    }
-
-    // Keep these normalizations consistent with controller exports.
-    private double scaleFeature(int featIdx, double v) {
-        if (!Double.isFinite(v)) return 0.0;
-        switch (featIdx) {
-            case IDX_ETX:   // 1..10+ -> [0.1..1.0]
-                return Math.max(1.0, Math.min(10.0, v)) / 10.0;
-            case IDX_HC:    // hop-count
-                return v / HOP_NORM;
-            case IDX_RE:    // residual energy absolute (J) -> [0,1]
-                return Math.max(0.0, Math.min(1.0, v / initialEnergy));
-            case IDX_QLR:   // [0,1]
-            case IDX_BDI:   // [0,1]
-            case IDX_WR:    // [0,1]
-                return Math.max(0.0, Math.min(1.0, v));
-            case IDX_RSSI:  // -100..-30 mapped to 0..10 in controller -> [0,1]
-                return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
-            case IDX_PC:    // [0..10] -> [0,1]
-                return Math.min(Math.max(v, 0.0), 10.0) / 10.0;
-            case IDX_SI:    // switches (count) — log1p squash
-                return Math.log1p(Math.max(0.0, v)) / 5.0;
-            case IDX_GEN:
-            case IDX_FWD:
-            case IDX_QLOSS: // counters — log1p squash
-                return Math.log1p(Math.max(0.0, v)) / 10.0;
-            default:
-                return v;
-        }
-    }
-
-    private double computeRewardForPrevious(Episode prev,
-                                            int[] candIds,
-                                            double[] hcArr,
-                                            double[] reArr,
-                                            double[] qlrArr) {
+    private double computeReward(Episode ep,
+                                 int[] candIds,
+                                 double[] hcArr, double[] reArr, double[] qlrArr)
+    {
         int idx = -1;
-        if (candIds != null) {
-            for (int i=0; i<candIds.length; i++)
-                if (candIds[i] == prev.parentId) { idx = i; break; }
-        }
-        double hc = (idx >= 0) ? valOrZero(hcArr, idx) : prev.hcSnap;
-        double re = (idx >= 0) ? valOrZero(reArr, idx) : prev.reSnap;
-        double ql = (idx >= 0) ? valOrZero(qlrArr, idx) : prev.qlrSnap;
-        return rewardFromRank(hc, re, ql);
+        for (int i=0;i<candIds.length;i++)
+            if (candIds[i] == ep.parentId) idx = i;
+
+        double hc = (idx>=0) ? safe(hcArr,idx) : ep.hcSnap;
+        double re = (idx>=0) ? safe(reArr,idx) : ep.reSnap;
+        double ql = (idx>=0) ? safe(qlrArr,idx) : ep.qlSnap;
+
+        return reward(hc,re,ql);
     }
 
-    // -------- Public setters (optional) --------
-    public int getReplaySize() { return replay.size(); }
-    public void setBatchSize(int b) { batchSize = Math.max(1, b); }
-    public void setGamma(double g)   { gamma = g; }
-    public void setRankWeights(double w1_QU, double w2_ECR) {
-        this.w1_QU = Math.max(0.0, w1_QU); this.w2_ECR = Math.max(0.0, w2_ECR);
+    // -------------------------------------------------------------------
+    // FINAL CORRECT SCALING (ALL FIXES APPLIED)
+    // -------------------------------------------------------------------
+    private double scale(int f, double v) {
+
+        if (!Double.isFinite(v)) return 0.0;
+
+        switch(f){
+
+            // ---------------- LINK ----------------
+            case IDX_ETX:  return Math.min(Math.max(v,0.0),10.0) / 10.0;
+            case IDX_RSSI: return Math.min(Math.max(v,0.0),10.0) / 10.0;
+
+            // PFI in [0,1]
+            case IDX_PFI:  return Math.max(0.0, Math.min(1.0, v));
+
+            // ---------------- NODE ----------------
+            case IDX_RE:   return Math.max(0.0, Math.min(1.0, v / initialEnergy));
+            case IDX_BDI:  return Math.max(0.0, Math.min(1.0, v));
+
+            // QO must be normalized (QUEUEBUF=8)
+            case IDX_QO:   return Math.max(0.0, Math.min(1.0, v / 8.0));
+
+            case IDX_QLR:  return Math.max(0.0, Math.min(1.0, v));
+            case IDX_HC:   return Math.max(0.0, Math.min(1.0, v / HOP_NORM));
+
+            // SI and TV already ∈ [0,1]
+            case IDX_SI:   return Math.max(0.0, Math.min(1.0, v));
+            case IDX_TV:   return Math.max(0.0, Math.min(1.0, v));
+
+            // For safety limit PC to [0,10]
+            case IDX_PC:   return Math.min(Math.max(v,0.0),10.0) / 10.0;
+
+            // ---------------- NETWORK ----------------
+            case IDX_WR:   return Math.max(0.0, Math.min(1.0, v));
+
+            // STR may be large
+            case IDX_STR:  return Math.log1p(Math.max(0.0, v)) / 5.0;
+        }
+
+        return 0.0;
     }
-    public void setPerAlpha(double a) { perAlpha = Math.max(0.0, Math.min(1.0, a)); }
-    public void setEpsilonAnneal(double start, double end, int phases) {
-        epsilonStart = Math.max(0.0, Math.min(1.0, start));
-        epsilonEnd = Math.max(0.0, Math.min(1.0, end));
-        epsilonAnnealPhases = Math.max(1, phases);
-        epsilon = epsilonStart + (epsilonEnd - epsilonStart) *
-                Math.min(1.0, phaseCount / (double)Math.max(1, epsilonAnnealPhases));
+
+    // -------------------------------------------------------------------
+    private static double safe(double[] arr, int i){
+        return (arr!=null && i>=0 && i<arr.length && Double.isFinite(arr[i]))
+                ? arr[i] : 0.0;
     }
-    public void setPerBetaAnneal(double start, double end, int phases) {
-        betaStart = Math.max(0.0, Math.min(1.0, start));
-        betaEnd = Math.max(0.0, Math.min(1.0, end));
-        betaAnnealPhases = Math.max(1, phases);
-        perBeta = betaStart + (betaEnd - betaStart) *
-                Math.min(1.0, phaseCount / (double)Math.max(1, betaAnnealPhases));
+
+    private static boolean[] copyValid(boolean[] v){
+        return v==null?null:Arrays.copyOf(v,v.length);
+    }
+
+    private static int argmaxMasked(double[] q, boolean[] valid){
+        int b=-1;
+        double bv=Double.NEGATIVE_INFINITY;
+        for (int i=0;i<q.length;i++){
+            if (valid==null || valid[i]){
+                if (q[i]>bv){ bv=q[i]; b=i; }
+            }
+        }
+        return (b<0)?0:b;
+    }
+
+    private int randomValid(boolean[] valid){
+        if (valid==null) return rnd.nextInt(k);
+        List<Integer> L = new ArrayList<>();
+        for (int i=0;i<k;i++) if (valid[i]) L.add(i);
+        return L.isEmpty()?0:L.get(rnd.nextInt(L.size()));
+    }
+
+    private static int lowerBound(double[] a, double x){
+        int lo=0, hi=a.length-1;
+        while (lo<hi) {
+            int m=(lo+hi)>>>1;
+            if (a[m]>=x) hi=m; else lo=m+1;
+        }
+        return lo;
+    }
+
+    private static double mean(double[] a){
+        double s=0; int n=0;
+        for (double v:a) if (Double.isFinite(v)){ s+=v; n++; }
+        return n>0? (s/n):0.0;
     }
 }

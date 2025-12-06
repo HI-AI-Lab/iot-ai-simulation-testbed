@@ -1,19 +1,31 @@
 run:
-  id: ppm80_n60_baseline
-  notes: Baseline: ETX
+  id: experiment_id_here
+  notes: describe_this_run
 
 features:
-  # you can omit keys; unspecified stay at default (see loader)
-  all: false        # optional baseline: turn everything off first
-  etx: true
-  hc:  false
-  re:  false
-  qlr: false
-  rssi: false
-  bdi: false
-  wr:  false
-  pc:  false
-  si:  false
-  gen: false
-  fwd: false
-  qloss: false
+  all: false
+
+  # -------------------------
+  # LINK-LEVEL (3)
+  # -------------------------
+  etx:   true
+  rssi:  false
+  pfi:   false
+
+  # -------------------------
+  # NODE-LEVEL (8)
+  # -------------------------
+  re:    false
+  bdi:   false
+  qo:    false
+  qlr:   false
+  hc:    false
+  si:    false
+  tv:    false
+  pc:    false
+
+  # -------------------------
+  # NETWORK-LEVEL (2)
+  # -------------------------
+  wr:    false
+  str:   false
