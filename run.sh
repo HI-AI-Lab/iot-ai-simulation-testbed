@@ -71,7 +71,12 @@ for node_count in "${nodes[@]}"; do
       rm -rf "/workspace/${ARARL_DIR}/rpl" "/workspace/${ARARL_DIR}/build" || true
       cp -f "${csc_src}" "/workspace/${ARARL_DIR}/simulation.csc"
       cp -f "${pos_src}" "/workspace/${ARARL_DIR}/positions-simulation.h"
-      cp -f "${makefile_src}" "/workspace/${ARARL_DIR}/Makefile"
+      rm -f "/workspace/${ARARL_DIR}/Makefile" || true
+      cp -f "${makefile_src}" "/workspace/${ARARL_DIR}/Makefile" 
+      
+	  echo "[INFO] Rebuilding firmware for PPM=${ppm_value}..."
+      make -C "/workspace/${ARARL_DIR}" clean
+      make -C "/workspace/${ARARL_DIR}"
 
       CSC_PATH="/workspace/${ARARL_DIR}/simulation.csc"
       OUT_DIR="${LOGS_BASE_DIR}/N${node_count}_PPM${ppm_value}/topo${topo}"

@@ -469,6 +469,14 @@ static int is_energy_depleted(void) {
   return 0;
 }
 
+/* Exponential inter-arrival based on SEND_INTERVAL_MS mean */
+static clock_time_t exp_interval(void) {
+  double u = (double)random_rand() / RANDOM_RAND_MAX;
+  if(u <= 1e-9) u = 1e-9;   /* avoid log(0) */
+  double interval_ms = -SEND_INTERVAL_MS * log(u);  /* exponential */
+  return (clock_time_t)(interval_ms * CLOCK_SECOND / 1000.0);
+}
+
 /* ============================================================
  * PROCESSES
  * ============================================================*/
@@ -482,19 +490,24 @@ AUTOSTART_PROCESSES(&packet_generator_process,
                     &status_refresher_process);
 
 /* generator */
-PROCESS_THREAD(packet_generator_process,ev,data)
+PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
   PROCESS_BEGIN();
 
   netstack_sniffer_add(&my_sniffer);
-  simple_udp_register(&udp_conn,UDP_CLIENT_PORT,NULL,
-                      UDP_SERVER_PORT,NULL);
+  simple_udp_register(&udp_conn,
+                      UDP_CLIENT_PORT,
+                      NULL,
+                      UDP_SERVER_PORT,
+                      NULL);
 
-  if(state.ppm==0) state.ppm=1;
-  etimer_set(&gen_timer,random_rand()%CLOCK_SECOND);
+  if(state.ppm == 0) state.ppm = 1;
 
-  while(1){
+  /* FIRST PACKET: exponential interval */
+  etimer_set(&gen_timer, exp_interval());
+
+  while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
 
     if(is_energy_depleted() || is_simulation_time_over()) {
@@ -503,11 +516,14 @@ PROCESS_THREAD(packet_generator_process,ev,data)
     }
 
     send_a_packet(&udp_conn);
-    etimer_set(&gen_timer,random_rand()%CLOCK_SECOND);
+
+    /* NEXT PACKET: exponential interval */
+    etimer_set(&gen_timer, exp_interval());
   }
 
   PROCESS_END();
 }
+
 
 /* metrics refresh */
 PROCESS_THREAD(status_refresher_process,ev,data)
