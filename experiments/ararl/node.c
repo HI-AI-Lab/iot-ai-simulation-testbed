@@ -28,6 +28,8 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
+#define DISABLE_RL_PARENT 1  /* set 1 = MRHOF only, 0 = RL may override */
+
 /* ==== RPL constants ==== */
 #ifndef MRHOF_ETX_DIVISOR
 #define MRHOF_ETX_DIVISOR 128
@@ -188,6 +190,8 @@ static void pin_route_to_root_via(const uip_ipaddr_t *nh)
   (void)uip_ds6_route_add(&root, 128, nh);
 }
 
+#ifndef DISABLE_RL_PARENT
+
 static void enforce_agent_parent_if_needed(void) {
   if(agent_parent == 0) return;
 
@@ -221,6 +225,14 @@ static void enforce_agent_parent_if_needed(void) {
     }
   }
 }
+
+#else  /* DISABLE_RL_PARENT defined → MRHOF only */
+
+static void enforce_agent_parent_if_needed(void) {
+  /* RL override disabled: do nothing, MRHOF chooses parents */
+}
+
+#endif
 
 /* ============================================================
  * PACKET SNIFFERS — QLR, ENERGY, PFI
