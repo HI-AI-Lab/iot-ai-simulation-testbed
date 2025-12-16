@@ -346,7 +346,8 @@ static void refresh_status(void)
   status_rank = dag ? dag->rank : 0;
 
   /* QO — queue occupancy snapshot: used = TOTAL - FREE */
-  status_qo = (uint32_t)(QUEUEBUF_CONF_NUM - queuebuf_num_free());
+  status_qo = (uint32_t)(QUEUEBUF_CONF_NUM - queuebuf_numfree());
+
 
   /* BDI */
   status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
