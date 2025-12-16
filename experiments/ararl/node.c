@@ -176,6 +176,8 @@ static unsigned get_parent_id(void) {
   return (unsigned)-1;
 }
 
+#ifndef DISABLE_RL_PARENT
+
 static void pin_route_to_root_via(const uip_ipaddr_t *nh)
 {
   if(!nh) return;
@@ -189,8 +191,6 @@ static void pin_route_to_root_via(const uip_ipaddr_t *nh)
   }
   (void)uip_ds6_route_add(&root, 128, nh);
 }
-
-#ifndef DISABLE_RL_PARENT
 
 static void enforce_agent_parent_if_needed(void) {
   if(agent_parent == 0) return;
@@ -226,13 +226,14 @@ static void enforce_agent_parent_if_needed(void) {
   }
 }
 
-#else  /* DISABLE_RL_PARENT defined → MRHOF only */
+#else  /* DISABLE_RL_PARENT → MRHOF only, no RL override */
 
 static void enforce_agent_parent_if_needed(void) {
   /* RL override disabled: do nothing, MRHOF chooses parents */
 }
 
 #endif
+
 
 /* ============================================================
  * PACKET SNIFFERS — QLR, ENERGY, PFI
