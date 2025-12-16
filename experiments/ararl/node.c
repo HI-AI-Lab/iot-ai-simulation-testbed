@@ -1,8 +1,8 @@
-#include "queuebuf.h"
 #include "contiki-net.h"
 #include "contiki.h"
 #include "lib/list.h"
 #include "math.h"
+#include "net/queuebuf.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-ds6-nbr.h"
 #include "net/ipv6/uip-ds6.h"
@@ -345,8 +345,8 @@ static void refresh_status(void)
   rpl_dag_t *dag = rpl_get_any_dag();
   status_rank = dag ? dag->rank : 0;
 
-  /* QO — queue occupancy snapshot */
-  status_qo = queuebuf_num();
+  /* QO — queue occupancy snapshot: used = TOTAL - FREE */
+  status_qo = (uint32_t)(QUEUEBUF_CONF_NUM - queuebuf_num_free());
 
   /* BDI */
   status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
