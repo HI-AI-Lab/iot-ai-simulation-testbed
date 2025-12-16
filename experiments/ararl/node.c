@@ -175,8 +175,8 @@ static unsigned get_parent_id(void) {
 }
 
 
-static void enforce_agent_parent_if_needed(void){}
-/*
+//static void enforce_agent_parent_if_needed(void){}
+
 static void pin_route_to_root_via(const uip_ipaddr_t *nh)
 {
   if(!nh) return;
@@ -222,7 +222,7 @@ static void enforce_agent_parent_if_needed(void) {
     }
   }
 }
-*/
+
 
 /* ============================================================
  * PACKET SNIFFERS — QLR, ENERGY, PFI
