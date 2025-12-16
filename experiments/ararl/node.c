@@ -178,7 +178,6 @@ static unsigned get_parent_id(void) {
 
 #if DISABLE_RL_PARENT
 
-static void pin_route_to_root_via(const uip_ipaddr_t *nh){}
 static void enforce_agent_parent_if_needed(void){}
 
 #else  /* DISABLE_RL_PARENT == 0 → RL ENABLED */
