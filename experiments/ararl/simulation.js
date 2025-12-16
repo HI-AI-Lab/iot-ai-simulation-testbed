@@ -138,6 +138,11 @@ function getInt16(m,n){
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
   return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF;
 }
+function getInt8(m,n){
+   var s=symOf(m,n);
+   var b=m.getMemory().getMemorySegment(s.addr,s.size);
+   return b[0] & 0xFF;
+}
 function getI16(m,n){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
@@ -165,6 +170,19 @@ function getU16Array(m,n,K){
   }
   return a;
 }
+
+// FIX 1: define getI16Array used for RSSI
+function getI16Array(m,n,K){
+  var s=symOf(m,n);
+  var b=m.getMemory().getMemorySegment(s.addr,s.size);
+  var bb=ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN);
+  var a=[];
+  for(var i=0;i<K && (i*2+1)<b.length;i++){
+    a.push(bb.getShort(i*2));  // signed int16_t
+  }
+  return a;
+}
+
 function getPFIArray(m){
   // PFI array = status_pfi[0..3]
   var arr=[];
@@ -178,6 +196,20 @@ function getPFIArray(m){
     }
   }
   return arr;
+}
+
+function setInt8(m, n, v){
+  var s = symOf(m, n);
+  var bb = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN);
+  bb.put(0, (v & 0xFF));
+  m.getMemory().setMemorySegment(s.addr, bb.array());
+}
+
+function setInt16(m, n, v){
+  var s = symOf(m, n);
+  var bb = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN);
+  bb.putShort(0, v & 0xFFFF);
+  m.getMemory().setMemorySegment(s.addr, bb.array());
 }
 
 function u32(x){ return (x>>>0); }
@@ -268,14 +300,14 @@ function decideAndSetParentFor(mote){
   var mid = mote.getID();
   if(mid===1) return;
 
-  var nn = getByte(mote,"status_num_neighbors");
+  var nn = getInt8(mote, "status_num_neighbors");
   if(nn<=0){ setInt8(mote,"agent_waiting",0); return; }
 
   var ids = getU8Array(mote,"status_neighbor_ids",K);
   var exs = getU16Array(mote,"status_etx_x100",K);
 
   var candIds=[], candEtx=[];
-  for(var i=0;i<nn;i++){
+  for(var i=0;i<nn && i<K;i++){       // safety: never exceed K
     candIds.push(ids[i]);
     candEtx.push(exs[i]/100.0);
   }
@@ -284,8 +316,11 @@ function decideAndSetParentFor(mote){
 
   var mats = buildCandidateMatrixFor(mote, candIds, candEtx);
 
+  // FIX 2: valid must be length K, first candIds.length = true, others = false
   var valid = [];
-  for(var v=0; v<candIds.length; v++) valid.push(true);
+  for (var i=0;i<K;i++){
+    valid.push(i < candIds.length);
+  }
 
   var ctrs = new Agent.Counters();
   ctrs.generated      = u32(getInt32(mote,"status_gen_count"));
@@ -294,7 +329,7 @@ function decideAndSetParentFor(mote){
   ctrs.residualEnergy = getDouble(mote,"status_residual_energy");
   ctrs.hopCount       = rankToHops(getInt16(mote,"status_rank"));
   ctrs.rankViolations = u32(getInt32(mote,"status_parent_switches"));
-  ctrs.etx            = exs[0];
+  ctrs.etx            = exs[0]; // not used in Agent now, but fine
 
   var choice = agent.decide(
       mid,
@@ -343,9 +378,9 @@ while(true){
     log.log("CTRL: INIT_ASSIGN done\n");
     continue;
   }
-  if(msg.indexOf("ALL_NODES_RETRAIN")>=0){
-    agent.endPhase();
-    assignParentsAll();
+  if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
+    agent.endPhase();      // optimize on transitions from last phase
+    assignParentsAll();    // deploy new parent decisions for next phase
     continue;
   }
   log.log(time+"\t"+id+"\t"+msg+"\n");

@@ -46,7 +46,6 @@ public class Agent implements Serializable {
 
     private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
     private static PrintWriter logger;
-    private static boolean csvHeaderWritten = false;
 
     static {
         try {
@@ -125,7 +124,6 @@ public class Agent implements Serializable {
     private final double initialEnergy;
 
     private final Map<Integer, Episode> open = new HashMap<>();
-    private final Map<Integer,Integer> posMap = new HashMap<>();
 
     private double epsilonStart = 0.30, epsilonEnd = 0.01;
     private int epsilonAnneal = 500;
@@ -133,7 +131,7 @@ public class Agent implements Serializable {
 
     private double betaStart = 0.40, betaEnd = 1.00;
     private int betaAnneal = 500;
-    private double perBeta = betaStart;
+    private double perBeta = betaStart; // NOTE: not yet used in loss weighting
 
     private double gamma = 0.90;
     private int batchSize = 32;
@@ -167,9 +165,7 @@ public class Agent implements Serializable {
         this.initialEnergy = initialEnergy;
 
         int c = 0;
-        for (int i=0; i < mask.length; i++)
-            if (mask[i]) posMap.put(i, c++);
-
+        for (boolean b : mask) if (b) c++;
         if (c == 0) throw new RuntimeException("Mask activates 0 features!");
         this.Factive = c;
 
@@ -243,6 +239,7 @@ public class Agent implements Serializable {
     {
         double[] flat = flatten(S);
 
+        // Close previous episode for this mote
         Episode prev = open.remove(moteId);
         if (prev != null) {
             double r = computeReward(prev, candIds, hcArr, reArr, qlrArr);
@@ -292,7 +289,7 @@ public class Agent implements Serializable {
     }
 
     // -------------------------------------------------------------------
-    // TRAINING STEP (PER)
+    // TRAINING STEP (PER sampling, no IS weighting yet)
     // -------------------------------------------------------------------
     private void trainOneBatch() {
 
@@ -303,20 +300,21 @@ public class Agent implements Serializable {
         Transition[] pool = replay.toArray(new Transition[0]);
 
         double[] p = new double[D];
-        double total = 0;
+        double c = 0;
         for (int i = 0; i < D; i++) {
             double w = pri.getOrDefault(pool[i], 1.0);
             w = Math.pow(w, perAlpha);
-            p[i] = w; total += w;
+            p[i] = w;
+            c += w;
         }
 
         double[] pref = new double[D];
-        double c = 0;
-        for (int i=0;i<D;i++){ c += p[i]; pref[i] = c; }
+        double acc = 0;
+        for (int i=0;i<D;i++){ acc += p[i]; pref[i] = acc; }
 
         int[] idx = new int[bs];
         for (int i=0;i<bs;i++) {
-            double u = ((i + rnd.nextDouble()) / bs) * c;
+            double u = ((i + rnd.nextDouble()) / bs) * acc;
             idx[i] = lowerBound(pref, u);
         }
 
@@ -397,7 +395,7 @@ public class Agent implements Serializable {
     }
 
     // -------------------------------------------------------------------
-    // STATE FLATTENING WITH FIXED SCALING
+    // STATE FLATTENING WITH FIXED SCALING (K rows, zero-padded)
     // -------------------------------------------------------------------
     private double[] flatten(double[][] S) {
 
@@ -478,7 +476,7 @@ public class Agent implements Serializable {
     }
 
     // -------------------------------------------------------------------
-    // FINAL CORRECT SCALING (ALL FIXES APPLIED)
+    // FINAL CORRECT SCALING
     // -------------------------------------------------------------------
     private double scale(int f, double v) {
 
@@ -530,22 +528,31 @@ public class Agent implements Serializable {
         return v==null?null:Arrays.copyOf(v,v.length);
     }
 
+    // FIX: robust to valid.length < k
     private static int argmaxMasked(double[] q, boolean[] valid){
         int b=-1;
         double bv=Double.NEGATIVE_INFINITY;
         for (int i=0;i<q.length;i++){
-            if (valid==null || valid[i]){
+            boolean ok = (valid == null) || (i < valid.length && valid[i]);
+            if (ok){
                 if (q[i]>bv){ bv=q[i]; b=i; }
             }
         }
         return (b<0)?0:b;
     }
 
+    // FIX: robust to valid.length < k
     private int randomValid(boolean[] valid){
-        if (valid==null) return rnd.nextInt(k);
+        if (valid == null) {
+            return rnd.nextInt(k);
+        }
         List<Integer> L = new ArrayList<>();
-        for (int i=0;i<k;i++) if (valid[i]) L.add(i);
-        return L.isEmpty()?0:L.get(rnd.nextInt(L.size()));
+        for (int i=0;i<k;i++) {
+            if (i < valid.length && valid[i]) {
+                L.add(i);
+            }
+        }
+        return L.isEmpty() ? 0 : L.get(rnd.nextInt(L.size()));
     }
 
     private static int lowerBound(double[] a, double x){

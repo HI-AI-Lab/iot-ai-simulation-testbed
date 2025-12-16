@@ -230,6 +230,8 @@ static void sniff_input(void) {
 }
 
 static void sniff_output(int mac_status) {
+  
+  enforce_agent_parent_if_needed();
   uint16_t len = packetbuf_datalen();
   unsigned parent_id = get_parent_id();
 
@@ -343,7 +345,7 @@ static void refresh_status(void)
   status_rank = dag ? dag->rank : 0;
 
   /* QO — queue occupancy snapshot */
-  status_qo = QUEUEBUF_CONF_NUM;
+  status_qo = queuebuf_num();
 
   /* BDI */
   status_bdi = 1.0 - (status_residual_energy / INIT_ENERGY_J);
@@ -356,22 +358,28 @@ static void refresh_status(void)
                (double)status_qloss_count / attempts : 0.0;
 
   /* WR */
-  status_wr = (status_gen_count>0) ?
-              (double)status_fwd_count / status_gen_count : 0.0;
+  uint8_t p = get_parent_id();
+  uint32_t a = 0, s = 0;
+
+  if(p < 256) {
+    a = parent_tx_attempts[p];
+    s = parent_tx_ok[p];
+  }
+
+  status_wr = (a > 0) ? ((double)s / a) : 0.0;
 
   /* PC — number of children */
-	status_pc = 0;
-	{
-		/* Count all routes whose nexthop == this node */
-		uip_ds6_route_t *r = uip_ds6_route_head();
-		while(r) {
-		  const uip_ipaddr_t *nh = uip_ds6_route_nexthop(r);
-		  if(nh && ip_to_nodeid(nh) == node_id) {
-			status_pc++;
-		  }
-		  r = uip_ds6_route_next(r);
-		}
-	}
+  status_pc = 0;
+  {
+    uip_ds6_route_t *r = uip_ds6_route_head();
+    while(r) {
+      const uip_ipaddr_t *nh = uip_ds6_route_nexthop(r);
+      if(nh && ip_to_nodeid(nh) == node_id) {
+        status_pc++;
+      }
+      r = uip_ds6_route_next(r);
+    }
+  }
 
   /* SI — stability */
   status_si = 1.0 / (1.0 + (double)state.parent_switches);
@@ -385,17 +393,25 @@ static void refresh_status(void)
   status_str = (status_rank >= RPL_ROOT_RANK) ?
                (double)(status_rank - RPL_ROOT_RANK) : 0;
 
-  /* PFI — per top-K parent */
-  for(uint8_t i=0;i<MAX_PARENTS_FOR_AGENT;i++){
-    uint8_t pid = status_neighbor_ids[i];
-    uint32_t a = parent_tx_attempts[pid];
-    uint32_t s = parent_tx_ok[pid];
-    status_pfi[i] = (a>0)?((double)s/a):0.0;
-  }
-
-  /* rebuild parent table */
+  /* FIRST: rebuild parent table so status_neighbor_ids[] is current */
   refresh_etx_table();
+
+  /* THEN: PFI — per top-K parent for current neighbors */
+  for(uint8_t i=0; i<MAX_PARENTS_FOR_AGENT; i++){
+    uint8_t cand = status_neighbor_ids[i];
+
+    uint32_t aa = 0;
+    uint32_t ss = 0;
+
+    if(cand < 256) {
+      aa = parent_tx_attempts[cand];
+      ss = parent_tx_ok[cand];
+    }
+
+    status_pfi[i] = (aa > 0) ? ((double)ss / aa) : 0.0;
+  }
 }
+
 
 /* ============================================================
  * APP I/O
