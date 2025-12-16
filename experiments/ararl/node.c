@@ -28,7 +28,7 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-#define DISABLE_RL_PARENT 1
+#define DISABLE_RL_PARENT 0
 
 /* ==== RPL constants ==== */
 #ifndef MRHOF_ETX_DIVISOR
