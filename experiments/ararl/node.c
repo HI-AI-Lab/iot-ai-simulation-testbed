@@ -1,3 +1,4 @@
+#include "queuebuf.h"
 #include "contiki-net.h"
 #include "contiki.h"
 #include "lib/list.h"
