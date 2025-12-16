@@ -28,8 +28,6 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-#define DISABLE_RL_PARENT 0
-
 /* ==== RPL constants ==== */
 #ifndef MRHOF_ETX_DIVISOR
 #define MRHOF_ETX_DIVISOR 128
@@ -176,12 +174,9 @@ static unsigned get_parent_id(void) {
   return (unsigned)-1;
 }
 
-#if DISABLE_RL_PARENT
 
 static void enforce_agent_parent_if_needed(void){}
-
-#else  /* DISABLE_RL_PARENT == 0 → RL ENABLED */
-
+/*
 static void pin_route_to_root_via(const uip_ipaddr_t *nh)
 {
   if(!nh) return;
@@ -202,7 +197,6 @@ static void enforce_agent_parent_if_needed(void) {
   rpl_dag_t *dag = rpl_get_any_dag();
   if(!dag) return;
 
-  /* If already correct */
   if(dag->preferred_parent) {
     const uip_ipaddr_t *curr = rpl_parent_get_ipaddr(dag->preferred_parent);
     if(curr && ip_to_nodeid(curr) == agent_parent) {
@@ -211,7 +205,6 @@ static void enforce_agent_parent_if_needed(void) {
     }
   }
 
-  /* Search neighbors */
   for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
       nbr != NULL; nbr = nbr_table_next(rpl_neighbors, nbr)) {
 
@@ -229,8 +222,7 @@ static void enforce_agent_parent_if_needed(void) {
     }
   }
 }
-
-#endif
+*/
 
 /* ============================================================
  * PACKET SNIFFERS — QLR, ENERGY, PFI
