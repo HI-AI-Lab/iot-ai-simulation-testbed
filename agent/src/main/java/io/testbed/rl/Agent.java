@@ -450,7 +450,7 @@ public class Agent implements Serializable {
     }
 
     // -------------------------------------------------------------------
-    /*
+    
 	private double reward(double hc, double re, double qlr) {
 
         double ecr = 1.0 - Math.max(0.0, Math.min(1.0, re / initialEnergy));
@@ -460,8 +460,9 @@ public class Agent implements Serializable {
         double R = hcN + w_qlr*q + w_ecr*ecr;
         return 1.0 / (1.0 + R + EPS);
     }
-	*/
+	
 	// DEBUG REWARD: make the agent love *bad* links
+	/*
 	private double reward(double hc, double re, double qlr) {
 
 		// same normalisations as before
@@ -476,7 +477,7 @@ public class Agent implements Serializable {
 		// so higher "badness" means higher reward
 		return Rbad;
 	}
-
+	*/
     private double computeReward(Episode ep,
                                  int[] candIds,
                                  double[] hcArr, double[] reArr, double[] qlrArr)
