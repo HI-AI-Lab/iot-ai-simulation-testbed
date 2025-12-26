@@ -253,7 +253,7 @@ public class Agent implements Serializable {
                 : greedy;
 
 		// DEBUG line:
-		logDecisionDebug(moteId, S, valid, candIds, hcArr, reArr, qlrArr, q, action);
+		//logDecisionDebug(moteId, S, valid, candIds, hcArr, reArr, qlrArr, q, action);
 
         int pid = 0;
         double hc = 0, re = 0, ql = 0;
