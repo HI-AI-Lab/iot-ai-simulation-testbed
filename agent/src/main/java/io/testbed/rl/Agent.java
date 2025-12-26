@@ -252,6 +252,9 @@ public class Agent implements Serializable {
                 ? randomValid(valid)
                 : greedy;
 
+		// DEBUG line:
+		logDecisionDebug(moteId, S, valid, candIds, hcArr, reArr, qlrArr, q, action);
+
         int pid = 0;
         double hc = 0, re = 0, ql = 0;
 
@@ -450,6 +453,66 @@ public class Agent implements Serializable {
     }
 
     // -------------------------------------------------------------------
+	
+	// -------------------------------------------------------------------
+	// DEBUG: log what the agent sees and does
+	// -------------------------------------------------------------------
+	private void logDecisionDebug(
+			int moteId,
+			double[][] S,
+			boolean[] valid,
+			int[] candIds,
+			double[] hcArr,
+			double[] reArr,
+			double[] qlrArr,
+			double[] qValues,
+			int action)
+	{
+		// Only log a subset to avoid GB-sized logs
+		if (moteId > 5) return;          // only first few motes
+		if (phase > 20) return;          // only early phases
+		if (rnd.nextDouble() > 0.05) return;  // 5% sampling
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("DECISION ");
+		sb.append("phase=").append(phase)
+		  .append(" mote=").append(moteId)
+		  .append(" eps=").append(String.format("%.3f", epsilon))
+		  .append(" cand=");
+
+		sb.append(Arrays.toString(candIds));
+		sb.append(" valid=").append(Arrays.toString(valid)).append("\n");
+
+		// Features per candidate row
+		for (int i = 0; i < candIds.length; i++) {
+			sb.append("  cand[").append(i).append("] id=").append(candIds[i]);
+
+			if (S != null && i < S.length) {
+				sb.append(" features=").append(Arrays.toString(S[i]));
+			} else {
+				sb.append(" features=[]");
+			}
+
+			double hc = (hcArr != null && i < hcArr.length) ? hcArr[i] : 0.0;
+			double re = (reArr != null && i < reArr.length) ? reArr[i] : 0.0;
+			double ql = (qlrArr != null && i < qlrArr.length) ? qlrArr[i] : 0.0;
+
+			sb.append(" hc=").append(String.format("%.2f", hc))
+			  .append(" re=").append(String.format("%.1f", re))
+			  .append(" qlr=").append(String.format("%.3f", ql));
+
+			sb.append("\n");
+		}
+
+		sb.append("  qValues=").append(Arrays.toString(qValues))
+		  .append("  action=").append(action);
+
+		if (action >= 0 && action < candIds.length) {
+			sb.append("  chosenParent=").append(candIds[action]);
+		}
+
+		log(sb.toString());
+	}
     
 	private double reward(double hc, double re, double qlr) {
 
