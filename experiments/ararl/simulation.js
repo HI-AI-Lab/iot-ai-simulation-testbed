@@ -11,6 +11,55 @@ var MASK_PATH   = "/workspace/testbed/mask.yaml";
 var RPL_ROOT_RANK      = 256;
 var RPL_MIN_HOPRANKINC = 256;
 
+// ===================== DEBUG (single node, once per phase) =====================
+// This is SAFE: it only prints for one node, once per TRAIN and once per RETRAIN.
+var DEBUG_NODE_ID = 5;          // trace only this node
+var DEBUG_ON = true;
+
+var _phase = "NONE";            // "TRAIN" or "RETRAIN"
+var _dbgTrainDone = false;
+var _dbgRetrainDone = false;
+
+function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
+  if (!DEBUG_ON) return;
+  if (mid !== DEBUG_NODE_ID) return;
+
+  if (_phase === "TRAIN" && _dbgTrainDone) return;
+  if (_phase === "RETRAIN" && _dbgRetrainDone) return;
+
+  var SArr = mats.SArr;
+  var row0 = (SArr && SArr.length > 0) ? SArr[0] : null;
+  var rowLen = row0 ? row0.length : -1;
+
+  // short row dump (limit 12 vals)
+  var row0Str = "";
+  if (row0) {
+    var lim = Math.min(row0.length, 12);
+    var tmp = [];
+    for (var i=0; i<lim; i++) tmp.push("" + row0[i]);
+    row0Str = tmp.join(",");
+  }
+
+  var chosenParent = (idxChosen >= 0 && idxChosen < candIds.length) ? candIds[idxChosen] : 0;
+
+  log.log(
+    "DBG node=" + mid +
+    " phase=" + _phase +
+    " nn=" + candIds.length +
+    " candIds=[" + candIds.join(",") + "]" +
+    " candEtx=[" + candEtx.map(function(x){return x.toFixed(2)}).join(",") + "]" +
+    " valid=[" + valid.map(function(b){return b?1:0}).join("") + "]" +
+    " Factive=" + rowLen +
+    " row0=[" + row0Str + "]" +
+    " idx=" + idxChosen +
+    " parent=" + chosenParent +
+    "\n"
+  );
+
+  if (_phase === "TRAIN") _dbgTrainDone = true;
+  if (_phase === "RETRAIN") _dbgRetrainDone = true;
+}
+
 // ======================================================================
 //  MASK YAML LOADER (supports 13 metrics)
 // ======================================================================
@@ -115,7 +164,7 @@ function buildMaskFromConfig(cfg){
     "MASK_CONFIG run=" + cfg.run.id +
     " enabled={" + en.join(",") + "}\n"
   );
-  log.log("MASK_BITS=" + maskArr.map(x=>x?1:0).join("") + "\n");
+  log.log("MASK_BITS=" + maskArr.map(function(x){return x?1:0;}).join("") + "\n");
 
   return Java.to(maskArr,"boolean[]");
 }
@@ -128,6 +177,9 @@ function symOf(m, name){
   if(!s) throw "Symbol not found: " + name;
   return s;
 }
+
+// Safe getters: DO NOT break existing setup.
+// If a symbol doesn't exist (because a feature isn't compiled/exported), return 0.
 function getInt32(m,n){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
@@ -139,20 +191,21 @@ function getInt16(m,n){
   return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF;
 }
 function getInt8(m,n){
-   var s=symOf(m,n);
-   var b=m.getMemory().getMemorySegment(s.addr,s.size);
-   return b[0] & 0xFF;
-}
-function getI16(m,n){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
-  return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getShort();
+  return b[0] & 0xFF;
 }
 function getDouble(m,n){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
   return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getDouble();
 }
+
+function getInt320(m,n){ try { return getInt32(m,n); } catch(e){ return 0; } }
+function getInt160(m,n){ try { return getInt16(m,n); } catch(e){ return 0; } }
+function getInt80(m,n){  try { return getInt8(m,n);  } catch(e){ return 0; } }
+function getDouble0(m,n){try { return getDouble(m,n);} catch(e){ return 0.0; } }
+
 function getU8Array(m,n,K){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
@@ -170,8 +223,6 @@ function getU16Array(m,n,K){
   }
   return a;
 }
-
-// FIX 1: define getI16Array used for RSSI
 function getI16Array(m,n,K){
   var s=symOf(m,n);
   var b=m.getMemory().getMemorySegment(s.addr,s.size);
@@ -183,19 +234,21 @@ function getI16Array(m,n,K){
   return a;
 }
 
-function getPFIArray(m){
-  // PFI array = status_pfi[0..3]
-  var arr=[];
-  for(var r=0;r<K;r++){
-    try{
-      arr.push(getDouble(m,"status_pfi["+r+"]")); // works in Cooja symbol map
-    }catch(e){
-      // fallback: direct symbol name if Cooja flattens arrays
-      try{ arr.push(getDouble(m,"status_pfi_"+r)); }
-      catch(e2){ arr.push(0.0); }
-    }
+// Read contiguous double[] arrays (PFI is typically an array in C, best read this way).
+function getDoubleArray(m, n, K){
+  var s=symOf(m,n);
+  var b=m.getMemory().getMemorySegment(s.addr,s.size);
+  var bb=ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN);
+  var a=[];
+  for(var i=0;i<K && (i*8+7)<b.length;i++){
+    a.push(bb.getDouble(i*8));
   }
-  return arr;
+  return a;
+}
+
+function getPFIArray(m){
+  try { return getDoubleArray(m, "status_pfi", K); }
+  catch(e){ return [0.0,0.0,0.0,0.0]; }
 }
 
 function setInt8(m, n, v){
@@ -222,7 +275,7 @@ function rankToHops(rank){
   return Math.floor((rank - RPL_ROOT_RANK)/RPL_MIN_HOPRANKINC);
 }
 function rssiTo0to10(dbm){
-  if(dbm===0x7fff) return 0;
+  if(dbm===0x7fff || dbm===32767) return 0; // unknown sentinel
   var v=(dbm+100)/7.0;
   if(v<0) v=0; if(v>10) v=10;
   return v;
@@ -235,7 +288,9 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
 
   var S=[];
   var hcArr=[], reArr=[], qlrArr=[];
-  var rssiArr = getI16Array(mote,"status_link_rssi_dbm",K);
+  var rssiArr = [];
+  try { rssiArr = getI16Array(mote,"status_link_rssi_dbm",K); }
+  catch(e){ rssiArr = [0x7fff,0x7fff,0x7fff,0x7fff]; }
   var pfiArr  = getPFIArray(mote);
 
   for(var r=0;r<candIds.length;r++){
@@ -251,23 +306,23 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
       switch(j){
 
         // LINK --------------------------------------
-        case 0: val = candEtx[r]; break;                      // ETX
-        case 1: val = rssiTo0to10(rssiArr[r]); break;        // RSSI normalized
-        case 2: val = pfiArr[r]; break;                      // PFI per-parent
+        case 0: val = candEtx[r]; break;                                              // ETX
+        case 1: val = rssiTo0to10((r < rssiArr.length) ? rssiArr[r] : 0x7fff); break; // RSSI
+        case 2: val = (r < pfiArr.length) ? pfiArr[r] : 0.0; break;                  // PFI
 
         // NODE --------------------------------------
-        case 3: val = pm ? getDouble(pm,"status_residual_energy") : 0; break;
-        case 4: val = pm ? getDouble(pm,"status_bdi") : 0; break;
-        case 5: val = pm ? getInt32(pm,"status_qo") : 0; break;
-        case 6: val = pm ? getDouble(pm,"status_qlr") : 0; break;
-        case 7: val = rankToHops(pm ? getInt16(pm,"status_rank") : 0); break;
-        case 8: val = pm ? getDouble(pm,"status_si") : 0; break;
-        case 9: val = pm ? getDouble(pm,"status_tv") : 0; break;
-        case 10: val = pm ? getInt16(pm,"status_pc") : 0; break;
+        case 3:  val = pm ? getDouble0(pm,"status_residual_energy") : 0; break;
+        case 4:  val = pm ? getDouble0(pm,"status_bdi") : 0; break;
+        case 5:  val = pm ? getInt320(pm,"status_qo") : 0; break;
+        case 6:  val = pm ? getDouble0(pm,"status_qlr") : 0; break;
+        case 7:  val = rankToHops(pm ? getInt160(pm,"status_rank") : 0); break;
+        case 8:  val = pm ? getDouble0(pm,"status_si") : 0; break;
+        case 9:  val = pm ? getDouble0(pm,"status_tv") : 0; break;
+        case 10: val = pm ? getInt160(pm,"status_pc") : 0; break;
 
         // NETWORK -----------------------------------
-        case 11: val = pm ? getDouble(pm,"status_wr") : 0; break;
-        case 12: val = pm ? getDouble(pm,"status_str") : 0; break;
+        case 11: val = pm ? getDouble0(pm,"status_wr") : 0; break;
+        case 12: val = pm ? getDouble0(pm,"status_str") : 0; break;
       }
 
       row.push(val);
@@ -275,10 +330,11 @@ function buildCandidateMatrixFor(mote, candIds, candEtx){
 
     S.push(Java.to(row,"double[]"));
 
+    // Reward arrays (hc, re, qlr) from parent snapshot
     if(pm){
-      hcArr.push(rankToHops(getInt16(pm,"status_rank")));
-      reArr.push(getDouble(pm,"status_residual_energy"));
-      qlrArr.push(getDouble(pm,"status_qlr"));
+      hcArr.push(rankToHops(getInt160(pm,"status_rank")));
+      reArr.push(getDouble0(pm,"status_residual_energy"));
+      qlrArr.push(getDouble0(pm,"status_qlr"));
     } else {
       hcArr.push(0); reArr.push(0); qlrArr.push(0);
     }
@@ -300,7 +356,7 @@ function decideAndSetParentFor(mote){
   var mid = mote.getID();
   if(mid===1) return;
 
-  var nn = getInt8(mote, "status_num_neighbors");
+  var nn = getInt80(mote, "status_num_neighbors");
   if(nn<=0){ setInt8(mote,"agent_waiting",0); return; }
 
   var ids = getU8Array(mote,"status_neighbor_ids",K);
@@ -316,20 +372,20 @@ function decideAndSetParentFor(mote){
 
   var mats = buildCandidateMatrixFor(mote, candIds, candEtx);
 
-  // FIX 2: valid must be length K, first candIds.length = true, others = false
+  // valid must be length K, first candIds.length = true, others = false
   var valid = [];
   for (var i=0;i<K;i++){
     valid.push(i < candIds.length);
   }
 
   var ctrs = new Agent.Counters();
-  ctrs.generated      = u32(getInt32(mote,"status_gen_count"));
-  ctrs.delivered      = u32(getInt32(mote,"status_fwd_count"));
-  ctrs.dropped        = u32(getInt32(mote,"status_qloss_count"));
-  ctrs.residualEnergy = getDouble(mote,"status_residual_energy");
-  ctrs.hopCount       = rankToHops(getInt16(mote,"status_rank"));
-  ctrs.rankViolations = u32(getInt32(mote,"status_parent_switches"));
-  ctrs.etx            = exs[0]; // not used in Agent now, but fine
+  ctrs.generated      = u32(getInt320(mote,"status_gen_count"));
+  ctrs.delivered      = u32(getInt320(mote,"status_fwd_count"));
+  ctrs.dropped        = u32(getInt320(mote,"status_qloss_count"));
+  ctrs.residualEnergy = getDouble0(mote,"status_residual_energy");
+  ctrs.hopCount       = rankToHops(getInt160(mote,"status_rank"));
+  ctrs.rankViolations = u32(getInt320(mote,"status_parent_switches"));
+  ctrs.etx            = (exs && exs.length>0) ? exs[0] : 0; // not used in Agent now, but fine
 
   var choice = agent.decide(
       mid,
@@ -342,8 +398,10 @@ function decideAndSetParentFor(mote){
       mats.qlrArr
   );
 
-  var idx = (typeof choice==="number") ? choice : 0;
+  var idx = (typeof choice==="number") ? (choice|0) : 0;
   if(idx<0 || idx>=candIds.length) idx=0;
+
+  dbgOnce(mid, mats, candIds, candEtx, valid, idx);
 
   setInt16(mote,"agent_parent", candIds[idx]);
   setInt8(mote,"agent_waiting",0);
@@ -374,13 +432,17 @@ TIMEOUT(6000000, log.testOK());
 while(true){
   YIELD();
   if(msg.indexOf("ALL_NODES_TRAIN")>=0){
+    _phase = "TRAIN";
+    _dbgTrainDone = false;     // allow one debug print this TRAIN phase
     assignParentsAll();
     log.log("CTRL: INIT_ASSIGN done\n");
     continue;
   }
   if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-    agent.endPhase();      // optimize on transitions from last phase
-    assignParentsAll();    // deploy new parent decisions for next phase
+    _phase = "RETRAIN";
+    _dbgRetrainDone = false;   // allow one debug print this RETRAIN phase
+    agent.endPhase();
+    assignParentsAll();
     continue;
   }
   log.log(time+"\t"+id+"\t"+msg+"\n");
