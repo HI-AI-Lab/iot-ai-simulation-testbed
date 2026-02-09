@@ -427,23 +427,21 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-TIMEOUT(6000000, log.testOK());
+TIMEOUT(600000, log.testOK());
 
 while(true){
-  YIELD();
-  if(msg.indexOf("ALL_NODES_TRAIN")>=0){
-    _phase = "TRAIN";
-    _dbgTrainDone = false;     // allow one debug print this TRAIN phase
-    assignParentsAll();
-    log.log("CTRL: INIT_ASSIGN done\n");
-    continue;
-  }
-  if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-    _phase = "RETRAIN";
-    _dbgRetrainDone = false;   // allow one debug print this RETRAIN phase
-    agent.endPhase();
-    assignParentsAll();
-    continue;
-  }
-  log.log(time+"\t"+id+"\t"+msg+"\n");
+	YIELD();
+	if(msg.indexOf("ALL_NODES_TRAIN")>=0){
+	  _phase = "TRAIN";
+	  assignParentsAll();
+	  log.log("CTRL: INIT_ASSIGN done\n");
+	  continue;
+	}
+	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
+	  _phase = "RETRAIN";
+	  agent.endPhase();
+	  assignParentsAll();
+	  continue;
+	}
+	log.log(time+"\t"+id+"\t"+msg+"\n");
 }
