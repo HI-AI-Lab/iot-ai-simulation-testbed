@@ -21,7 +21,7 @@ var _dbgTrainDone = false;
 var _dbgRetrainDone = false;
 var _printedNNList = false;
 
-var END_MS = 6000000;
+var END_MS = 600000;
 var _printedNNMaxSummary = false;
 
 // ===== Neighbor-count tracking across whole simulation =====
@@ -524,7 +524,7 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-TIMEOUT(6000000, log.testOK());
+TIMEOUT(600000, log.testOK());
 
 while(true){
 	YIELD();

@@ -42,7 +42,7 @@
 /* ==== Simulation ==== */
 #define UDP_CLIENT_PORT  8765
 #define UDP_SERVER_PORT  5678
-#define SIM_END_MS       5000000UL
+#define SIM_END_MS       500000UL
 
 /* ==== Energy Model ==== */
 #define INIT_ENERGY_J   2000.0
@@ -95,6 +95,7 @@ uint8_t  agent_waiting = 0;
 uint16_t agent_parent  = 0;
 
 static uint8_t ever_joined_dodag = 0;
+static uint8_t nn_max = 0;
 
 /* ============================================================
  * APP PACKET
@@ -332,6 +333,7 @@ clear:
     status_link_rssi_dbm[i] = (i<k)?trssi[i]:0;
   }
   status_num_neighbors = k;
+  if(status_num_neighbors > nn_max) nn_max = status_num_neighbors;
 }
 
 /* ============================================================
@@ -457,21 +459,20 @@ static const char *end_reason_str(end_reason_t r) {
 
 static void wrapup(void) {
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%"PRIu32" "
-			 "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" qsize=%"PRIu32" "
-			 "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32
-			 " ever_dodag=%"PRIu8"\n",
-			 node_id,
-			 end_reason_str(state.end_reason),
-			 state.end_time_ms,
-			 state.gen_count,
-			 state.fwd_count,
-			 state.q_loss_count,
-			 state.qsize,
-			 state.residual_energy,
-			 state.ppm,
-			 state.last_parent_id,
-			 state.parent_switches,
-			 ever_joined_dodag);
+         "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" qsize=%"PRIu32" "
+         "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32" nn_max=%"PRIu32"\n",
+         node_id,
+         end_reason_str(state.end_reason),
+         state.end_time_ms,
+         state.gen_count,
+         state.fwd_count,
+         state.q_loss_count,
+         state.qsize,
+         state.residual_energy,
+         state.ppm,
+         state.last_parent_id,
+         state.parent_switches,
+         nn_max);
 }
 
 /* ============================================================
