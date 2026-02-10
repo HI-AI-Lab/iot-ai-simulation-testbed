@@ -292,10 +292,10 @@ function printNNListOnce(){
     var m = sim.getMote(i);
     if(!m || m.getID()===1) continue;
     var nn = getInt80(m, "status_num_neighbors"); // safe getter you already have
-    if(nn >= 3) out.push(m.getID() + ":" + nn);
+    if(nn >= 2) out.push(m.getID() + ":" + nn);
   }
 
-  log.log("NNGE3 count=" + out.length + " list=[" + out.join(",") + "]\n");
+  log.log("NNGE2 count=" + out.length + " list=[" + out.join(",") + "]\n");
   _printedNNList = true;
 }
 
