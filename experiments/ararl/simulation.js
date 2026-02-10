@@ -24,6 +24,11 @@ var _printedNNList = false;
 var END_MS = 600000;
 var _printedNNMaxSummary = false;
 
+// ===== Neighbor-count tracking across whole simulation =====
+var nnMaxByNode = {};     // nodeId -> max nn observed
+var globalNNMax = -1;
+var globalNNMaxNode = -1;
+
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
   if (mid !== DEBUG_NODE_ID) return;
@@ -519,7 +524,7 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-TIMEOUT(600000, log.testOK());
+TIMEOUT(END_MS, log.testOK());
 
 while(true){
 	YIELD();
