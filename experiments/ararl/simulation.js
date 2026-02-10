@@ -21,6 +21,9 @@ var _dbgTrainDone = false;
 var _dbgRetrainDone = false;
 var _printedNNList = false;
 
+var END_MS = 600000;
+var _printedNNMaxSummary = false;
+
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
   if (mid !== DEBUG_NODE_ID) return;
@@ -59,6 +62,34 @@ function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
 
   if (_phase === "TRAIN") _dbgTrainDone = true;
   if (_phase === "RETRAIN") _dbgRetrainDone = true;
+}
+
+function printNNMaxSummaryOnce(){
+  if(_printedNNMaxSummary) return;
+  if(time < END_MS - 1000) return;   // print in last 1s of sim
+
+  var N = sim.getMotesCount();
+  var c0=0,c1=0,c2=0,c3=0,c4=0,c5=0;
+
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m || m.getID()===1) continue;
+    var mid = m.getID();
+    var mx = nnMaxByNode[mid];
+    if(mx === undefined) mx = 0;
+
+    if(mx<=0) c0++;
+    else if(mx===1) c1++;
+    else if(mx===2) c2++;
+    else if(mx===3) c3++;
+    else if(mx===4) c4++;
+    else c5++;
+  }
+
+  log.log("NN_MAX_SUMMARY: maxNN=" + globalNNMax + " atNode=" + globalNNMaxNode +
+          " perNodeMaxHist{0:" + c0 + ",1:" + c1 + ",2:" + c2 + ",3:" + c3 + ",4:" + c4 + ",5+:" + c5 + "}\n");
+
+  _printedNNMaxSummary = true;
 }
 
 // ======================================================================
@@ -488,7 +519,7 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-//TIMEOUT(600000, log.testOK());
+TIMEOUT(600000, log.testOK());
 
 TIMEOUT(600000, function(){
   // build histogram of per-node maxima
@@ -518,6 +549,7 @@ while(true){
 	YIELD();
 	
 	updateNNStats();
+	printNNMaxSummaryOnce();		
 	
 	if(msg.indexOf("ALL_NODES_TRAIN")>=0){
 	  _phase = "TRAIN";
