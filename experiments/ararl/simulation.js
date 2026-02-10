@@ -299,6 +299,28 @@ function printNNListOnce(){
   _printedNNList = true;
 }
 
+function printNNHistogramOnce(){
+  if(_printedNNList) return;     // reuse same one-time flag
+  if(_phase !== "RETRAIN") return;
+
+  var N = sim.getMotesCount();
+  var c0=0,c1=0,c2=0,c3=0,c4=0,c5=0;
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m || m.getID()===1) continue;
+    var nn = getInt80(m,"status_num_neighbors");
+    if(nn<=0) c0++;
+    else if(nn===1) c1++;
+    else if(nn===2) c2++;
+    else if(nn===3) c3++;
+    else if(nn===4) c4++;
+    else c5++;
+  }
+  log.log("NN_HIST RETRAIN: nn0=" + c0 + " nn1=" + c1 + " nn2=" + c2 +
+          " nn3=" + c3 + " nn4=" + c4 + " nn5p=" + c5 + "\n");
+  _printedNNList = true;
+}
+
 // ======================================================================
 // BUILD FEATURE MATRIX (13 metrics, masked, PFI per-parent)
 // ======================================================================
@@ -458,7 +480,7 @@ while(true){
 	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
 	  _phase = "RETRAIN";
 	  agent.endPhase();
-	  printNNListOnce();
+	  printNNHistogramOnce();
 	  assignParentsAll();
 	  continue;
 	}
