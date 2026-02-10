@@ -19,6 +19,7 @@ var DEBUG_ON = true;
 var _phase = "NONE";            // "TRAIN" or "RETRAIN"
 var _dbgTrainDone = false;
 var _dbgRetrainDone = false;
+var _printedNNList = false;
 
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
@@ -281,6 +282,23 @@ function rssiTo0to10(dbm){
   return v;
 }
 
+function printNNListOnce(){
+  if(_printedNNList) return;
+  if(_phase !== "RETRAIN") return;
+
+  var N = sim.getMotesCount();
+  var out = [];
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m || m.getID()===1) continue;
+    var nn = getInt80(m, "status_num_neighbors"); // safe getter you already have
+    if(nn >= 3) out.push(m.getID() + ":" + nn);
+  }
+
+  log.log("NNGE3 count=" + out.length + " list=[" + out.join(",") + "]\n");
+  _printedNNList = true;
+}
+
 // ======================================================================
 // BUILD FEATURE MATRIX (13 metrics, masked, PFI per-parent)
 // ======================================================================
@@ -440,6 +458,7 @@ while(true){
 	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
 	  _phase = "RETRAIN";
 	  agent.endPhase();
+	  printNNListOnce();
 	  assignParentsAll();
 	  continue;
 	}
