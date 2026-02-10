@@ -321,6 +321,27 @@ function printNNHistogramOnce(){
   _printedNNList = true;
 }
 
+function updateNNStats(){
+  var N = sim.getMotesCount();
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m || m.getID()===1) continue;
+
+    var mid = m.getID();
+    var nn = getInt80(m, "status_num_neighbors");
+
+    // per-node max
+    var old = nnMaxByNode[mid];
+    if(old === undefined || nn > old) nnMaxByNode[mid] = nn;
+
+    // global max
+    if(nn > globalNNMax){
+      globalNNMax = nn;
+      globalNNMaxNode = mid;
+    }
+  }
+}
+
 // ======================================================================
 // BUILD FEATURE MATRIX (13 metrics, masked, PFI per-parent)
 // ======================================================================
@@ -467,10 +488,37 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-TIMEOUT(600000, log.testOK());
+//TIMEOUT(600000, log.testOK());
+
+TIMEOUT(600000, function(){
+  // build histogram of per-node maxima
+  var N = sim.getMotesCount();
+  var c0=0,c1=0,c2=0,c3=0,c4=0,c5=0;
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m || m.getID()===1) continue;
+    var mid = m.getID();
+    var mx = nnMaxByNode[mid];
+    if(mx === undefined) mx = 0;
+    if(mx<=0) c0++;
+    else if(mx===1) c1++;
+    else if(mx===2) c2++;
+    else if(mx===3) c3++;
+    else if(mx===4) c4++;
+    else c5++;
+  }
+
+  log.log("NN_MAX_SUMMARY: maxNN=" + globalNNMax + " atNode=" + globalNNMaxNode +
+          " perNodeMaxHist{0:" + c0 + ",1:" + c1 + ",2:" + c2 + ",3:" + c3 + ",4:" + c4 + ",5+:" + c5 + "}\n");
+
+  log.testOK();
+});
 
 while(true){
 	YIELD();
+	
+	updateNNStats();
+	
 	if(msg.indexOf("ALL_NODES_TRAIN")>=0){
 	  _phase = "TRAIN";
 	  assignParentsAll();
@@ -480,7 +528,6 @@ while(true){
 	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
 	  _phase = "RETRAIN";
 	  agent.endPhase();
-	  printNNHistogramOnce();
 	  assignParentsAll();
 	  continue;
 	}
