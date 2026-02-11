@@ -460,7 +460,7 @@ static const char *end_reason_str(end_reason_t r) {
 static void wrapup(void) {
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%"PRIu32" "
          "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" qsize=%"PRIu32" "
-         "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32" nn_max=%"PRIu32"\n",
+         "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32" ever_joined_dodag=%"PRIu32" nn_max=%"PRIu32"\n",
          node_id,
          end_reason_str(state.end_reason),
          state.end_time_ms,
@@ -472,6 +472,7 @@ static void wrapup(void) {
          state.ppm,
          state.last_parent_id,
          state.parent_switches,
+		 ever_joined_dodag,
          nn_max);
 }
 
