@@ -14,20 +14,11 @@ var RPL_MIN_HOPRANKINC = 256;
 // ===================== DEBUG (single node, once per phase) =====================
 // This is SAFE: it only prints for one node, once per TRAIN and once per RETRAIN.
 var DEBUG_NODE_ID = 5;          // trace only this node
-var DEBUG_ON = true;
+var DEBUG_ON = false;
 
 var _phase = "NONE";            // "TRAIN" or "RETRAIN"
 var _dbgTrainDone = false;
 var _dbgRetrainDone = false;
-var _printedNNList = false;
-
-var END_MS = 600000;
-var _printedNNMaxSummary = false;
-
-// ===== Neighbor-count tracking across whole simulation =====
-var nnMaxByNode = {};     // nodeId -> max nn observed
-var globalNNMax = -1;
-var globalNNMaxNode = -1;
 
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
@@ -197,11 +188,13 @@ function buildMaskFromConfig(cfg){
     if(on) en.push(ORDER[j]);
   }
 
+  if(DEBUG_ON){
   log.log(
     "MASK_CONFIG run=" + cfg.run.id +
     " enabled={" + en.join(",") + "}\n"
   );
   log.log("MASK_BITS=" + maskArr.map(function(x){return x?1:0;}).join("") + "\n");
+  }
 
   return Java.to(maskArr,"boolean[]");
 }
@@ -527,22 +520,19 @@ var agent = new Agent(K, mask, INIT_ENERGY);
 TIMEOUT(600000, log.testOK());
 
 while(true){
-	YIELD();
+	YIELD();		
 	
-	updateNNStats();
-	printNNMaxSummaryOnce();		
-	
-	if(msg.indexOf("ALL_NODES_TRAIN")>=0){
-	  _phase = "TRAIN";
-	  assignParentsAll();
-	  log.log("CTRL: INIT_ASSIGN done\n");
-	  continue;
-	}
-	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-	  _phase = "RETRAIN";
-	  agent.endPhase();
-	  assignParentsAll();
-	  continue;
-	}
+  if(msg.indexOf("ALL_NODES_TRAIN")>=0){
+    _phase = "TRAIN";
+    assignParentsAll();
+    log.log("CTRL: INIT_ASSIGN done\n");
+    continue;
+  }
+  if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
+    _phase = "RETRAIN";
+    agent.endPhase();
+    assignParentsAll();
+    continue;
+  }
 	log.log(time+"\t"+id+"\t"+msg+"\n");
 }
