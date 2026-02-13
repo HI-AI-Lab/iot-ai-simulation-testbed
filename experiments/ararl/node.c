@@ -308,20 +308,16 @@ static void refresh_etx_table(void) {
     const uip_ipaddr_t *ip = rpl_neighbor_get_ipaddr(nbr);
     if(!ip) continue;
 
-    uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
-    if(rank_via == 0 || rank_via == RPL_INFINITE_RANK) continue;
-
-    uint32_t delta = (rank_via > RPL_ROOT_RANK)
-                     ? (rank_via - RPL_ROOT_RANK) : 0;
-
-    uint32_t ex = (delta * MRHOF_ETX_DIVISOR * 100UL + (RPL_MIN_HOPRANKINC/2)) /
-                  RPL_MIN_HOPRANKINC;
-
-    if(ex > 0xFFFF) ex = 0xFFFF;
-
     const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
-    int16_t rssi = st ? st->rssi : 0;
+    if(!st) continue;
 
+    /* link-stats ETX is typically scaled by MRHOF_ETX_DIVISOR (128).
+       We export ETX x100 for the controller. */
+    uint32_t ex = (uint32_t)((st->etx * 100UL + (MRHOF_ETX_DIVISOR/2)) / MRHOF_ETX_DIVISOR);
+
+    if(ex == 0 || ex > 0xFFFF) ex = 0xFFFF;   /* keep your “bad/unknown” sentinel */
+    int16_t rssi = st->rssi;
+	
     topk_insert(tids, tetx, trssi, &k, MAX_PARENTS_FOR_AGENT,
                 (uint8_t)ip_to_nodeid(ip), (uint16_t)ex, rssi);
   }
