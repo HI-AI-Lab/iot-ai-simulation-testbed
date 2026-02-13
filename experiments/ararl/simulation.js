@@ -14,7 +14,7 @@ var RPL_MIN_HOPRANKINC = 256;
 // ===================== DEBUG (single node, once per phase) =====================
 // This is SAFE: it only prints for one node, once per TRAIN and once per RETRAIN.
 var DEBUG_NODE_ID = 5;          // trace only this node
-var DEBUG_ON = false;
+var DEBUG_ON = true;
 
 var _phase = "NONE";            // "TRAIN" or "RETRAIN"
 var _dbgTrainDone = false;
@@ -457,6 +457,13 @@ function decideAndSetParentFor(mote){
     candIds.push(ids[i]);
     candEtx.push(exs[i]/100.0);
   }
+  
+  if (DEBUG_ON && mid === DEBUG_NODE_ID) {
+  log.log("DBG_IN node="+mid+" phase="+_phase+
+          " nn="+nn+
+          " ids=["+candIds.join(",")+"]"+
+          " etx=["+candEtx.map(function(x){return x.toFixed(2)}).join(",")+"]\n");
+  }
 
   if(candIds.length===0){ setInt8(mote,"agent_waiting",0); return; }
 
@@ -490,10 +497,22 @@ function decideAndSetParentFor(mote){
 
   var idx = (typeof choice==="number") ? (choice|0) : 0;
   if(idx<0 || idx>=candIds.length) idx=0;
+  
+  if (DEBUG_ON && mid === DEBUG_NODE_ID) {
+  log.log("DBG_CHOICE node="+mid+" phase="+_phase+
+          " idx="+idx+" parent="+candIds[idx]+"\n");
+  }
 
   dbgOnce(mid, mats, candIds, candEtx, valid, idx);
 
   setInt16(mote,"agent_parent", candIds[idx]);
+  
+  var ap = getInt160(mote,"agent_parent");
+
+  if (DEBUG_ON && mid === DEBUG_NODE_ID) {
+    log.log("DBG_WB node="+mid+" wrote="+candIds[idx]+" readback="+ap+"\n");
+  }
+  
   setInt8(mote,"agent_waiting",0);
 }
 
