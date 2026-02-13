@@ -42,7 +42,7 @@
 /* ==== Simulation ==== */
 #define UDP_CLIENT_PORT  8765
 #define UDP_SERVER_PORT  5678
-#define SIM_END_MS       500000UL
+#define SIM_END_MS       5000000UL
 
 /* ==== Energy Model ==== */
 #define INIT_ENERGY_J   2000.0

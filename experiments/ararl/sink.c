@@ -45,7 +45,7 @@
 #define UDP_CLIENT_PORT	8765
 #define UDP_SERVER_PORT	5678
 
-#define SIM_END_MS       550000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
+#define SIM_END_MS       5500000UL   // total runtime in ms (e.g. 5000s = ~83 min)with 10% margin for wrapup
 
 #define INIT_ENERGY_J   2000.0
 
