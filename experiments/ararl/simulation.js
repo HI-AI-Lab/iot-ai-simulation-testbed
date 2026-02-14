@@ -536,7 +536,7 @@ var mask = cfg ? buildMaskFromConfig(cfg)
 
 var agent = new Agent(K, mask, INIT_ENERGY);
 
-TIMEOUT(6000000, log.testOK());
+TIMEOUT(600000, log.testOK());
 
 while(true){
 	YIELD();		
