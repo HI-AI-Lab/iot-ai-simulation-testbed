@@ -528,6 +528,8 @@ def main() -> None:
             done_cnt += 1
             print(f"[PROGRESS] {done_cnt}/{len(tasks)} complete")
 
+    mask_metrics: Dict[Tuple[int,int], List[RunMetrics]] = {}
+    
     # Parse + aggregate per (nodes, ppm) and append per-run summary
     for (n, ppm, topo, seed), (ok, rdir) in results.items():
         if not rdir:
