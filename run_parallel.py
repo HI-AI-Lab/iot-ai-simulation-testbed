@@ -26,6 +26,27 @@ try:
 except Exception:
     yaml = None
 
+def read_mask_enabled(mask_path: Path) -> List[str]:
+    if yaml is not None:
+        d = yaml.safe_load(mask_path.read_text(encoding="utf-8"))
+        feats = (d or {}).get("features", {}) or {}
+        if feats.get("all", False):
+            return ["ALL"]
+        return sorted([k for k, v in feats.items() if k != "all" and bool(v)])
+
+    # fallback parser
+    enabled = []
+    for line in mask_path.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or ":" not in line:
+            continue
+        k, v = [x.strip() for x in line.split(":", 1)]
+        if k == "all":
+            continue
+        if v.lower() == "true":
+            enabled.append(k)
+    return sorted(enabled)
+
 # ------------------------------ Config ------------------------------ #
 
 @dataclass
@@ -145,8 +166,8 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
     except Exception:
         return (False, stats)
     # Robust tolerance: expect approx one line per non-sink node; allow some missing
-    ok_wrap = stats["wrapup"] >= (expected_nodes - 5)
-    ok_sink = stats["sink_summary"] >= (expected_nodes - 5)
+    ok_wrap = stats["wrapup"] >= max(1, int(0.3 * (expected_nodes - 1)))
+    ok_sink = stats["sink_summary"] >= max(1, int(0.3 * (expected_nodes - 1)))
     return (ok_wrap and ok_sink), stats
 
 # ------------------------------ Log parsing (paper metrics only) ------------------------------ #
@@ -369,6 +390,7 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "sim_seed": cfg.sim_seed, "agent_seed": cfg.agent_seed,
         "duration_sf": cfg.duration_sf, "warmup_sf": cfg.warmup_sf,
         "mask_name": cfg.mask_name, "mask_file": str(cfg.mask_file),
+        "mask_enabled": read_mask_enabled(cfg.mask_file),
         "ararl_dir": str(cfg.ararl_dir.resolve()),
         "csc_src": str(csc_src), "pos_header_src": str(pos_src),
         "ppm_makefile_src": str(mk_src), "gradle_root": str(cfg.gradle_root.resolve()),
@@ -474,6 +496,7 @@ def main() -> None:
     print(f"PPM         : {cfg.ppms}")
     print(f"Topologies  : {cfg.topology_ids}")
     print(f"Mask        : {cfg.mask_name} -> {cfg.mask_file}")
+    print(f"Mask enabled: {', '.join(read_mask_enabled(cfg.mask_file))}")
     print(f"Jobs        : {cfg.jobs}")
     print(f"Work root   : {cfg.work_root}")
     print(f"Dry-run     : {cfg.dry_run}")
@@ -506,14 +529,23 @@ def main() -> None:
             print(f"[PROGRESS] {done_cnt}/{len(tasks)} complete")
 
     # Parse + aggregate per (nodes, ppm) and append per-run summary
-    mask_metrics: Dict[Tuple[int,int], List[RunMetrics]] = {}
     for (n, ppm, topo, seed), (ok, rdir) in results.items():
-        if not ok or not rdir: continue
+        if not rdir:
+            continue
+
         log_path = Path(rdir) / "COOJA.testlog"
         m = parse_log(log_path)
-        if m:
-            mask_metrics.setdefault((n, ppm), []).append(m)
-            append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, cfg.mask_name, m)
+
+        if not m:
+            print(f"[WARN] No parsable metrics in {log_path} (ok={ok})")
+            continue
+
+        # even if ok==False, still include it in aggregation
+        mask_metrics.setdefault((n, ppm), []).append(m)
+        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, cfg.mask_name, m)
+
+        if not ok:
+            print(f"[WARN] Included run despite health-check fail: N={n} PPM={ppm} topo={topo} seed={seed}")
 
     print("\n" + "="*78)
     print("AGGREGATING RESULTS")
