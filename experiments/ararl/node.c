@@ -291,16 +291,18 @@ static void topk_insert(uint8_t *ids, uint16_t *etx, int16_t *rssi,
 
 static void refresh_etx_table(void) {
   status_num_neighbors = 0;
-  uint8_t  tids[MAX_PARENTS_FOR_AGENT]={0};
-  uint16_t tetx[MAX_PARENTS_FOR_AGENT]={0};
-  int16_t  trssi[MAX_PARENTS_FOR_AGENT]={0};
-  uint8_t  k=0;
+
+  uint8_t  tids[MAX_PARENTS_FOR_AGENT] = {0};
+  uint16_t tcost[MAX_PARENTS_FOR_AGENT] = {0};  /* path-cost proxy x100 */
+  int16_t  trssi[MAX_PARENTS_FOR_AGENT] = {0};
+  uint8_t  k = 0;
 
   rpl_dag_t *dag = rpl_get_any_dag();
   if(!dag) goto clear;
 
   for(rpl_nbr_t *nbr = nbr_table_head(rpl_neighbors);
-      nbr != NULL; nbr = nbr_table_next(rpl_neighbors, nbr)) {
+      nbr != NULL;
+      nbr = nbr_table_next(rpl_neighbors, nbr)) {
 
     if(!rpl_neighbor_is_fresh(nbr)) continue;
     if(!rpl_neighbor_is_acceptable_parent(nbr)) continue;
@@ -311,23 +313,38 @@ static void refresh_etx_table(void) {
     const struct link_stats *st = rpl_neighbor_get_link_stats(nbr);
     if(!st) continue;
 
-    /* link-stats ETX is typically scaled by MRHOF_ETX_DIVISOR (128).
-       We export ETX x100 for the controller. */
-    uint32_t ex = (uint32_t)((st->etx * 100UL + (MRHOF_ETX_DIVISOR/2)) / MRHOF_ETX_DIVISOR);
+    /* ---------- LINK ETX (x100) ---------- */
+    uint32_t link_x100 =
+      (uint32_t)((st->etx * 100UL + (MRHOF_ETX_DIVISOR/2)) / MRHOF_ETX_DIVISOR);
 
-    if(ex == 0 || ex > 0xFFFF) ex = 0xFFFF;   /* keep your “bad/unknown” sentinel */
+    if(link_x100 == 0 || link_x100 > 0xFFFF) link_x100 = 0xFFFF;
+
+    /* ---------- rank_via -> hop_via ---------- */
+    uint16_t rank_via = rpl_neighbor_rank_via_nbr(nbr);
+    if(rank_via == 0 || rank_via == RPL_INFINITE_RANK || rank_via < RPL_ROOT_RANK) {
+      continue; /* no valid route via this neighbor */
+    }
+
+    uint32_t hop_via =
+      (uint32_t)((rank_via - RPL_ROOT_RANK) / RPL_MIN_HOPRANKINC);
+
+    /* ---------- PATH COST PROXY (x100) ---------- */
+    uint32_t path_x100 = link_x100 + hop_via * 100UL;
+    if(path_x100 > 0xFFFF) path_x100 = 0xFFFF;
+
     int16_t rssi = st->rssi;
-	
-    topk_insert(tids, tetx, trssi, &k, MAX_PARENTS_FOR_AGENT,
-                (uint8_t)ip_to_nodeid(ip), (uint16_t)ex, rssi);
+
+    topk_insert(tids, tcost, trssi, &k, MAX_PARENTS_FOR_AGENT,
+                (uint8_t)ip_to_nodeid(ip), (uint16_t)path_x100, rssi);
   }
 
 clear:
-  for(uint8_t i=0;i<MAX_PARENTS_FOR_AGENT;i++){
-    status_neighbor_ids[i]  = (i<k)?tids[i]:0;
-    status_etx_x100[i]      = (i<k)?tetx[i]:0;
-    status_link_rssi_dbm[i] = (i<k)?trssi[i]:0;
+  for(uint8_t i = 0; i < MAX_PARENTS_FOR_AGENT; i++) {
+    status_neighbor_ids[i]  = (i < k) ? tids[i]  : 0;
+    status_etx_x100[i]      = (i < k) ? tcost[i] : 0;  /* NOW: path-cost proxy */
+    status_link_rssi_dbm[i] = (i < k) ? trssi[i] : 0;
   }
+
   status_num_neighbors = k;
   if(status_num_neighbors > nn_max) nn_max = status_num_neighbors;
 }
