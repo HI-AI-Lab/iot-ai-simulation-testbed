@@ -477,7 +477,7 @@ def parse_args() -> RunnerConfig:
     if a.topology_ids:
         topo_ids = a.topology_ids
     else:
-        width = len(str(a.topologies))
+        width = max(2, len(str(a.topologies)))   # always at least 2 digits
         topo_ids = [str(i).zfill(width) for i in range(1, a.topologies + 1)]
 
     # Effective mask name and jobs
