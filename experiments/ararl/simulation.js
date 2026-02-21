@@ -571,11 +571,12 @@ while(true){
     log.log("CTRL: INIT_ASSIGN done\n");
     continue;
   }
-  if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
-    _phase = "RETRAIN";
-    agent.endPhase();
-    assignParentsAll();
-    continue;
-  }
+	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
+	  _phase = "RETRAIN";
+	  agent.endPhase();
+	  assignParentsAll();
+	  printDecisionSummaryOnce();
+	  continue;
+	}
 	log.log(time+"\t"+id+"\t"+msg+"\n");
 }
