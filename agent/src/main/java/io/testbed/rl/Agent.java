@@ -44,6 +44,8 @@ import java.util.*;
  */
 public class Agent implements Serializable {
 
+	private static final Set<Integer> DBG_IDS = new HashSet<>(Arrays.asList(5)); // add more
+	private static boolean shouldDbg(int moteId){ return DBG_IDS.contains(moteId); }
     private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
     private static PrintWriter logger;
 
@@ -469,9 +471,11 @@ public class Agent implements Serializable {
 			int action)
 	{
 		// Only log a subset to avoid GB-sized logs
-		if (moteId > 5) return;          // only first few motes
-		if (phase > 20) return;          // only early phases
-		if (rnd.nextDouble() > 0.05) return;  // 5% sampling
+		// if (moteId > 5) return;          // only first few motes
+		// if (phase > 20) return;          // only early phases
+		// if (rnd.nextDouble() > 0.05) return;  // 5% sampling
+
+		if(!shouldDbg(moteId)) return;
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("DECISION ");
