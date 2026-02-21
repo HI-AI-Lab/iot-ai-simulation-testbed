@@ -26,6 +26,26 @@ try:
 except Exception:
     yaml = None
 
+def backup_if_exists(p: Path) -> None:
+    if not p.exists():
+        return
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    bak = p.with_name(p.name + f".bak_{ts}")
+    p.rename(bak)
+
+def auto_mask_name_from_file(mask_path: Path) -> str:
+    enabled = read_mask_enabled(mask_path)
+
+    if enabled == ["ALL"]:
+        return "all"
+    if not enabled:
+        return "none"
+
+    # stable and readable folder name
+    name = "_".join(enabled)
+    name = re.sub(r"[^A-Za-z0-9_-]+", "_", name).strip("_")
+    return name or "mask"
+
 def read_mask_enabled(mask_path: Path) -> List[str]:
     if yaml is not None:
         d = yaml.safe_load(mask_path.read_text(encoding="utf-8"))
@@ -344,6 +364,7 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
 
     # Prepare paths
     run_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / cfg.mask_name
+    backup_if_exists(run_dir)
     ensure_dir(run_dir)
 
     # Isolated workspace
@@ -460,7 +481,7 @@ def parse_args() -> RunnerConfig:
         topo_ids = [str(i).zfill(width) for i in range(1, a.topologies + 1)]
 
     # Effective mask name and jobs
-    mask_name = a.mask_name or a.mask_file.stem
+    mask_name = a.mask_name or auto_mask_name_from_file(a.mask_file)
     jobs = detect_available_cores() if a.jobs == 0 else max(1, a.jobs)
 
     return RunnerConfig(
@@ -501,7 +522,12 @@ def main() -> None:
     print(f"Work root   : {cfg.work_root}")
     print(f"Dry-run     : {cfg.dry_run}")
 
-    ensure_dir(cfg.logs_dir); ensure_dir(cfg.work_root)
+    # Pre-clean workspace so old aborted runs can't leak anything
+    if not cfg.keep_work and cfg.work_root.exists():
+        shutil.rmtree(cfg.work_root, ignore_errors=True)
+
+    ensure_dir(cfg.logs_dir)
+    ensure_dir(cfg.work_root)
 
     # Prepare all tasks
     tasks = []
