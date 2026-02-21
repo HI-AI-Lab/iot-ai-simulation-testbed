@@ -15,6 +15,7 @@ var RPL_MIN_HOPRANKINC = 256;
 // This is SAFE: it only prints for one node, once per TRAIN and once per RETRAIN.
 var DEBUG_NODE_ID = 5;          // trace only this node
 var DEBUG_ON = true;
+var END_MS = 6000000; 
 
 var _phase = "NONE";            // "TRAIN" or "RETRAIN"
 var _dbgTrainDone = false;
