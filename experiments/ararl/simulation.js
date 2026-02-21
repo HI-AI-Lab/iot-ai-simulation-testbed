@@ -20,6 +20,10 @@ var _phase = "NONE";            // "TRAIN" or "RETRAIN"
 var _dbgTrainDone = false;
 var _dbgRetrainDone = false;
 
+var totalDecisions = 0;
+var decisionsByNode = {};         // mid -> count
+var _printedDecisionSummary = false;
+
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
   if (mid !== DEBUG_NODE_ID) return;
@@ -371,6 +375,23 @@ function updateNNStats(){
   }
 }
 
+function printDecisionSummaryOnce(){
+  if(_printedDecisionSummary) return;
+  if(time < END_MS - 1000) return;   // last 1s
+
+  var keys = Object.keys(decisionsByNode).sort(function(a,b){return (+a)-(+b);});
+  var parts = [];
+  for(var i=0;i<keys.length;i++){
+    var k = keys[i];
+    parts.push(k + ":" + decisionsByNode[k]);
+  }
+
+  log.log("DECISION_SUMMARY total=" + totalDecisions +
+          " nodes=" + keys.length +
+          " perNode=[" + parts.join(",") + "]\n");
+  _printedDecisionSummary = true;
+}
+
 // ======================================================================
 // BUILD FEATURE MATRIX (13 metrics, masked, PFI per-parent)
 // ======================================================================
@@ -483,6 +504,9 @@ function decideAndSetParentFor(mote){
   ctrs.hopCount       = rankToHops(getInt160(mote,"status_rank"));
   ctrs.rankViolations = u32(getInt320(mote,"status_parent_switches"));
   ctrs.etx            = (exs && exs.length>0) ? exs[0] : 0; // not used in Agent now, but fine
+
+  totalDecisions++;
+  decisionsByNode[mid] = (decisionsByNode[mid] || 0) + 1;
 
   var choice = agent.decide(
       mid,
