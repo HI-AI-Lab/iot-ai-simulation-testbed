@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time, selectors
 
 try:
     import yaml  # optional, for nicer meta YAML
@@ -100,23 +101,73 @@ def sh(
     cmd: List[str],
     cwd: Optional[Path] = None,
     env: Optional[Dict[str, str]] = None,
-    out_path: Optional[Path] = None
+    out_path: Optional[Path] = None,
+    tag: str = "",
+    heartbeat_secs: int = 60
 ) -> int:
     print(f"[RUN] {' '.join(cmd)} (cwd={cwd})")
     try:
-        if out_path is not None:
-            ensure_dir(out_path.parent)
-            with out_path.open("w", encoding="utf-8") as f:
-                proc = subprocess.Popen(
-                    cmd,
-                    cwd=str(cwd) if cwd else None,
-                    env=env,
-                    stdout=f,
-                    stderr=subprocess.STDOUT
-                )
-                return proc.wait()
+        if out_path is None:
+            proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
+            return proc.wait()
 
-        proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
+        ensure_dir(out_path.parent)
+
+        start = time.time()
+        last_print = start
+        last_out = start
+        last_line = ""
+
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(cwd) if cwd else None,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        assert proc.stdout is not None
+        sel = selectors.DefaultSelector()
+        sel.register(proc.stdout, selectors.EVENT_READ)
+
+        with out_path.open("w", encoding="utf-8") as f:
+            while True:
+                # Read available output (non-blocking-ish)
+                events = sel.select(timeout=1)
+                for key, _ in events:
+                    line = key.fileobj.readline()
+                    if line:
+                        f.write(line)
+                        f.flush()
+                        last_out = time.time()
+                        s = line.strip()
+                        if s:
+                            last_line = s
+
+                # Heartbeat (even if no output)
+                now = time.time()
+                if now - last_print >= heartbeat_secs:
+                    elapsed = int(now - start)
+                    mm, ss = divmod(elapsed, 60)
+                    since = int(now - last_out)
+                    size = out_path.stat().st_size if out_path.exists() else 0
+                    snippet = (last_line[:120] + "…") if len(last_line) > 120 else last_line
+                    print(f"[LIVE] {tag} +{mm:02d}:{ss:02d} last_out={since}s log={size/1024:.1f}KB last='{snippet}'")
+                    last_print = now
+
+                # Exit condition
+                if proc.poll() is not None:
+                    # drain any remaining output
+                    while True:
+                        line = proc.stdout.readline()
+                        if not line:
+                            break
+                        f.write(line)
+                        f.flush()
+                    break
+
         return proc.wait()
 
     except FileNotFoundError:
@@ -443,7 +494,8 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         return True, str(run_dir)
 
     # Execute in the workspace (so COOJA.testlog is unique)
-    exit_code = sh(cmd, cwd=work_dir, env=env, out_path=run_dir / "runner.log")
+    tag = f"N{n}_PPM{ppm}_topo{topo}_seed{seed}_mask={cfg.mask_name}"
+    exit_code = sh(cmd, cwd=work_dir, env=env, out_path=run_dir / "runner.log", tag=tag, heartbeat_secs=60)
 
     # Handle logs
     log_src = work_dir / "COOJA.testlog"
