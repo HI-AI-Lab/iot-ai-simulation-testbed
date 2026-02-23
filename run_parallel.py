@@ -96,11 +96,29 @@ class RunnerConfig:
 def die(msg: str, code: int = 2) -> None:
     print(f"[FATAL] {msg}", file=sys.stderr); sys.exit(code)
 
-def sh(cmd: List[str], cwd: Optional[Path] = None, env: Optional[Dict[str, str]] = None) -> int:
+def sh(
+    cmd: List[str],
+    cwd: Optional[Path] = None,
+    env: Optional[Dict[str, str]] = None,
+    out_path: Optional[Path] = None
+) -> int:
     print(f"[RUN] {' '.join(cmd)} (cwd={cwd})")
     try:
+        if out_path is not None:
+            ensure_dir(out_path.parent)
+            with out_path.open("w", encoding="utf-8") as f:
+                proc = subprocess.Popen(
+                    cmd,
+                    cwd=str(cwd) if cwd else None,
+                    env=env,
+                    stdout=f,
+                    stderr=subprocess.STDOUT
+                )
+                return proc.wait()
+
         proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
         return proc.wait()
+
     except FileNotFoundError:
         return 127
 
@@ -389,6 +407,7 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "WARMUP_SF": str(cfg.warmup_sf),
         "MASK_NAME": cfg.mask_name,
         "MASK_FILE": str(cfg.mask_file.resolve()),
+        "AGENT_LOG_PATH": str((work_dir / "agent.log").resolve()),
         # per-run gradle cache, avoid lock contention
         "GRADLE_USER_HOME": str((work_dir / ".gradle_cache").resolve()),
         # avoid BLAS over-subscription
@@ -424,7 +443,7 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         return True, str(run_dir)
 
     # Execute in the workspace (so COOJA.testlog is unique)
-    exit_code = sh(cmd, cwd=work_dir, env=env)
+    exit_code = sh(cmd, cwd=work_dir, env=env, out_path=run_dir / "runner.log")
 
     # Handle logs
     log_src = work_dir / "COOJA.testlog"
@@ -436,6 +455,10 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
     ok, stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
     if not ok:
         print(f"[WARN] Health check failed: WRAPUP={stats['wrapup']} SINK_SUMMARY={stats['sink_summary']} (expected ≈{n-1})")
+
+    agent_src = work_dir / "agent.log"
+    if agent_src.exists():
+        shutil.copy2(agent_src, run_dir / "agent.log")
 
     # Cleanup workspace unless requested to keep
     if not cfg.keep_work:

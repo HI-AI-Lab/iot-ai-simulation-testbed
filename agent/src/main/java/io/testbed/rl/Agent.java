@@ -46,18 +46,38 @@ public class Agent implements Serializable {
 
 	private static final Set<Integer> DBG_IDS = new HashSet<>(Arrays.asList(5)); // add more
 	private static boolean shouldDbg(int moteId){ return DBG_IDS.contains(moteId); }
-    private static final String LOG_PATH = "/workspace/testbed/logs/agent.log";
-    private static PrintWriter logger;
+	private static PrintWriter logger;
+	private static final long SEED = getAgentSeed();
+	
+	private static String getLogPath() {
+		String p = System.getenv("AGENT_LOG_PATH");
+		if (p != null && !p.trim().isEmpty()) return p.trim();
+		return "/workspace/testbed/logs/agent.log"; // fallback
+	}
+	
+	private static long getAgentSeed() {
+		String s = System.getenv("AGENT_SEED");
+		if (s != null && !s.trim().isEmpty()) {
+			try { return Long.parseLong(s.trim()); } catch (Exception ignored) {}
+		}
+		return 1234L; // fallback
+	}
 
-    static {
-        try {
-            logger = new PrintWriter(new FileWriter(LOG_PATH, true), true);
-            logger.println("=== Agent started ===");
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger = new PrintWriter(System.err, true);
-        }
-    }
+	static {
+		try {
+			String path = getLogPath();
+			File f = new File(path);
+			File parent = f.getParentFile();
+			if (parent != null) parent.mkdirs(); // ensure dirs exist
+
+			logger = new PrintWriter(new FileWriter(path, true), true);
+			logger.println("=== Agent started === logPath=" + path);
+			logger.println("AGENT_SEED=" + SEED);
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger = new PrintWriter(System.err, true);
+		}
+	}
 
     private static void log(String msg) {
         logger.println(System.currentTimeMillis() + " " + msg);
@@ -151,7 +171,7 @@ public class Agent implements Serializable {
     private double w_qlr = 1.0;
     private double w_ecr = 1.0;
 
-    private final Random rnd = new Random(1234);
+    private final Random rnd = new Random(SEED);
 
     private final ComputationGraph online;
     private final ComputationGraph target;
@@ -171,7 +191,7 @@ public class Agent implements Serializable {
         if (c == 0) throw new RuntimeException("Mask activates 0 features!");
         this.Factive = c;
 
-        Nd4j.getRandom().setSeed(123);
+        Nd4j.getRandom().setSeed(SEED);
 
         this.online = buildGraph(k);
         this.target = buildGraph(k);
@@ -180,6 +200,7 @@ public class Agent implements Serializable {
         syncTarget();
 
         log("INIT Agent: K=" + k + " Factive=" + Factive);
+		log("EPS sched: start=" + epsilonStart + " end=" + epsilonEnd + " anneal=" + epsilonAnneal);
     }
 
     // -------------------------------------------------------------------
@@ -188,7 +209,7 @@ public class Agent implements Serializable {
     private ComputationGraph buildGraph(int outK) {
         ComputationGraphConfiguration conf =
             new NeuralNetConfiguration.Builder()
-                .seed(123)
+                .seed(SEED)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .updater(new Adam(1e-3))
                 .convolutionMode(ConvolutionMode.Same)
