@@ -3,29 +3,29 @@ run:
   notes: describe_this_run
 
 features:
-  all: true
+  all: false
 
   # -------------------------
   # LINK-LEVEL (3)
   # -------------------------
   etx:   true
-  rssi:  false
-  pfi:   false
+  rssi:  true
+  pfi:   true
 
   # -------------------------
   # NODE-LEVEL (8)
   # -------------------------
   re:    true
-  bdi:   false
-  qo:    false
+  bdi:   true
+  qo:    true
   qlr:   true
   hc:    true
-  si:    false
-  tv:    false
-  pc:    false
+  si:    true
+  tv:    true
+  pc:    true
 
   # -------------------------
   # NETWORK-LEVEL (2)
   # -------------------------
-  wr:    false
-  str:   false
+  wr:    true
+  str:   true
