@@ -177,7 +177,7 @@ static inline void consume_energy(double dj) {
     mote_dead = 1;
 
     /* stop forwarding / participation */
-    NETSTACK_MAC.off(0);
+    NETSTACK_MAC.off();
     NETSTACK_RADIO.off();
   }
 }
@@ -526,8 +526,6 @@ static int is_simulation_time_over(void) {
   }
   return 0;
 }
-
-static int is_energy_depleted(void) { return mote_dead; }
 
 /* Exponential inter-arrival based on SEND_INTERVAL_MS mean */
 static clock_time_t exp_interval(void) {
