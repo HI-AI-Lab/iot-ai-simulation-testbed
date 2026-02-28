@@ -281,7 +281,7 @@ class RunMetrics:
     qlr: List[float] = field(default_factory=list)           # QLoss/(QLoss+Fwd) per node
     prr: Optional[float] = None                              # total recv / total gen
     total_gen: int = 0
-    total_fw: int = 0
+    total_fwd: int = 0
     total_recv: int = 0
     total_qloss: int = 0
     node_count: int = 0
@@ -318,7 +318,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                     if fw:
                         val = int(fw.group(1))
                         node_data[nid]['fwd'] = val
-                        m.total_fw += val
+                        m.total_fwd += val
                     ql = re.search(r'QLoss=(\d+)', line)
                     if ql:
                         val = int(ql.group(1))
