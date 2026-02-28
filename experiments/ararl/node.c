@@ -90,6 +90,9 @@ uint16_t status_etx_x100[MAX_PARENTS_FOR_AGENT];
 int16_t  status_link_rssi_dbm[MAX_PARENTS_FOR_AGENT];
 uint8_t  status_num_neighbors = 0;
 
+static uint8_t mote_dead = 0;
+static uint8_t wrapup_done = 0;
+
 /* agent control */
 uint8_t  agent_waiting = 0;
 uint16_t agent_parent  = 0;
@@ -158,8 +161,25 @@ static inline double rx_energy(uint32_t bits) {
 }
 
 static inline void consume_energy(double dj) {
+  if(mote_dead) return;
+
   state.residual_energy -= dj;
-  if(state.residual_energy < 0) state.residual_energy = 0;
+
+  if(state.residual_energy <= 0) {
+    state.residual_energy = 0;
+
+    /* record EXACT depletion time ONCE */
+    if(state.end_reason == END_NONE) {
+      state.end_reason = END_ENERGY;
+      state.end_time_ms = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
+    }
+
+    mote_dead = 1;
+
+    /* stop forwarding / participation */
+    NETSTACK_MAC.off(0);
+    NETSTACK_RADIO.off();
+  }
 }
 
 /* ============================================================
@@ -231,12 +251,13 @@ static void enforce_agent_parent_if_needed(void) {
  * PACKET SNIFFERS — QLR, ENERGY, PFI
  * ============================================================*/
 static void sniff_input(void) {
+  if(mote_dead) return;
   uint16_t len = packetbuf_datalen();
   if(len) consume_energy(rx_energy(len*8));
 }
 
 static void sniff_output(int mac_status) {
-  
+  if(mote_dead) return;
   enforce_agent_parent_if_needed();
   uint16_t len = packetbuf_datalen();
   unsigned parent_id = get_parent_id();
@@ -442,6 +463,8 @@ static void refresh_status(void)
  * APP I/O
  * ============================================================*/
 static void send_a_packet(struct simple_udp_connection *udp_conn) {
+  if(mote_dead) return;	
+	
   uip_ipaddr_t dest_ipaddr;
 
   if(!NETSTACK_ROUTING.node_is_reachable() ||
@@ -471,6 +494,8 @@ static const char *end_reason_str(end_reason_t r) {
 }
 
 static void wrapup(void) {
+	if(wrapup_done) return;
+	wrapup_done = 1;
 	LOG_INFO("WRAPUP node_id=%u reason=%s end_ms=%"PRIu32" "
          "Gen=%"PRIu32" Fwd=%"PRIu32" QLoss=%"PRIu32" qsize=%"PRIu32" "
          "residual=%.6fJ ppm=%"PRIu32" parent=%u switches=%"PRIu32" ever_joined_dodag=%"PRIu32" nn_max=%"PRIu32"\n",
@@ -502,15 +527,7 @@ static int is_simulation_time_over(void) {
   return 0;
 }
 
-static int is_energy_depleted(void) {
-  if(state.residual_energy <= 0) {
-    state.residual_energy = 0;
-    state.end_reason = END_ENERGY;
-    state.end_time_ms = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
-    return 1;
-  }
-  return 0;
-}
+static int is_energy_depleted(void) { return mote_dead; }
 
 /* Exponential inter-arrival based on SEND_INTERVAL_MS mean */
 static clock_time_t exp_interval(void) {
@@ -526,8 +543,8 @@ static clock_time_t exp_interval(void) {
 NETSTACK_SNIFFER(my_sniffer, sniff_input, sniff_output);
 static struct simple_udp_connection udp_conn;
 
-PROCESS(packet_generator_process,"Packet Generator");
-PROCESS(status_refresher_process,"Status Refresher");
+PROCESS(packet_generator_process, "Packet Generator");
+PROCESS(status_refresher_process, "Status Refresher");
 
 AUTOSTART_PROCESSES(&packet_generator_process,
                     &status_refresher_process);
@@ -536,9 +553,11 @@ AUTOSTART_PROCESSES(&packet_generator_process,
 PROCESS_THREAD(packet_generator_process, ev, data)
 {
   static struct etimer gen_timer;
+
   PROCESS_BEGIN();
 
   netstack_sniffer_add(&my_sniffer);
+
   simple_udp_register(&udp_conn,
                       UDP_CLIENT_PORT,
                       NULL,
@@ -551,9 +570,16 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   etimer_set(&gen_timer, exp_interval());
 
   while(1) {
+    /* If dead, exit immediately (do not wait for timer) */
+    if(mote_dead) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
 
-    if(is_energy_depleted() || is_simulation_time_over()) {
+    /* termination checks after wake-up */
+    if(mote_dead || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
     }
@@ -569,15 +595,29 @@ PROCESS_THREAD(packet_generator_process, ev, data)
 
 
 /* metrics refresh */
-PROCESS_THREAD(status_refresher_process,ev,data)
+PROCESS_THREAD(status_refresher_process, ev, data)
 {
   static struct etimer t;
+
   PROCESS_BEGIN();
 
-  etimer_set(&t,CLOCK_SECOND);
+  etimer_set(&t, CLOCK_SECOND);
 
-  while(1){
+  while(1) {
+    /* If dead, exit immediately */
+    if(mote_dead) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+
+    /* Death can occur while waiting; re-check before doing work */
+    if(mote_dead) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+
     refresh_status();
     enforce_agent_parent_if_needed();
     etimer_reset(&t);
