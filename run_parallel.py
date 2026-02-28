@@ -91,6 +91,7 @@ class RunnerConfig:
     work_root: Path
     keep_work: bool
     dry_run: bool
+    error_log_tail: int
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -178,6 +179,17 @@ def ensure_dir(p: Path) -> None:
 
 def write_text(p: Path, s: str) -> None:
     ensure_dir(p.parent); p.write_text(s, encoding="utf-8")
+
+def tail_lines(p: Path, n: int = 40) -> List[str]:
+    if not p.is_file():
+        return []
+    try:
+        lines = p.read_text(encoding="utf-8", errors="ignore").splitlines()
+        if n <= 0:
+            return lines
+        return lines[-n:]
+    except Exception:
+        return []
 
 def yaml_dump(d: Dict) -> str:
     if yaml is None:
@@ -496,6 +508,21 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
     # Execute in the workspace (so COOJA.testlog is unique)
     tag = f"N{n}_PPM{ppm}_topo{topo}_seed{seed}_mask={cfg.mask_name}"
     exit_code = sh(cmd, cwd=work_dir, env=env, out_path=run_dir / "runner.log", tag=tag, heartbeat_secs=60)
+    if exit_code != 0:
+        print(f"[ERR] Runner exited non-zero: code={exit_code} run={run_dir}")
+        tail = tail_lines(run_dir / "runner.log", n=cfg.error_log_tail)
+        if tail:
+            if cfg.error_log_tail == 0:
+                print("[ERR] Full runner.log:")
+            else:
+                print(f"[ERR] Last {cfg.error_log_tail} lines of runner.log:")
+            for ln in tail:
+                print(f"  {ln}")
+        else:
+            print("[ERR] runner.log not found or unreadable.")
+        if not cfg.keep_work:
+            shutil.rmtree(work_dir, ignore_errors=True)
+        return False, str(run_dir)
 
     # Handle logs
     log_src = work_dir / "COOJA.testlog"
@@ -545,6 +572,8 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--work-root", type=Path, default=Path("testbed/_work"), help="Where per-run temp workspaces go")
     ap.add_argument("--keep-work", action="store_true", help="Keep workspaces (debug)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--error-log-tail", type=int, default=50,
+                    help="Lines from end of runner.log to print on non-zero exit. 0 = print full file.")
 
     a = ap.parse_args()
 
@@ -579,6 +608,7 @@ def parse_args() -> RunnerConfig:
         work_root=a.work_root.resolve(),
         keep_work=a.keep_work,
         dry_run=a.dry_run,
+        error_log_tail=max(0, a.error_log_tail),
     )
 
 def main() -> None:
@@ -596,6 +626,7 @@ def main() -> None:
     print(f"Jobs        : {cfg.jobs}")
     print(f"Work root   : {cfg.work_root}")
     print(f"Dry-run     : {cfg.dry_run}")
+    print(f"Err log tail: {cfg.error_log_tail} (0=full)")
 
     # Pre-clean workspace so old aborted runs can't leak anything
     if not cfg.keep_work and cfg.work_root.exists():
