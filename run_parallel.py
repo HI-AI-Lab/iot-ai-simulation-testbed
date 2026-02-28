@@ -87,6 +87,7 @@ class RunnerConfig:
     traffic_seeds: List[int]
     tx_range: Optional[float]
     int_range: Optional[float]
+    gradle_user_home: Optional[Path]
     jobs: int
     work_root: Path
     keep_work: bool
@@ -471,14 +472,14 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "MASK_NAME": cfg.mask_name,
         "MASK_FILE": str(cfg.mask_file.resolve()),
         "AGENT_LOG_PATH": str((work_dir / "agent.log").resolve()),
-        # per-run gradle cache, avoid lock contention
-        "GRADLE_USER_HOME": str((work_dir / ".gradle_cache").resolve()),
         # avoid BLAS over-subscription
         "OMP_NUM_THREADS": "1",
         "OPENBLAS_NUM_THREADS": "1",
         "MKL_NUM_THREADS": "1",
         "OPENMP_NUM_THREADS": "1",
     })
+    if cfg.gradle_user_home is not None:
+        env["GRADLE_USER_HOME"] = str(cfg.gradle_user_home.resolve())
     if cfg.tx_range is not None: env["TX_RANGE"] = str(cfg.tx_range)
     if cfg.int_range is not None: env["INT_RANGE"] = str(cfg.int_range)
 
@@ -568,6 +569,8 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--traffic-seeds", type=int, nargs="+", default=[1])
     ap.add_argument("--tx-range", type=float, default=None)
     ap.add_argument("--int-range", type=float, default=None)
+    ap.add_argument("--gradle-user-home", type=Path, default=None,
+                    help="Gradle user home/cache path. Default: inherit environment (recommended with Docker volume).")
     ap.add_argument("--jobs", type=int, default=0, help="Max concurrent runs. 0 = auto (use all allowed cores)")
     ap.add_argument("--work-root", type=Path, default=Path("testbed/_work"), help="Where per-run temp workspaces go")
     ap.add_argument("--keep-work", action="store_true", help="Keep workspaces (debug)")
@@ -604,6 +607,7 @@ def parse_args() -> RunnerConfig:
         traffic_seeds=a.traffic_seeds,
         tx_range=a.tx_range,
         int_range=a.int_range,
+        gradle_user_home=(a.gradle_user_home.resolve() if a.gradle_user_home else None),
         jobs=jobs,
         work_root=a.work_root.resolve(),
         keep_work=a.keep_work,
@@ -623,6 +627,7 @@ def main() -> None:
     print(f"Topologies  : {cfg.topology_ids}")
     print(f"Mask        : {cfg.mask_name} -> {cfg.mask_file}")
     print(f"Mask enabled: {', '.join(read_mask_enabled(cfg.mask_file))}")
+    print(f"Gradle home : {cfg.gradle_user_home if cfg.gradle_user_home else '(inherited)'}")
     print(f"Jobs        : {cfg.jobs}")
     print(f"Work root   : {cfg.work_root}")
     print(f"Dry-run     : {cfg.dry_run}")
