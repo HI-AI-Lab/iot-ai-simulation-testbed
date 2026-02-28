@@ -616,6 +616,7 @@ def parse_args() -> RunnerConfig:
     )
 
 def main() -> None:
+    started_at = time.time()
     cfg = parse_args()
 
     print("== Cooja Runner v2 (parallel) ==")
@@ -704,8 +705,12 @@ def main() -> None:
         print(f"  → {base}")
 
     total = len(tasks); ok_count = sum(1 for v in results.values() if v[0])
+    elapsed_s = int(time.time() - started_at)
+    hh, rem = divmod(elapsed_s, 3600)
+    mm, ss = divmod(rem, 60)
     print("\n" + "="*78)
     print(f"DONE. Runs attempted: {total}, passed basic health: {ok_count}.")
+    print(f"Elapsed wall time: {hh:02d}:{mm:02d}:{ss:02d} ({elapsed_s}s)")
     print("="*78)
 
     # Cleanup global work root unless kept for debug
