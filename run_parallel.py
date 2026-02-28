@@ -278,9 +278,10 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
 class RunMetrics:
     e2e_latency: List[float] = field(default_factory=list)   # ms, per-node AvgE2E
     nlt: Optional[float] = None                              # ms, first END_ENERGY
-    qlr: List[float] = field(default_factory=list)           # QLoss/Gen per node
+    qlr: List[float] = field(default_factory=list)           # QLoss/(QLoss+Fwd) per node
     prr: Optional[float] = None                              # total recv / total gen
     total_gen: int = 0
+    total_fw: int = 0
     total_recv: int = 0
     total_qloss: int = 0
     node_count: int = 0
@@ -313,6 +314,11 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         val = int(gg.group(1))
                         node_data[nid]['gen'] = val
                         m.total_gen += val
+                    fw = re.search(r'Fwd=(\d+)', line)
+                    if fw:
+                        val = int(fw.group(1))
+                        node_data[nid]['fwd'] = val
+                        m.total_fw += val
                     ql = re.search(r'QLoss=(\d+)', line)
                     if ql:
                         val = int(ql.group(1))
@@ -345,8 +351,11 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
         max_end = max((n.get('end_ms', 0) for n in node_data.values()), default=0)
         if max_end > 0: m.nlt = float(max_end)
     for nid, d in node_data.items():
-        gen = d.get('gen', 0); ql = d.get('qloss', 0)
-        if gen > 0: m.qlr.append(ql / gen)
+        ql  = d.get('qloss', 0)
+        fwd = d.get('fwd', 0)
+        attempts = ql + fwd
+        if attempts > 0:
+            m.qlr.append(ql / attempts)   # QLoss/(QLoss+Fwd)
     if m.total_gen > 0:
         m.prr = m.total_recv / m.total_gen
     return m
