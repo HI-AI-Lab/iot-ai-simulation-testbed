@@ -71,6 +71,11 @@ def read_mask_enabled(mask_path: Path) -> List[str]:
 # ------------------------------ Config ------------------------------ #
 
 @dataclass
+class MaskSpec:
+    name: str
+    file: Path
+
+@dataclass
 class RunnerConfig:
     ararl_dir: Path
     logs_dir: Path
@@ -78,8 +83,7 @@ class RunnerConfig:
     nodes: List[int]
     ppms: List[int]
     topology_ids: List[str]
-    mask_name: str
-    mask_file: Path
+    masks: List[MaskSpec]
     duration_sf: int
     warmup_sf: int
     sim_seed: int
@@ -104,21 +108,13 @@ def sh(
     cwd: Optional[Path] = None,
     env: Optional[Dict[str, str]] = None,
     out_path: Optional[Path] = None,
-    tag: str = "",
-    heartbeat_secs: int = 60
 ) -> int:
-    print(f"[RUN] {' '.join(cmd)} (cwd={cwd})")
     try:
         if out_path is None:
             proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
             return proc.wait()
 
         ensure_dir(out_path.parent)
-
-        start = time.time()
-        last_print = start
-        last_out = start
-        last_line = ""
 
         proc = subprocess.Popen(
             cmd,
@@ -143,21 +139,6 @@ def sh(
                     if line:
                         f.write(line)
                         f.flush()
-                        last_out = time.time()
-                        s = line.strip()
-                        if s:
-                            last_line = s
-
-                # Heartbeat (even if no output)
-                now = time.time()
-                if now - last_print >= heartbeat_secs:
-                    elapsed = int(now - start)
-                    mm, ss = divmod(elapsed, 60)
-                    since = int(now - last_out)
-                    size = out_path.stat().st_size if out_path.exists() else 0
-                    snippet = (last_line[:120] + "…") if len(last_line) > 120 else last_line
-                    print(f"[LIVE] {tag} +{mm:02d}:{ss:02d} last_out={since}s log={size/1024:.1f}KB last='{snippet}'")
-                    last_print = now
 
                 # Exit condition
                 if proc.poll() is not None:
@@ -341,7 +322,7 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         node_data[nid]['e2e'] = e
                         m.e2e_latency.append(e)
     except Exception as e:
-        print(f"[WARN] parse failed {log_path}: {e}")
+        print(f"[WARN] parse failed {log_path}: {e}", file=sys.stderr)
         return None
 
     m.node_count = len(node_data)
@@ -445,21 +426,21 @@ def _clone_workspace(src: Path, dst: Path) -> None:
     except Exception:
         shutil.copytree(src, dst)
 
-def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tuple[bool, str]:
+def run_block(cfg: RunnerConfig, mask: MaskSpec, n: int, ppm: int, topo: str, seed: int) -> Tuple[bool, str]:
     # Resolve inputs
     csc_src = csc_path_for(cfg.ararl_dir, n, topo)
     pos_src = pos_header_for(cfg.ararl_dir, n, topo)
     mk_src  = makefile_for_ppm(cfg.ararl_dir, ppm)
-    if not cfg.mask_file.is_file():
-        die(f"Mask file not found: {cfg.mask_file}")
+    if not mask.file.is_file():
+        die(f"Mask file not found: {mask.file}")
 
     # Prepare paths
-    run_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / cfg.mask_name
+    run_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask.name
     backup_if_exists(run_dir)
     ensure_dir(run_dir)
 
     # Isolated workspace
-    work_dir = cfg.work_root / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / cfg.mask_name
+    work_dir = cfg.work_root / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask.name
     _clone_workspace(cfg.ararl_dir, work_dir)
 
     # Drop scenario files into workspace
@@ -478,8 +459,8 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "AGENT_SEED": str(cfg.agent_seed),
         "DURATION_SF": str(cfg.duration_sf),
         "WARMUP_SF": str(cfg.warmup_sf),
-        "MASK_NAME": cfg.mask_name,
-        "MASK_FILE": str(cfg.mask_file.resolve()),
+        "MASK_NAME": mask.name,
+        "MASK_FILE": str(mask.file.resolve()),
         "AGENT_LOG_PATH": str((work_dir / "agent.log").resolve()),
         # avoid BLAS over-subscription
         "OMP_NUM_THREADS": "1",
@@ -502,8 +483,8 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         "nodes": n, "ppm": ppm, "topology_id": topo, "traffic_seed": seed,
         "sim_seed": cfg.sim_seed, "agent_seed": cfg.agent_seed,
         "duration_sf": cfg.duration_sf, "warmup_sf": cfg.warmup_sf,
-        "mask_name": cfg.mask_name, "mask_file": str(cfg.mask_file),
-        "mask_enabled": read_mask_enabled(cfg.mask_file),
+        "mask_name": mask.name, "mask_file": str(mask.file),
+        "mask_enabled": read_mask_enabled(mask.file),
         "ararl_dir": str(cfg.ararl_dir.resolve()),
         "csc_src": str(csc_src), "pos_header_src": str(pos_src),
         "ppm_makefile_src": str(mk_src), "gradle_root": str(cfg.gradle_root.resolve()),
@@ -516,20 +497,24 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
         return True, str(run_dir)
 
     # Execute in the workspace (so COOJA.testlog is unique)
-    tag = f"N{n}_PPM{ppm}_topo{topo}_seed{seed}_mask={cfg.mask_name}"
-    exit_code = sh(cmd, cwd=work_dir, env=env, out_path=run_dir / "runner.log", tag=tag, heartbeat_secs=60)
+    exit_code = sh(
+        cmd,
+        cwd=work_dir,
+        env=env,
+        out_path=run_dir / "runner.log",
+    )
     if exit_code != 0:
-        print(f"[ERR] Runner exited non-zero: code={exit_code} run={run_dir}")
+        print(f"[ERR] Runner exited non-zero: code={exit_code} run={run_dir}", file=sys.stderr)
         tail = tail_lines(run_dir / "runner.log", n=cfg.error_log_tail)
         if tail:
             if cfg.error_log_tail == 0:
-                print("[ERR] Full runner.log:")
+                print("[ERR] Full runner.log:", file=sys.stderr)
             else:
-                print(f"[ERR] Last {cfg.error_log_tail} lines of runner.log:")
+                print(f"[ERR] Last {cfg.error_log_tail} lines of runner.log:", file=sys.stderr)
             for ln in tail:
-                print(f"  {ln}")
+                print(f"  {ln}", file=sys.stderr)
         else:
-            print("[ERR] runner.log not found or unreadable.")
+            print("[ERR] runner.log not found or unreadable.", file=sys.stderr)
         if not cfg.keep_work:
             shutil.rmtree(work_dir, ignore_errors=True)
         return False, str(run_dir)
@@ -538,12 +523,8 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
     log_src = work_dir / "COOJA.testlog"
     if log_src.exists():
         shutil.move(str(log_src), str(run_dir / "COOJA.testlog"))
-    else:
-        print(f"[WARN] missing log: {log_src}")
 
-    ok, stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
-    if not ok:
-        print(f"[WARN] Health check failed: WRAPUP={stats['wrapup']} SINK_SUMMARY={stats['sink_summary']} (expected ≈{n-1})")
+    ok, _stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
 
     agent_src = work_dir / "agent.log"
     if agent_src.exists():
@@ -557,6 +538,39 @@ def run_block(cfg: RunnerConfig, n: int, ppm: int, topo: str, seed: int) -> Tupl
 
 # ------------------------------ CLI/Main ------------------------------ #
 
+def _safe_mask_name(s: str) -> str:
+    name = re.sub(r"[^A-Za-z0-9_-]+", "_", s).strip("_")
+    return name or "mask"
+
+def _resolve_masks(mask_input: Path, single_mask_name: Optional[str]) -> List[MaskSpec]:
+    if not mask_input.exists():
+        die(f"Mask path not found: {mask_input}")
+
+    if mask_input.is_file():
+        name = _safe_mask_name(single_mask_name) if single_mask_name else auto_mask_name_from_file(mask_input)
+        return [MaskSpec(name=name, file=mask_input.resolve())]
+
+    if not mask_input.is_dir():
+        die(f"Mask path must be a file or directory: {mask_input}")
+
+    if single_mask_name:
+        die("--mask-name can only be used when --mask-file points to a single file.")
+
+    files = sorted([p for p in mask_input.glob("*.yaml") if p.is_file()])
+    files.extend(sorted([p for p in mask_input.glob("*.yml") if p.is_file()]))
+    if not files:
+        die(f"No YAML masks found in directory: {mask_input}")
+
+    masks: List[MaskSpec] = []
+    used_names: Dict[str, int] = {}
+    for p in files:
+        base = _safe_mask_name(p.stem)
+        count = used_names.get(base, 0) + 1
+        used_names[base] = count
+        name = base if count == 1 else f"{base}_{count}"
+        masks.append(MaskSpec(name=name, file=p.resolve()))
+    return masks
+
 def parse_args() -> RunnerConfig:
     ap = argparse.ArgumentParser(
         description="Parallel Cooja runner with isolated workspaces + aggregation (paper metrics).",
@@ -569,8 +583,8 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--ppm", type=int, nargs="+", default=[80,100,120])
     ap.add_argument("--topologies", type=int, default=10, help="Number of topo IDs (01..NN) if --topology-ids not given")
     ap.add_argument("--topology-ids", type=str, nargs="*", help="Explicit topo IDs like 01 02 03")
-    ap.add_argument("--mask-file", type=Path, required=True, help="YAML mask file the controller reads")
-    ap.add_argument("--mask-name", type=str, default=None, help="Name tag for this mask (folder name). Default: mask file name (stem)")
+    ap.add_argument("--mask-file", type=Path, required=True, help="Mask YAML file OR directory containing multiple mask YAML files")
+    ap.add_argument("--mask-name", type=str, default=None, help="Name tag for single mask mode only")
     ap.add_argument("--duration-sf", type=int, default=180)
     ap.add_argument("--warmup-sf", type=int, default=12)
     ap.add_argument("--sim-seed", type=int, default=67890)
@@ -596,8 +610,8 @@ def parse_args() -> RunnerConfig:
         width = max(2, len(str(a.topologies)))   # always at least 2 digits
         topo_ids = [str(i).zfill(width) for i in range(1, a.topologies + 1)]
 
-    # Effective mask name and jobs
-    mask_name = a.mask_name or auto_mask_name_from_file(a.mask_file)
+    # Resolve masks and jobs
+    masks = _resolve_masks(a.mask_file.resolve(), a.mask_name)
     jobs = detect_available_cores() if a.jobs == 0 else max(1, a.jobs)
 
     return RunnerConfig(
@@ -607,8 +621,7 @@ def parse_args() -> RunnerConfig:
         nodes=a.nodes,
         ppms=a.ppm,
         topology_ids=topo_ids,
-        mask_name=mask_name,
-        mask_file=a.mask_file.resolve(),
+        masks=masks,
         duration_sf=a.duration_sf,
         warmup_sf=a.warmup_sf,
         sim_seed=a.sim_seed,
@@ -628,21 +641,6 @@ def main() -> None:
     started_at = time.time()
     cfg = parse_args()
 
-    print("== Cooja Runner v2 (parallel) ==")
-    print(f"ARARL dir   : {cfg.ararl_dir}")
-    print(f"Logs dir    : {cfg.logs_dir}")
-    print(f"Gradle root : {cfg.gradle_root}")
-    print(f"Nodes       : {cfg.nodes}")
-    print(f"PPM         : {cfg.ppms}")
-    print(f"Topologies  : {cfg.topology_ids}")
-    print(f"Mask        : {cfg.mask_name} -> {cfg.mask_file}")
-    print(f"Mask enabled: {', '.join(read_mask_enabled(cfg.mask_file))}")
-    print(f"Gradle home : {cfg.gradle_user_home if cfg.gradle_user_home else '(inherited)'}")
-    print(f"Jobs        : {cfg.jobs}")
-    print(f"Work root   : {cfg.work_root}")
-    print(f"Dry-run     : {cfg.dry_run}")
-    print(f"Err log tail: {cfg.error_log_tail} (0=full)")
-
     # Pre-clean workspace so old aborted runs can't leak anything
     if not cfg.keep_work and cfg.work_root.exists():
         shutil.rmtree(cfg.work_root, ignore_errors=True)
@@ -651,34 +649,41 @@ def main() -> None:
     ensure_dir(cfg.work_root)
 
     # Prepare all tasks
-    tasks = []
-    for n in cfg.nodes:
-        for ppm in cfg.ppms:
-            for topo in cfg.topology_ids:
-                for seed in cfg.traffic_seeds:
-                    tasks.append((n, ppm, topo, seed))
+    tasks: List[Tuple[str, int, int, str, int]] = []
+    mask_by_name = {m.name: m for m in cfg.masks}
+    for mask in cfg.masks:
+        for n in cfg.nodes:
+            for ppm in cfg.ppms:
+                for topo in cfg.topology_ids:
+                    for seed in cfg.traffic_seeds:
+                        tasks.append((mask.name, n, ppm, topo, seed))
+    total_tasks = len(tasks)
 
     # Run in parallel
-    results: Dict[Tuple[int,int,str,int], Tuple[bool,str]] = {}
-    with ThreadPoolExecutor(max_workers=cfg.jobs) as ex:
-        futs = {ex.submit(run_block, cfg, n, ppm, topo, seed): (n, ppm, topo, seed)
-                for (n, ppm, topo, seed) in tasks}
-        done_cnt = 0
+    results: Dict[Tuple[str,int,int,str,int], Tuple[bool,str]] = {}
+    max_workers = min(cfg.jobs, len(tasks)) if tasks else 1
+    print(f"MAX PARALLEL WORKERS: {max_workers}")
+    print(f"TASK STATUS: total={total_tasks}, in_progress=0, remaining={total_tasks}, completed=0")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futs = {
+            ex.submit(run_block, cfg, mask_by_name[mask_name], n, ppm, topo, seed): (mask_name, n, ppm, topo, seed)
+            for (mask_name, n, ppm, topo, seed) in tasks
+        }
         for fut in as_completed(futs):
             key = futs[fut]
             try:
                 ok, rdir = fut.result()
             except Exception as e:
                 ok, rdir = False, ""
-                print(f"[ERR] run failed {key}: {e}")
+                print(f"[ERR] run failed {key}: {e}", file=sys.stderr)
             results[key] = (ok, rdir)
-            done_cnt += 1
-            print(f"[PROGRESS] {done_cnt}/{len(tasks)} complete")
 
-    mask_metrics: Dict[Tuple[int,int], List[RunMetrics]] = {}
+    mask_metrics: Dict[Tuple[str,int,int], List[RunMetrics]] = {}
     
     # Parse + aggregate per (nodes, ppm) and append per-run summary
-    for (n, ppm, topo, seed), (ok, rdir) in results.items():
+    for (mask_name, n, ppm, topo, seed) in sorted(results.keys()):
+        ok, rdir = results[(mask_name, n, ppm, topo, seed)]
         if not rdir:
             continue
 
@@ -686,38 +691,27 @@ def main() -> None:
         m = parse_log(log_path)
 
         if not m:
-            print(f"[WARN] No parsable metrics in {log_path} (ok={ok})")
             continue
 
         # even if ok==False, still include it in aggregation
-        mask_metrics.setdefault((n, ppm), []).append(m)
-        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, cfg.mask_name, m)
+        mask_metrics.setdefault((mask_name, n, ppm), []).append(m)
+        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m)
 
-        if not ok:
-            print(f"[WARN] Included run despite health-check fail: N={n} PPM={ppm} topo={topo} seed={seed}")
-
-    print("\n" + "="*78)
-    print("AGGREGATING RESULTS")
-    print("="*78)
-
-    for (n, ppm), lst in sorted(mask_metrics.items()):
+    for (mask_name, n, ppm), lst in sorted(mask_metrics.items()):
         agg = aggregate_metrics(lst)
-        base = cfg.logs_dir / f"N{n}_PPM{ppm}" / cfg.mask_name
+        base = cfg.logs_dir / f"N{n}_PPM{ppm}" / mask_name
         write_aggregated_csv(agg, base / "aggregated_results.csv")
         write_aggregated_json(agg, base / "aggregated_results.json")
-        print(f"\nMask={cfg.mask_name}  N={n}  PPM={ppm}")
-        print(f"  Runs: {agg.valid_runs}/{agg.run_count}")
-        if agg.e2e_mean is not None: print(f"  E2E: {agg.e2e_mean:.2f} ± {agg.e2e_std:.2f} ms (min={agg.e2e_min:.2f}, max={agg.e2e_max:.2f})")
-        if agg.nlt_mean is not None: print(f"  NLT: {agg.nlt_mean:.2f} ± {agg.nlt_std:.2f} ms (min={agg.nlt_min:.2f}, max={agg.nlt_max:.2f})")
-        if agg.qlr_mean is not None: print(f"  QLR: {agg.qlr_mean:.4f} ± {agg.qlr_std:.4f} (min={agg.qlr_min:.4f}, max={agg.qlr_max:.4f})")
-        if agg.prr_mean is not None: print(f"  PRR: {agg.prr_mean:.4f} ± {agg.prr_std:.4f} (min={agg.prr_min:.4f}, max={agg.prr_max:.4f})")
-        print(f"  → {base}")
 
     total = len(tasks); ok_count = sum(1 for v in results.values() if v[0])
+    completed = len(results)
+    remaining = max(0, total_tasks - completed)
+    in_progress = 0
     elapsed_s = int(time.time() - started_at)
     hh, rem = divmod(elapsed_s, 3600)
     mm, ss = divmod(rem, 60)
     print("\n" + "="*78)
+    print(f"TASK STATUS: total={total_tasks}, in_progress={in_progress}, remaining={remaining}, completed={completed}")
     print(f"DONE. Runs attempted: {total}, passed basic health: {ok_count}.")
     print(f"Elapsed wall time: {hh:02d}:{mm:02d}:{ss:02d} ({elapsed_s}s)")
     print("="*78)
