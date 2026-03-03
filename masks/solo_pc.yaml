@@ -1,0 +1,25 @@
+run:
+  id: solo_pc
+  notes: "SOLO feature mask: only pc enabled"
+
+features:
+  all: false
+
+  # LINK
+  etx:  false
+  rssi: false
+  pfi:  false
+
+  # NODE
+  re:  false
+  bdi:  false
+  qo:  false
+  qlr:  false
+  hc:  false
+  si:  false
+  tv:  false
+  pc:  true
+
+  # NETWORK
+  wr:   false
+  str:  false

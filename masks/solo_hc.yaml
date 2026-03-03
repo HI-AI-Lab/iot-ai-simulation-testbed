@@ -1,0 +1,25 @@
+run:
+  id: solo_hc
+  notes: "SOLO feature mask: only hc enabled"
+
+features:
+  all: false
+
+  # LINK
+  etx:  false
+  rssi: false
+  pfi:  false
+
+  # NODE
+  re:  false
+  bdi:  false
+  qo:  false
+  qlr:  false
+  hc:  true
+  si:  false
+  tv:  false
+  pc:  false
+
+  # NETWORK
+  wr:   false
+  str:  false

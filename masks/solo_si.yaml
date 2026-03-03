@@ -1,0 +1,25 @@
+run:
+  id: solo_si
+  notes: "SOLO feature mask: only si enabled"
+
+features:
+  all: false
+
+  # LINK
+  etx:  false
+  rssi: false
+  pfi:  false
+
+  # NODE
+  re:  false
+  bdi:  false
+  qo:  false
+  qlr:  false
+  hc:  false
+  si:  true
+  tv:  false
+  pc:  false
+
+  # NETWORK
+  wr:   false
+  str:  false
