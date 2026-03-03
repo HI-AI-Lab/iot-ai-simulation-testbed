@@ -662,14 +662,19 @@ def main() -> None:
     # Run in parallel
     results: Dict[Tuple[str,int,int,str,int], Tuple[bool,str]] = {}
     max_workers = min(cfg.jobs, len(tasks)) if tasks else 1
-    print(f"MAX PARALLEL WORKERS: {max_workers}")
-    print(f"TASK STATUS: total={total_tasks}, in_progress=0, remaining={total_tasks}, completed=0")
+    initial_in_progress = min(max_workers, total_tasks) if total_tasks > 0 else 0
+    print(f"MAX PARALLEL WORKERS: {max_workers}", flush=True)
+    print(
+        f"TASK STATUS: total={total_tasks}, in_progress={initial_in_progress}, remaining={total_tasks}, completed=0",
+        flush=True,
+    )
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futs = {
             ex.submit(run_block, cfg, mask_by_name[mask_name], n, ppm, topo, seed): (mask_name, n, ppm, topo, seed)
             for (mask_name, n, ppm, topo, seed) in tasks
         }
+        completed_tasks = 0
         for fut in as_completed(futs):
             key = futs[fut]
             try:
@@ -678,6 +683,13 @@ def main() -> None:
                 ok, rdir = False, ""
                 print(f"[ERR] run failed {key}: {e}", file=sys.stderr)
             results[key] = (ok, rdir)
+            completed_tasks += 1
+            remaining_tasks = max(0, total_tasks - completed_tasks)
+            in_progress_tasks = min(max_workers, remaining_tasks) if remaining_tasks > 0 else 0
+            print(
+                f"TASK STATUS: total={total_tasks}, in_progress={in_progress_tasks}, remaining={remaining_tasks}, completed={completed_tasks}",
+                flush=True,
+            )
 
     mask_metrics: Dict[Tuple[str,int,int], List[RunMetrics]] = {}
     
