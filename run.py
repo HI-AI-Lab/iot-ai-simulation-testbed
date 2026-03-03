@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import time, selectors
 
 try:
@@ -97,6 +97,7 @@ class RunnerConfig:
     keep_work: bool
     dry_run: bool
     error_log_tail: int
+    heartbeat_secs: int
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -181,6 +182,12 @@ def yaml_dump(d: Dict) -> str:
 def now_stamp() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def fmt_hms(total_seconds: int) -> str:
+    total_seconds = max(0, int(total_seconds))
+    hh, rem = divmod(total_seconds, 3600)
+    mm, ss = divmod(rem, 60)
+    return f"{hh:02d}:{mm:02d}:{ss:02d}"
+
 # ------------------------------ CPU / jobs auto-detection ------------------------------ #
 
 def _affinity_cores() -> Optional[int]:
@@ -214,6 +221,10 @@ def detect_available_cores() -> int:
         if n and n > 0:
             return n
     return max(1, os.cpu_count() or 1)
+
+def auto_jobs_from_cores(fraction: float = 0.8) -> int:
+    cores = detect_available_cores()
+    return max(1, int(cores * fraction))
 
 # ------------------------------ Discovery (uses 'topologies') ------------------------------ #
 
@@ -594,7 +605,9 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--int-range", type=float, default=None)
     ap.add_argument("--gradle-user-home", type=Path, default=None,
                     help="Gradle user home/cache path. Default: inherit environment (recommended with Docker volume).")
-    ap.add_argument("--jobs", type=int, default=0, help="Max concurrent runs. 0 = auto (use all allowed cores)")
+    ap.add_argument("--jobs", type=int, default=0, help="Max concurrent runs. 0 = auto (use 80%% of allowed cores)")
+    ap.add_argument("--heartbeat-secs", type=int, default=60,
+                    help="Heartbeat interval in seconds for stalled/no-completion status. 0 disables heartbeat.")
     ap.add_argument("--work-root", type=Path, default=Path("testbed/_work"), help="Where per-run temp workspaces go")
     ap.add_argument("--keep-work", action="store_true", help="Keep workspaces (debug)")
     ap.add_argument("--dry-run", action="store_true")
@@ -612,7 +625,7 @@ def parse_args() -> RunnerConfig:
 
     # Resolve masks and jobs
     masks = _resolve_masks(a.mask_file.resolve(), a.mask_name)
-    jobs = detect_available_cores() if a.jobs == 0 else max(1, a.jobs)
+    jobs = auto_jobs_from_cores(0.8) if a.jobs == 0 else max(1, a.jobs)
 
     return RunnerConfig(
         ararl_dir=a.ararl_dir.resolve(),
@@ -635,6 +648,7 @@ def parse_args() -> RunnerConfig:
         keep_work=a.keep_work,
         dry_run=a.dry_run,
         error_log_tail=max(0, a.error_log_tail),
+        heartbeat_secs=max(0, a.heartbeat_secs),
     )
 
 def main() -> None:
@@ -675,21 +689,40 @@ def main() -> None:
             for (mask_name, n, ppm, topo, seed) in tasks
         }
         completed_tasks = 0
-        for fut in as_completed(futs):
-            key = futs[fut]
-            try:
-                ok, rdir = fut.result()
-            except Exception as e:
-                ok, rdir = False, ""
-                print(f"[ERR] run failed {key}: {e}", file=sys.stderr)
-            results[key] = (ok, rdir)
-            completed_tasks += 1
-            remaining_tasks = max(0, total_tasks - completed_tasks)
-            in_progress_tasks = min(max_workers, remaining_tasks) if remaining_tasks > 0 else 0
-            print(
-                f"TASK STATUS: total={total_tasks}, in_progress={in_progress_tasks}, remaining={remaining_tasks}, completed={completed_tasks}",
-                flush=True,
-            )
+        last_completion_ts = time.time()
+        pending = set(futs.keys())
+        heartbeat_timeout = None if cfg.heartbeat_secs == 0 else cfg.heartbeat_secs
+
+        while pending:
+            done, pending = wait(pending, timeout=heartbeat_timeout, return_when=FIRST_COMPLETED)
+
+            if not done:
+                now = time.time()
+                remaining_tasks = max(0, total_tasks - completed_tasks)
+                in_progress_tasks = min(max_workers, remaining_tasks) if remaining_tasks > 0 else 0
+                print(
+                    f"HEARTBEAT: elapsed={fmt_hms(now - started_at)} no_completion_for={fmt_hms(now - last_completion_ts)} "
+                    f"total={total_tasks}, in_progress={in_progress_tasks}, remaining={remaining_tasks}, completed={completed_tasks}",
+                    flush=True,
+                )
+                continue
+
+            for fut in done:
+                key = futs[fut]
+                try:
+                    ok, rdir = fut.result()
+                except Exception as e:
+                    ok, rdir = False, ""
+                    print(f"[ERR] run failed {key}: {e}", file=sys.stderr)
+                results[key] = (ok, rdir)
+                completed_tasks += 1
+                last_completion_ts = time.time()
+                remaining_tasks = max(0, total_tasks - completed_tasks)
+                in_progress_tasks = min(max_workers, remaining_tasks) if remaining_tasks > 0 else 0
+                print(
+                    f"TASK STATUS: total={total_tasks}, in_progress={in_progress_tasks}, remaining={remaining_tasks}, completed={completed_tasks}",
+                    flush=True,
+                )
 
     mask_metrics: Dict[Tuple[str,int,int], List[RunMetrics]] = {}
     
