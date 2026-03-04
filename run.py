@@ -268,14 +268,12 @@ def basic_log_health(log_path: Path, expected_nodes: int) -> Tuple[bool, Dict[st
 
 @dataclass
 class RunMetrics:
-    e2e_latency: List[float] = field(default_factory=list)   # ms, per-node AvgE2E
+    delay_latency: List[float] = field(default_factory=list)   # ms, per-node delay from sink summary
     nlt: Optional[float] = None                              # ms, first END_ENERGY
-    qlr: List[float] = field(default_factory=list)           # QLoss/(QLoss+Fwd) per node
     prr: Optional[float] = None                              # total recv / total gen
     total_gen: int = 0
     total_fwd: int = 0
     total_recv: int = 0
-    total_qloss: int = 0
     node_count: int = 0
 
 def parse_log(log_path: Path) -> Optional[RunMetrics]:
@@ -315,7 +313,6 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                     if ql:
                         val = int(ql.group(1))
                         node_data[nid]['qloss'] = val
-                        m.total_qloss += val
                 elif "SINK_SUMMARY node=" in line:
                     g = re.search(r'node=(\d+)', line)
                     if not g: continue
@@ -327,11 +324,11 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
                         rcv = int(rv.group(1))
                         node_data[nid]['recv'] = rcv
                         m.total_recv += rcv
-                    av = re.search(r'AvgE2E=(\d+(?:\.\d+)?)(?:ms)?', line)
+                    av = re.search(r'AvgDelay=(\d+(?:\.\d+)?)(?:ms)?', line)
                     if av:
                         e = float(av.group(1))
-                        node_data[nid]['e2e'] = e
-                        m.e2e_latency.append(e)
+                        node_data[nid]['delay'] = e
+                        m.delay_latency.append(e)
     except Exception as e:
         print(f"[WARN] parse failed {log_path}: {e}", file=sys.stderr)
         return None
@@ -342,46 +339,34 @@ def parse_log(log_path: Path) -> Optional[RunMetrics]:
     elif node_data:
         max_end = max((n.get('end_ms', 0) for n in node_data.values()), default=0)
         if max_end > 0: m.nlt = float(max_end)
-    for nid, d in node_data.items():
-        ql  = d.get('qloss', 0)
-        fwd = d.get('fwd', 0)
-        attempts = ql + fwd
-        if attempts > 0:
-            m.qlr.append(ql / attempts)   # QLoss/(QLoss+Fwd)
     if m.total_gen > 0:
         m.prr = m.total_recv / m.total_gen
     return m
 
 @dataclass
 class AggregatedMetrics:
-    e2e_mean: Optional[float]=None; e2e_std: Optional[float]=None; e2e_min: Optional[float]=None; e2e_max: Optional[float]=None
+    delay_mean: Optional[float]=None; delay_std: Optional[float]=None; delay_min: Optional[float]=None; delay_max: Optional[float]=None
     nlt_mean: Optional[float]=None; nlt_std: Optional[float]=None; nlt_min: Optional[float]=None; nlt_max: Optional[float]=None
-    qlr_mean: Optional[float]=None; qlr_std: Optional[float]=None; qlr_min: Optional[float]=None; qlr_max: Optional[float]=None
     prr_mean: Optional[float]=None; prr_std: Optional[float]=None; prr_min: Optional[float]=None; prr_max: Optional[float]=None
     run_count: int = 0; valid_runs: int = 0
 
 def aggregate_metrics(items: List[RunMetrics]) -> AggregatedMetrics:
     agg = AggregatedMetrics()
-    vals_e2e: List[float]=[]; vals_nlt: List[float]=[]; vals_qlr: List[float]=[]; vals_prr: List[float]=[]
+    vals_delay: List[float]=[]; vals_nlt: List[float]=[]; vals_prr: List[float]=[]
     agg.run_count = len(items); agg.valid_runs = len([x for x in items if x is not None])
     for m in items:
         if m is None: continue
-        vals_e2e.extend(m.e2e_latency)
+        vals_delay.extend(m.delay_latency)
         if m.nlt is not None: vals_nlt.append(m.nlt)
-        vals_qlr.extend(m.qlr)
         if m.prr is not None: vals_prr.append(m.prr)
-    if vals_e2e:
-        agg.e2e_mean = statistics.mean(vals_e2e)
-        agg.e2e_std  = statistics.stdev(vals_e2e) if len(vals_e2e)>1 else 0.0
-        agg.e2e_min, agg.e2e_max = min(vals_e2e), max(vals_e2e)
+    if vals_delay:
+        agg.delay_mean = statistics.mean(vals_delay)
+        agg.delay_std  = statistics.stdev(vals_delay) if len(vals_delay)>1 else 0.0
+        agg.delay_min, agg.delay_max = min(vals_delay), max(vals_delay)
     if vals_nlt:
         agg.nlt_mean = statistics.mean(vals_nlt)
         agg.nlt_std  = statistics.stdev(vals_nlt) if len(vals_nlt)>1 else 0.0
         agg.nlt_min, agg.nlt_max = min(vals_nlt), max(vals_nlt)
-    if vals_qlr:
-        agg.qlr_mean = statistics.mean(vals_qlr)
-        agg.qlr_std  = statistics.stdev(vals_qlr) if len(vals_qlr)>1 else 0.0
-        agg.qlr_min, agg.qlr_max = min(vals_qlr), max(vals_qlr)
     if vals_prr:
         agg.prr_mean = statistics.mean(vals_prr)
         agg.prr_std  = statistics.stdev(vals_prr) if len(vals_prr)>1 else 0.0
@@ -393,18 +378,16 @@ def write_aggregated_csv(agg: AggregatedMetrics, out_csv: Path) -> None:
     with out_csv.open('w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Metric','Mean','Std','Min','Max','Unit'])
-        if agg.e2e_mean is not None: w.writerow(['E2E', f'{agg.e2e_mean:.2f}', f'{agg.e2e_std:.2f}', f'{agg.e2e_min:.2f}', f'{agg.e2e_max:.2f}', 'ms'])
+        if agg.delay_mean is not None: w.writerow(['Delay', f'{agg.delay_mean:.2f}', f'{agg.delay_std:.2f}', f'{agg.delay_min:.2f}', f'{agg.delay_max:.2f}', 'ms'])
         if agg.nlt_mean is not None: w.writerow(['NLT', f'{agg.nlt_mean:.2f}', f'{agg.nlt_std:.2f}', f'{agg.nlt_min:.2f}', f'{agg.nlt_max:.2f}', 'ms'])
-        if agg.qlr_mean is not None: w.writerow(['QLR', f'{agg.qlr_mean:.4f}', f'{agg.qlr_std:.4f}', f'{agg.qlr_min:.4f}', f'{agg.qlr_max:.4f}', 'ratio'])
         if agg.prr_mean is not None: w.writerow(['PRR', f'{agg.prr_mean:.4f}', f'{agg.prr_std:.4f}', f'{agg.prr_min:.4f}', f'{agg.prr_max:.4f}', 'ratio'])
         w.writerow([]); w.writerow(['Runs', agg.run_count, 'Valid', agg.valid_runs, '', ''])
 
 def write_aggregated_json(agg: AggregatedMetrics, out_json: Path) -> None:
     ensure_dir(out_json.parent)
     data = {"runs":{"total":agg.run_count,"valid":agg.valid_runs},"metrics":{}}
-    if agg.e2e_mean is not None: data["metrics"]["E2E"]={"mean":agg.e2e_mean,"std":agg.e2e_std,"min":agg.e2e_min,"max":agg.e2e_max,"unit":"ms"}
+    if agg.delay_mean is not None: data["metrics"]["Delay"]={"mean":agg.delay_mean,"std":agg.delay_std,"min":agg.delay_min,"max":agg.delay_max,"unit":"ms"}
     if agg.nlt_mean is not None: data["metrics"]["NLT"]={"mean":agg.nlt_mean,"std":agg.nlt_std,"min":agg.nlt_min,"max":agg.nlt_max,"unit":"ms"}
-    if agg.qlr_mean is not None: data["metrics"]["QLR"]={"mean":agg.qlr_mean,"std":agg.qlr_std,"min":agg.qlr_min,"max":agg.qlr_max,"unit":"ratio"}
     if agg.prr_mean is not None: data["metrics"]["PRR"]={"mean":agg.prr_mean,"std":agg.prr_std,"min":agg.prr_min,"max":agg.prr_max,"unit":"ratio"}
     out_json.write_text(json.dumps(data, indent=2), encoding='utf-8')
 
@@ -414,15 +397,13 @@ def append_run_summary_row(base_logs: Path, n:int, ppm:int, topo:str, seed:int, 
     with csv_path.open("a", newline="") as f:
         w = csv.writer(f)
         if new:
-            w.writerow(["nodes","ppm","topo","seed","mask","prr","qlr","e2e_ms","nlt_ms","gen","recv"])
+            w.writerow(["nodes","ppm","topo","seed","mask","prr","delay_ms","nlt_ms","gen","recv"])
         prr = m.prr if m.prr is not None else ""
-        qlr = (statistics.mean(m.qlr) if m.qlr else "")
-        e2e = (statistics.mean(m.e2e_latency) if m.e2e_latency else "")
+        delay_ms = (statistics.mean(m.delay_latency) if m.delay_latency else "")
         nlt = m.nlt if m.nlt is not None else ""
         w.writerow([n, ppm, topo, seed, mask,
                     f"{prr:.6f}" if prr!="" else "",
-                    f"{qlr:.9f}" if qlr!="" else "",
-                    f"{e2e:.2f}" if e2e!="" else "",
+                    f"{delay_ms:.2f}" if delay_ms!="" else "",
                     int(nlt) if nlt!="" else "",
                     m.total_gen, m.total_recv])
 

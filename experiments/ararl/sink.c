@@ -88,7 +88,7 @@ wrapup(void) {
       uint32_t avg_latency = (stats[i].latency_count > 0) ?
         (uint32_t)(stats[i].total_latency / stats[i].latency_count) : 0;
       LOG_INFO("SINK_SUMMARY node=%u Recv=%"PRIu32
-               " AvgE2E=%ums MinE2E=%ums MaxE2E=%ums\n",
+               " AvgDelay=%ums MinDelay=%ums MaxDelay=%ums\n",
                i, stats[i].recv_count,
                avg_latency,
                stats[i].min_latency,

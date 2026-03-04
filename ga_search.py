@@ -9,7 +9,7 @@ Genetic search for feature masks (GA) on top of run_parallel.py
       ...
 - For each mask, we call run_parallel.py with your full test matrix.
 - We read aggregated_results.json from each (N, PPM) and produce a scalar fitness
-  based only on PRR, NLT, E2E, QLR (paper metrics).
+  based only on PRR, NLT, Delay (paper metrics).
 - Caching avoids re-evaluating the same mask.
 - GA evaluates masks sequentially; run_parallel.py does the parallelism using --runner-jobs.
 
@@ -20,7 +20,7 @@ Example:
     --work-root /workspace/testbed/_work \
     --ga-out   /workspace/testbed/ga_out \
     --nodes 60 80 100 --ppm 80 100 120 --topologies 10 --traffic-seeds 1 \
-    --features etx,hc,re,qlr,rssi,bdi,wr,pc,si,gen,fwd,qloss \
+    --features etx,hc,re,rssi,bdi,wr,pc,si,gen,fwd,qloss \
     --require-at-least-one etx,hc,re \
     --population 16 --generations 12 --elite 2 --cx-rate 0.8 --mut-rate 0.08 \
     --runner-jobs 0 --prr-min 0.85
@@ -69,9 +69,7 @@ class GAConfig:
     w_prr: float
     w_nlt: float
     w_e2e: float
-    w_qlr: float
     e2e_scale_ms: float
-    qlr_scale: float
     prr_min: float  # hard cutoff (penalize if below)
     # nlt normalization uses duration_sf*1000 automatically
 
@@ -100,7 +98,7 @@ def parse_args() -> GAConfig:
 
     # GA search space
     ap.add_argument("--features", type=str, required=True,
-                    help="Comma-separated feature keys (e.g., etx,qlr,re,...)")
+                    help="Comma-separated feature keys (e.g., etx,re,rssi,...)")
     ap.add_argument("--require-at-least-one", type=str, default="",
                     help="Comma-separated set; enforce at least one True among these")
 
@@ -116,9 +114,7 @@ def parse_args() -> GAConfig:
     ap.add_argument("--w-prr", type=float, default=0.4)
     ap.add_argument("--w-nlt", type=float, default=0.3)
     ap.add_argument("--w-e2e", type=float, default=0.2)
-    ap.add_argument("--w-qlr", type=float, default=0.1)
     ap.add_argument("--e2e-scale-ms", type=float, default=1000.0)
-    ap.add_argument("--qlr-scale", type=float, default=0.05)
     ap.add_argument("--prr-min", type=float, default=0.85)
 
     a = ap.parse_args()
@@ -160,9 +156,7 @@ def parse_args() -> GAConfig:
         w_prr=a.w_prr,
         w_nlt=a.w_nlt,
         w_e2e=a.w_e2e,
-        w_qlr=a.w_qlr,
         e2e_scale_ms=a.e2e_scale_ms,
-        qlr_scale=a.qlr_scale,
         prr_min=a.prr_min,
     )
 
@@ -322,22 +316,20 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict]) -> Tuple[float, Dict]:
         return -1e6, {"reason": "no_scenarios"}
 
     # Average across scenarios (simple mean of means)
-    prr_vals, nlt_vals, e2e_vals, qlr_vals = [], [], [], []
+    prr_vals, nlt_vals, delay_vals = [], [], []
     for sc in scenarios:
         prr = _metric(sc, "PRR");  nlt = _metric(sc, "NLT")
-        e2e = _metric(sc, "E2E");  qlr = _metric(sc, "QLR")
+        delay = _metric(sc, "Delay")
         if prr is not None: prr_vals.append(prr)
         if nlt is not None: nlt_vals.append(nlt)
-        if e2e is not None: e2e_vals.append(e2e)
-        if qlr is not None: qlr_vals.append(qlr)
+        if delay is not None: delay_vals.append(delay)
 
     # If too sparse, penalize
     if not prr_vals:
         return -1e6, {"reason": "missing_prr"}
     prr_mean = sum(prr_vals)/len(prr_vals)
     nlt_mean = sum(nlt_vals)/len(nlt_vals) if nlt_vals else 0.0
-    e2e_mean = sum(e2e_vals)/len(e2e_vals) if e2e_vals else 1e9
-    qlr_mean = sum(qlr_vals)/len(qlr_vals) if qlr_vals else 1.0
+    delay_mean = sum(delay_vals)/len(delay_vals) if delay_vals else 1e9
 
     # Guardrail: PRR minimum
     if prr_mean < cfg.prr_min:
@@ -346,19 +338,16 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict]) -> Tuple[float, Dict]:
 
     # Scales
     nlt_scale = max(1.0, cfg.duration_sf * 1000.0)
-    e2e_score = 1.0 / (1.0 + e2e_mean / max(1.0, cfg.e2e_scale_ms))
-    qlr_score = 1.0 / (1.0 + qlr_mean / max(1e-9, cfg.qlr_scale))
+    delay_score = 1.0 / (1.0 + delay_mean / max(1.0, cfg.e2e_scale_ms))
     nlt_score = nlt_mean / nlt_scale  # 0..>1 typically
 
-    fitness = (cfg.w_prr * prr_mean) + (cfg.w_nlt * nlt_score) + (cfg.w_e2e * e2e_score) + (cfg.w_qlr * qlr_score)
+    fitness = (cfg.w_prr * prr_mean) + (cfg.w_nlt * nlt_score) + (cfg.w_e2e * delay_score)
     detail = {
         "prr_mean": prr_mean,
         "nlt_mean": nlt_mean,
-        "e2e_mean": e2e_mean,
-        "qlr_mean": qlr_mean,
+        "delay_mean": delay_mean,
         "nlt_score": nlt_score,
-        "e2e_score": e2e_score,
-        "qlr_score": qlr_score,
+        "delay_score": delay_score,
     }
     return fitness, detail
 
@@ -384,7 +373,7 @@ def main() -> None:
     # CSV log
     hist_path = cfg.ga_out / "ga_history.csv"
     if not hist_path.exists():
-        hist_path.write_text("generation,idx,fitness,mask_id,bits,prr,e2e,qlr,nlt\n", encoding="utf-8")
+        hist_path.write_text("generation,idx,fitness,mask_id,bits,prr,delay,nlt\n", encoding="utf-8")
 
     # Initial population
     pop: List[List[int]] = []
@@ -404,12 +393,11 @@ def main() -> None:
             scored.append((bits, fit, info))
             # Append to CSV
             prr = info.get("detail", {}).get("prr_mean", "")
-            e2e = info.get("detail", {}).get("e2e_mean", "")
-            qlr = info.get("detail", {}).get("qlr_mean", "")
+            delay = info.get("detail", {}).get("delay_mean", "")
             nlt = info.get("detail", {}).get("nlt_mean", "")
             hist_path.write_text(
-                (hist_path.read_text(encoding="utf-8") if hist_path.exists() else "generation,idx,fitness,mask_id,bits,prr,e2e,qlr,nlt\n")
-                + f"{gen},{i},{fit:.6f},{info['mask_id']},{''.join(map(str,bits))},{prr},{e2e},{qlr},{nlt}\n",
+                (hist_path.read_text(encoding="utf-8") if hist_path.exists() else "generation,idx,fitness,mask_id,bits,prr,delay,nlt\n")
+                + f"{gen},{i},{fit:.6f},{info['mask_id']},{''.join(map(str,bits))},{prr},{delay},{nlt}\n",
                 encoding="utf-8"
             )
 
