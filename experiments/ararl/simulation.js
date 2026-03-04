@@ -27,6 +27,8 @@ var _dbgRetrainDone = false;
 var totalDecisions = 0;
 var decisionsByNode = {};         // mid -> count
 var _printedDecisionSummary = false;
+var _globalStopTriggered = false;
+var _globalStopNode = -1;
 
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
@@ -396,6 +398,38 @@ function printDecisionSummaryOnce(){
   _printedDecisionSummary = true;
 }
 
+function parseEnergyWrapupNodeId(line){
+  if(!line) return -1;
+  var s = "" + line;
+  if(s.indexOf("WRAPUP node_id=") < 0) return -1;
+  if(s.toLowerCase().indexOf("reason=energy") < 0) return -1;
+  var m = s.match(/WRAPUP node_id=(\d+)/);
+  if(!m) return -1;
+  try { return parseInt(m[1], 10); } catch(e){ return -1; }
+}
+
+function broadcastGlobalStop(triggerNodeId){
+  if(_globalStopTriggered) return;
+  _globalStopTriggered = true;
+  _globalStopNode = triggerNodeId;
+
+  var N = sim.getMotesCount();
+  var flagged = 0;
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m) continue;
+    try{
+      setInt8(m, "status_global_stop", 1);
+      flagged++;
+    } catch(e){
+      // Some motes (e.g. sink firmware) may not export this symbol.
+    }
+  }
+
+  log.log("CTRL: GLOBAL_STOP triggerNode=" + triggerNodeId +
+          " flaggedMotes=" + flagged + "\n");
+}
+
 // ======================================================================
 // BUILD FEATURE MATRIX (13 metrics, masked, PFI per-parent)
 // ======================================================================
@@ -568,6 +602,13 @@ TIMEOUT(6000000, log.testOK());
 
 while(true){
 	YIELD();		
+
+  if(!_globalStopTriggered){
+    var deadNode = parseEnergyWrapupNodeId(msg);
+    if(deadNode > 0){
+      broadcastGlobalStop(deadNode);
+    }
+  }
 	
   if(msg.indexOf("ALL_NODES_TRAIN")>=0){
     _phase = "TRAIN";

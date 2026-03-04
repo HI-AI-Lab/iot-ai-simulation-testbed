@@ -78,6 +78,7 @@ double   status_si              = 0.0;   /* Stability Index */
 double   status_tv              = 0.0;   /* Trust Value */
 double   status_str             = 0.0;   /* Stretch of Rank */
 uint32_t status_qo              = 0;     /* Queue occupancy snapshot */
+uint8_t  status_global_stop     = 0;     /* set by simulation.js to stop all nodes */
 
 /* PFI counters */
 static uint32_t parent_tx_ok[256];
@@ -106,7 +107,8 @@ static uint8_t nn_max = 0;
 typedef enum {
   END_NONE   = 0,
   END_ENERGY = 1,
-  END_TIME   = 2
+  END_TIME   = 2,
+  END_GLOBAL = 3
 } end_reason_t;
 
 typedef struct {
@@ -182,6 +184,19 @@ static inline void consume_energy(double dj) {
   }
 }
 
+static inline void apply_global_stop_if_needed(void) {
+  if(mote_dead || !status_global_stop) return;
+
+  if(state.end_reason == END_NONE) {
+    state.end_reason = END_GLOBAL;
+    state.end_time_ms = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
+  }
+
+  mote_dead = 1;
+  NETSTACK_MAC.off();
+  NETSTACK_RADIO.off();
+}
+
 /* ============================================================
  * PARENT PINNING (unchanged)
  * ============================================================*/
@@ -251,12 +266,14 @@ static void enforce_agent_parent_if_needed(void) {
  * PACKET SNIFFERS — QLR, ENERGY, PFI
  * ============================================================*/
 static void sniff_input(void) {
+  apply_global_stop_if_needed();
   if(mote_dead) return;
   uint16_t len = packetbuf_datalen();
   if(len) consume_energy(rx_energy(len*8));
 }
 
 static void sniff_output(int mac_status) {
+  apply_global_stop_if_needed();
   if(mote_dead) return;
   enforce_agent_parent_if_needed();
   uint16_t len = packetbuf_datalen();
@@ -463,6 +480,7 @@ static void refresh_status(void)
  * APP I/O
  * ============================================================*/
 static void send_a_packet(struct simple_udp_connection *udp_conn) {
+  apply_global_stop_if_needed();
   if(mote_dead) return;	
 	
   uip_ipaddr_t dest_ipaddr;
@@ -489,6 +507,7 @@ static const char *end_reason_str(end_reason_t r) {
   switch(r) {
     case END_ENERGY: return "energy";
     case END_TIME:   return "time";
+    case END_GLOBAL: return "global_stop";
     default:         return "none";
   }
 }
@@ -568,6 +587,8 @@ PROCESS_THREAD(packet_generator_process, ev, data)
   etimer_set(&gen_timer, exp_interval());
 
   while(1) {
+    apply_global_stop_if_needed();
+
     /* If dead, exit immediately (do not wait for timer) */
     if(mote_dead) {
       wrapup();
@@ -575,6 +596,8 @@ PROCESS_THREAD(packet_generator_process, ev, data)
     }
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&gen_timer));
+
+    apply_global_stop_if_needed();
 
     /* termination checks after wake-up */
     if(mote_dead || is_simulation_time_over()) {
@@ -602,6 +625,8 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   etimer_set(&t, CLOCK_SECOND);
 
   while(1) {
+    apply_global_stop_if_needed();
+
     /* If dead, exit immediately */
     if(mote_dead) {
       wrapup();
@@ -609,6 +634,8 @@ PROCESS_THREAD(status_refresher_process, ev, data)
     }
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+
+    apply_global_stop_if_needed();
 
     /* Death can occur while waiting; re-check before doing work */
     if(mote_dead) {
