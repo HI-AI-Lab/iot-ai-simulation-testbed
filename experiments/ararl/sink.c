@@ -64,7 +64,7 @@ uint32_t status_parent_switches = 0;
 typedef struct {
   uint32_t t_sent;
   uint16_t origin_id;
-  char     padding[58];
+  char     padding[122];
 } app_packet_t;
 
 /* Per-node statistics */
