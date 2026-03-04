@@ -275,11 +275,11 @@ static void sniff_input(void) {
 static void sniff_output(int mac_status) {
   apply_global_stop_if_needed();
   if(mote_dead) return;
+
+  /* Use the attribute name recommended by your compiler */
+  uint8_t attempts = packetbuf_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS);
   
-  /* 1. This is the 'hidden' counter maintained by the CSMA driver */
-  uint8_t attempts = packetbuf_attr(PACKETBUF_ATTR_TRANSMISSIONS);
-  
-  /* If the MAC layer hasn't set it yet, we assume at least 1 attempt */
+  /* Safety: if it's 0, at least 1 attempt happened */
   if(attempts == 0) attempts = 1;
 
   uint16_t len = packetbuf_datalen();
@@ -289,28 +289,25 @@ static void sniff_output(int mac_status) {
   if(parent_id != (unsigned)-1)
     d = distance_nodes(node_id, parent_id);
 
-  /* 2. Calculate energy based on the REAL number of attempts */
+  /* This is your 'First-Order' energy cost per single try */
   double energy_per_attempt = tx_energy(d, len * 8);
 
   switch(mac_status) {
     case MAC_TX_QUEUE_FULL:
-      /* The packet never left the node, but the CPU/Radio spent 
-         time 'listening' for a gap. We charge for 1 failed 'Listen' */
+      /* Penalty for listening/waiting even if we didn't fire the radio */
       consume_energy(energy_per_attempt); 
       state.q_loss_count++;
       return;
 
     case MAC_TX_OK:
-      /* It worked! But it might have taken 1, 3, or 7 attempts. 
-         We charge for every time the radio was actually fired. */
+      /* Successful TX: Charge for ALL the attempts it took */
       consume_energy(attempts * energy_per_attempt);
       if(parent_id < 256) parent_tx_ok[parent_id]++;
       state.fwd_count++;
       return;
 
     default:
-      /* COLLISION, NO ACK, or ERR. 
-         The radio fired 'attempts' times but failed. */
+      /* Failed TX (No ACK / Collision): Still charge for the attempts made */
       consume_energy(attempts * energy_per_attempt);
       return;
   }
