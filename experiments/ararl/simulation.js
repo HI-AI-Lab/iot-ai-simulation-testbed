@@ -5,7 +5,7 @@ var ByteOrder  = Java.type('java.nio.ByteOrder');
 
 // === Constants ===
 var K = 4;
-var INIT_ENERGY = 100.0;
+var INIT_ENERGY = 1000.0;
 var MASK_PATH = java.lang.System.getenv("MASK_FILE");
 if(MASK_PATH === null || (""+MASK_PATH).trim().length === 0) {
   MASK_PATH = "/workspace/testbed/mask.yaml";
