@@ -45,7 +45,7 @@
 #define SIM_END_MS       5000000UL
 
 /* ==== Energy Model ==== */
-#define INIT_ENERGY_J   10.0
+#define INIT_ENERGY_J   100.0
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
 #define EPS_MP          10e-12
