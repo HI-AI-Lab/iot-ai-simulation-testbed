@@ -49,7 +49,7 @@
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
 #define EPS_MP          0.0013e-12
-#define PKT_BITS       (128*8)
+#define PKT_BITS       (64*8)
 
 /* ==== Parent table ==== */
 #define MAX_PARENTS_FOR_AGENT 4
@@ -114,7 +114,7 @@ typedef enum {
 typedef struct {
   uint32_t t_sent;
   uint16_t origin_id;
-  char     padding[122];
+  char     padding[58];
 } app_packet_t;
 
 typedef struct {
