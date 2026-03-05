@@ -606,7 +606,8 @@ while(true){
   if(!_globalStopTriggered){
     var deadNode = parseEnergyWrapupNodeId(msg);
     if(deadNode > 0){
-      broadcastGlobalStop(deadNode);
+      // Temporary experiment: disable forced global stop on first node death.
+      // broadcastGlobalStop(deadNode);
     }
   }
 	

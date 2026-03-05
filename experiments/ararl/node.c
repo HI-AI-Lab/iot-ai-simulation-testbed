@@ -276,14 +276,22 @@ static void sniff_output(int mac_status) {
   apply_global_stop_if_needed();
   if(mote_dead) return;
 
-  /* Use the attribute name recommended by your compiler */
-  uint8_t attempts = packetbuf_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS);
+  /* Prefer actual transmission attempts; fall back safely. */
+  uint8_t attempts = 1;
+#if defined(PACKETBUF_ATTR_TRANSMISSIONS)
+  attempts = packetbuf_attr(PACKETBUF_ATTR_TRANSMISSIONS);
+#elif defined(PACKETBUF_ATTR_MAC_TRANSMISSIONS)
+  attempts = packetbuf_attr(PACKETBUF_ATTR_MAC_TRANSMISSIONS);
+#elif defined(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS)
+  attempts = packetbuf_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS);
+#endif
   
   /* Safety: if it's 0, at least 1 attempt happened */
   if(attempts == 0) attempts = 1;
 
   uint16_t len = packetbuf_datalen();
   unsigned parent_id = get_parent_id();
+  if(parent_id < 256) parent_tx_attempts[parent_id] += attempts;
 
   double d = 0.0;
   if(parent_id != (unsigned)-1)
