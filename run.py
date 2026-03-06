@@ -27,10 +27,6 @@ try:
 except Exception:
     yaml = None
 
-ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
-SIM_PROGRESS_RE = re.compile(r"(\d{1,3})%\s+completed,\s+([0-9]+(?:\.[0-9]+)?)\s+sec remaining")
-BUILD_STEP_RE = re.compile(r"^\s*(CC|LD|AR|MKDIR)\s+(.+)$")
-
 def backup_if_exists(p: Path) -> None:
     if not p.exists():
         return
@@ -102,8 +98,6 @@ class RunnerConfig:
     dry_run: bool
     error_log_tail: int
     heartbeat_secs: int
-
-TaskKey = Tuple[str, int, int, str, int]  # (mask_name, nodes, ppm, topo, seed)
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -193,55 +187,6 @@ def fmt_hms(total_seconds: int) -> str:
     hh, rem = divmod(total_seconds, 3600)
     mm, ss = divmod(rem, 60)
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
-
-def run_dir_for_task(cfg: RunnerConfig, key: TaskKey) -> Path:
-    mask_name, n, ppm, topo, seed = key
-    return cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask_name
-
-def task_label(key: TaskKey) -> str:
-    mask_name, n, ppm, topo, seed = key
-    return f"{mask_name} N{n} PPM{ppm} topo{topo} seed{seed}"
-
-def summarize_runner_progress(runner_log: Path) -> str:
-    if not runner_log.exists():
-        return "starting (runner.log not created yet)"
-
-    lines = tail_lines(runner_log, n=200)
-    if not lines:
-        return "starting (runner.log empty)"
-
-    cleaned = [ANSI_ESCAPE_RE.sub("", ln).strip() for ln in lines if ln.strip()]
-    if not cleaned:
-        return "starting"
-
-    for ln in reversed(cleaned):
-        m = SIM_PROGRESS_RE.search(ln)
-        if m:
-            pct = int(m.group(1))
-            eta = fmt_hms(float(m.group(2)))
-            return f"{pct:>3}% complete, eta {eta}"
-
-    for ln in reversed(cleaned):
-        if "Timeout event @" in ln:
-            return "simulation timeout reached, finalizing"
-        if "Script timeout in " in ln:
-            return ln
-        if ln.startswith("> Task :"):
-            return f"gradle phase: {ln[2:]}"
-        if ln.startswith("> make "):
-            return "building Contiki firmware (make)"
-        m = BUILD_STEP_RE.match(ln)
-        if m:
-            step = m.group(1)
-            target = m.group(2).strip()
-            if len(target) > 70:
-                target = target[-70:]
-            return f"build step: {step} {target}"
-
-    last = cleaned[-1]
-    if len(last) > 100:
-        last = last[:97] + "..."
-    return last
 
 # ------------------------------ CPU / jobs auto-detection ------------------------------ #
 
@@ -713,7 +658,7 @@ def main() -> None:
     ensure_dir(cfg.work_root)
 
     # Prepare all tasks
-    tasks: List[TaskKey] = []
+    tasks: List[Tuple[str, int, int, str, int]] = []
     mask_by_name = {m.name: m for m in cfg.masks}
     for mask in cfg.masks:
         for n in cfg.nodes:
@@ -724,7 +669,7 @@ def main() -> None:
     total_tasks = len(tasks)
 
     # Run in parallel
-    results: Dict[TaskKey, Tuple[bool, str]] = {}
+    results: Dict[Tuple[str,int,int,str,int], Tuple[bool,str]] = {}
     max_workers = min(cfg.jobs, len(tasks)) if tasks else 1
     initial_in_progress = min(max_workers, total_tasks) if total_tasks > 0 else 0
     print(f"MAX PARALLEL WORKERS: {max_workers}", flush=True)
@@ -749,20 +694,12 @@ def main() -> None:
             if not done:
                 now = time.time()
                 remaining_tasks = max(0, total_tasks - completed_tasks)
-                running_futs = [f for f in pending if f.running()]
-                in_progress_tasks = len(running_futs)
-                queued_tasks = max(0, len(pending) - in_progress_tasks)
+                in_progress_tasks = min(max_workers, remaining_tasks) if remaining_tasks > 0 else 0
                 print(
                     f"HEARTBEAT: elapsed={fmt_hms(now - started_at)} no_completion_for={fmt_hms(now - last_completion_ts)} "
-                    f"total={total_tasks}, in_progress={in_progress_tasks}, queued={queued_tasks}, "
-                    f"remaining={remaining_tasks}, completed={completed_tasks}",
+                    f"total={total_tasks}, in_progress={in_progress_tasks}, remaining={remaining_tasks}, completed={completed_tasks}",
                     flush=True,
                 )
-                for fut in sorted(running_futs, key=lambda x: futs[x]):
-                    key = futs[fut]
-                    runner_log = run_dir_for_task(cfg, key) / "runner.log"
-                    prog = summarize_runner_progress(runner_log)
-                    print(f"  IN-PROGRESS: {task_label(key)} :: {prog}", flush=True)
                 continue
 
             for fut in done:
