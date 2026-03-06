@@ -193,13 +193,9 @@ def parse_args() -> GAConfig:
 
     ap.add_argument("--nodes", type=int, nargs="+", default=[60, 80, 100])
     ap.add_argument("--ppm", type=int, nargs="+", default=[80, 100, 120])
-    ap.add_argument("--topologies", "--topology-count", dest="topologies", type=int, default=10,
-                    help="Used when --topology-ids is not provided")
+    ap.add_argument("--topologies", type=int, default=10, help="Used when --topology-ids is not provided")
     ap.add_argument("--topology-ids", type=str, nargs="*", default=[])
-    ap.add_argument("--traffic-seeds", type=int, nargs="+", default=[1],
-                    help="Explicit traffic seed IDs, e.g. --traffic-seeds 1 2 3")
-    ap.add_argument("--seed-count", "--seeds", dest="seed_count", type=int, default=None,
-                    help="Number of traffic seeds to generate as 1..N (cannot be used with --traffic-seeds)")
+    ap.add_argument("--traffic-seeds", type=int, nargs="+", default=[1])
     ap.add_argument("--duration-sf", type=int, default=180)
     ap.add_argument("--warmup-sf", type=int, default=12)
     ap.add_argument("--sim-seed", type=int, default=67890)
@@ -261,16 +257,6 @@ def parse_args() -> GAConfig:
         die("--delay-scale-ms must be > 0")
     if a.duration_sf <= 0:
         die("--duration-sf must be > 0")
-    if a.topologies < 1:
-        die("--topologies must be >= 1")
-    if a.seed_count is not None and a.seed_count < 1:
-        die("--seed-count must be >= 1")
-    if a.seed_count is not None and a.traffic_seeds != [1]:
-        die("Use either --traffic-seeds or --seed-count, not both.")
-
-    traffic_seeds = list(range(1, a.seed_count + 1)) if a.seed_count is not None else a.traffic_seeds
-    if any(s < 1 for s in traffic_seeds):
-        die("--traffic-seeds values must be >= 1")
 
     return GAConfig(
         runner_script=runner_script,
@@ -283,7 +269,7 @@ def parse_args() -> GAConfig:
         ppms=a.ppm,
         topologies=a.topologies,
         topology_ids=a.topology_ids,
-        traffic_seeds=traffic_seeds,
+        traffic_seeds=a.traffic_seeds,
         duration_sf=a.duration_sf,
         warmup_sf=a.warmup_sf,
         sim_seed=a.sim_seed,
@@ -840,3 +826,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
