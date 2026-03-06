@@ -18,7 +18,7 @@ import argparse, csv, json, os, re, shutil, statistics, subprocess, sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import time, selectors
 
@@ -96,8 +96,11 @@ class RunnerConfig:
     work_root: Path
     keep_work: bool
     dry_run: bool
+    resume: bool
     error_log_tail: int
     heartbeat_secs: int
+
+SummaryKey = Tuple[int, int, str, int, str]
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -187,6 +190,33 @@ def fmt_hms(total_seconds: int) -> str:
     hh, rem = divmod(total_seconds, 3600)
     mm, ss = divmod(rem, 60)
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
+
+def run_dir_for(logs_dir: Path, mask_name: str, n: int, ppm: int, topo: str, seed: int) -> Path:
+    return logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask_name
+
+def _summary_key(n: int, ppm: int, topo: str, seed: int, mask: str) -> SummaryKey:
+    return (n, ppm, topo, seed, mask)
+
+def load_existing_summary_keys(csv_path: Path) -> Set[SummaryKey]:
+    keys: Set[SummaryKey] = set()
+    if not csv_path.is_file():
+        return keys
+    try:
+        with csv_path.open("r", newline="") as f:
+            rd = csv.DictReader(f)
+            for row in rd:
+                try:
+                    n = int(row["nodes"])
+                    ppm = int(row["ppm"])
+                    topo = row["topo"]
+                    seed = int(row["seed"])
+                    mask = row["mask"]
+                    keys.add(_summary_key(n, ppm, topo, seed, mask))
+                except Exception:
+                    continue
+    except Exception:
+        return set()
+    return keys
 
 # ------------------------------ CPU / jobs auto-detection ------------------------------ #
 
@@ -391,7 +421,20 @@ def write_aggregated_json(agg: AggregatedMetrics, out_json: Path) -> None:
     if agg.prr_mean is not None: data["metrics"]["PRR"]={"mean":agg.prr_mean,"std":agg.prr_std,"min":agg.prr_min,"max":agg.prr_max,"unit":"ratio"}
     out_json.write_text(json.dumps(data, indent=2), encoding='utf-8')
 
-def append_run_summary_row(base_logs: Path, n:int, ppm:int, topo:str, seed:int, mask:str, m: RunMetrics) -> None:
+def append_run_summary_row(
+    base_logs: Path,
+    n: int,
+    ppm: int,
+    topo: str,
+    seed: int,
+    mask: str,
+    m: RunMetrics,
+    existing_keys: Optional[Set[SummaryKey]] = None,
+) -> None:
+    row_key = _summary_key(n, ppm, topo, seed, mask)
+    if existing_keys is not None and row_key in existing_keys:
+        return
+
     csv_path = base_logs / "summary.csv"
     new = not csv_path.exists()
     with csv_path.open("a", newline="") as f:
@@ -406,6 +449,8 @@ def append_run_summary_row(base_logs: Path, n:int, ppm:int, topo:str, seed:int, 
                     f"{delay_ms:.2f}" if delay_ms!="" else "",
                     int(nlt) if nlt!="" else "",
                     m.total_gen, m.total_recv])
+    if existing_keys is not None:
+        existing_keys.add(row_key)
 
 # ------------------------------ One run (isolated workspace) ------------------------------ #
 
@@ -427,7 +472,7 @@ def run_block(cfg: RunnerConfig, mask: MaskSpec, n: int, ppm: int, topo: str, se
         die(f"Mask file not found: {mask.file}")
 
     # Prepare paths
-    run_dir = cfg.logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask.name
+    run_dir = run_dir_for(cfg.logs_dir, mask.name, n, ppm, topo, seed)
     backup_if_exists(run_dir)
     ensure_dir(run_dir)
 
@@ -596,6 +641,8 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--work-root", type=Path, default=Path("testbed/_work"), help="Where per-run temp workspaces go")
     ap.add_argument("--keep-work", action="store_true", help="Keep workspaces (debug)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--resume", action="store_true",
+                    help="Skip tasks with an existing healthy COOJA.testlog in logs-dir and run only missing/incomplete tasks.")
     ap.add_argument("--error-log-tail", type=int, default=50,
                     help="Lines from end of runner.log to print on non-zero exit. 0 = print full file.")
 
@@ -642,6 +689,7 @@ def parse_args() -> RunnerConfig:
         work_root=a.work_root.resolve(),
         keep_work=a.keep_work,
         dry_run=a.dry_run,
+        resume=a.resume,
         error_log_tail=max(0, a.error_log_tail),
         heartbeat_secs=max(0, a.heartbeat_secs),
     )
@@ -668,22 +716,44 @@ def main() -> None:
                         tasks.append((mask.name, n, ppm, topo, seed))
     total_tasks = len(tasks)
 
-    # Run in parallel
+    # Resume support: treat already-complete runs as done and only schedule missing/incomplete ones.
     results: Dict[Tuple[str,int,int,str,int], Tuple[bool,str]] = {}
-    max_workers = min(cfg.jobs, len(tasks)) if tasks else 1
-    initial_in_progress = min(max_workers, total_tasks) if total_tasks > 0 else 0
+    resumed_tasks = 0
+    tasks_to_run: List[Tuple[str, int, int, str, int]] = tasks
+    if cfg.resume:
+        pending: List[Tuple[str, int, int, str, int]] = []
+        for (mask_name, n, ppm, topo, seed) in tasks:
+            run_dir = run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed)
+            log_path = run_dir / "COOJA.testlog"
+            ok_existing, _stats = basic_log_health(log_path, expected_nodes=n)
+            if ok_existing:
+                results[(mask_name, n, ppm, topo, seed)] = (True, str(run_dir))
+                resumed_tasks += 1
+            else:
+                pending.append((mask_name, n, ppm, topo, seed))
+        tasks_to_run = pending
+        print(
+            f"RESUME STATUS: recovered={resumed_tasks}, to_run={len(tasks_to_run)}, total={total_tasks}",
+            flush=True,
+        )
+
+    # Run in parallel
+    max_workers = min(cfg.jobs, len(tasks_to_run)) if tasks_to_run else 1
+    initial_in_progress = min(max_workers, len(tasks_to_run)) if tasks_to_run else 0
+    initial_completed = resumed_tasks
+    initial_remaining = max(0, total_tasks - initial_completed)
     print(f"MAX PARALLEL WORKERS: {max_workers}", flush=True)
     print(
-        f"TASK STATUS: total={total_tasks}, in_progress={initial_in_progress}, remaining={total_tasks}, completed=0",
+        f"TASK STATUS: total={total_tasks}, in_progress={initial_in_progress}, remaining={initial_remaining}, completed={initial_completed}",
         flush=True,
     )
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futs = {
             ex.submit(run_block, cfg, mask_by_name[mask_name], n, ppm, topo, seed): (mask_name, n, ppm, topo, seed)
-            for (mask_name, n, ppm, topo, seed) in tasks
+            for (mask_name, n, ppm, topo, seed) in tasks_to_run
         }
-        completed_tasks = 0
+        completed_tasks = resumed_tasks
         last_completion_ts = time.time()
         pending = set(futs.keys())
         heartbeat_timeout = None if cfg.heartbeat_secs == 0 else cfg.heartbeat_secs
@@ -722,6 +792,7 @@ def main() -> None:
     mask_metrics: Dict[Tuple[str,int,int], List[RunMetrics]] = {}
     
     # Parse + aggregate per (nodes, ppm) and append per-run summary
+    summary_keys = load_existing_summary_keys(cfg.logs_dir / "summary.csv")
     for (mask_name, n, ppm, topo, seed) in sorted(results.keys()):
         ok, rdir = results[(mask_name, n, ppm, topo, seed)]
         if not rdir:
@@ -735,7 +806,7 @@ def main() -> None:
 
         # even if ok==False, still include it in aggregation
         mask_metrics.setdefault((mask_name, n, ppm), []).append(m)
-        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m)
+        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m, existing_keys=summary_keys)
 
     for (mask_name, n, ppm), lst in sorted(mask_metrics.items()):
         agg = aggregate_metrics(lst)
@@ -743,7 +814,7 @@ def main() -> None:
         write_aggregated_csv(agg, base / "aggregated_results.csv")
         write_aggregated_json(agg, base / "aggregated_results.json")
 
-    total = len(tasks); ok_count = sum(1 for v in results.values() if v[0])
+    total = total_tasks; ok_count = sum(1 for v in results.values() if v[0])
     completed = len(results)
     remaining = max(0, total_tasks - completed)
     in_progress = 0
@@ -752,7 +823,7 @@ def main() -> None:
     mm, ss = divmod(rem, 60)
     print("\n" + "="*78)
     print(f"TASK STATUS: total={total_tasks}, in_progress={in_progress}, remaining={remaining}, completed={completed}")
-    print(f"DONE. Runs attempted: {total}, passed basic health: {ok_count}.")
+    print(f"DONE. Runs attempted: {len(tasks_to_run)}, resumed existing: {resumed_tasks}, passed basic health: {ok_count}/{total}.")
     print(f"Elapsed wall time: {hh:02d}:{mm:02d}:{ss:02d} ({elapsed_s}s)")
     print("="*78)
 
