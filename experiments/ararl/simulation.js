@@ -5,7 +5,7 @@ var ByteOrder  = Java.type('java.nio.ByteOrder');
 
 // === Constants ===
 var K = 4;
-var INIT_ENERGY = 1.1;
+var INIT_ENERGY = 1.0;
 var MASK_PATH = java.lang.System.getenv("MASK_FILE");
 if(MASK_PATH === null || (""+MASK_PATH).trim().length === 0) {
   MASK_PATH = "/workspace/testbed/mask.yaml";
@@ -29,6 +29,7 @@ var decisionsByNode = {};         // mid -> count
 var _printedDecisionSummary = false;
 var _globalStopTriggered = false;
 var _globalStopNode = -1;
+var _loggedRetrainSkip = false;
 
 function dbgOnce(mid, mats, candIds, candEtx, valid, idxChosen) {
   if (!DEBUG_ON) return;
@@ -398,14 +399,27 @@ function printDecisionSummaryOnce(){
   _printedDecisionSummary = true;
 }
 
-function parseEnergyWrapupNodeId(line){
-  if(!line) return -1;
-  var s = "" + line;
-  if(s.indexOf("WRAPUP node_id=") < 0) return -1;
-  if(s.toLowerCase().indexOf("reason=energy") < 0) return -1;
-  var m = s.match(/WRAPUP node_id=(\d+)/);
-  if(!m) return -1;
-  try { return parseInt(m[1], 10); } catch(e){ return -1; }
+function findFirstDeadNodeByEnergy(){
+  var N = sim.getMotesCount();
+  for(var i=0;i<N;i++){
+    var m = sim.getMote(i);
+    if(!m) continue;
+    var mid = m.getID();
+    if(mid === 1) continue; // sink
+
+    var re = null;
+    try { re = getDouble(m, "status_residual_energy"); } catch(e){ re = null; }
+    if(re !== null && re <= 0.0) return mid;
+  }
+  return -1;
+}
+
+function maybeTriggerGlobalStopFromEnergy(){
+  if(_globalStopTriggered) return;
+  var deadNode = findFirstDeadNodeByEnergy();
+  if(deadNode > 0) {
+    broadcastGlobalStop(deadNode);
+  }
 }
 
 function broadcastGlobalStop(triggerNodeId){
@@ -602,25 +616,29 @@ TIMEOUT(6000000, log.testOK());
 
 while(true){
 	YIELD();		
-
-  if(!_globalStopTriggered){
-    var deadNode = parseEnergyWrapupNodeId(msg);
-    if(deadNode > 0){
-      broadcastGlobalStop(deadNode);
-    }
-  }
 	
   if(msg.indexOf("ALL_NODES_TRAIN")>=0){
     _phase = "TRAIN";
-    assignParentsAll();
-    log.log("CTRL: INIT_ASSIGN done\n");
+    maybeTriggerGlobalStopFromEnergy();
+    if(!_globalStopTriggered){
+      assignParentsAll();
+      log.log("CTRL: INIT_ASSIGN done\n");
+    }
     continue;
   }
 	if (msg.indexOf("ALL_NODES_RETRAIN") >= 0) {
 	  _phase = "RETRAIN";
-	  agent.endPhase();
-	  assignParentsAll();
-	  printDecisionSummaryOnce();
+    maybeTriggerGlobalStopFromEnergy();
+    if(_globalStopTriggered){
+      if(!_loggedRetrainSkip){
+        log.log("CTRL: RETRAIN skipped (global stop active)\n");
+        _loggedRetrainSkip = true;
+      }
+      continue;
+    }
+    agent.endPhase();
+    assignParentsAll();
+    printDecisionSummaryOnce();
 	  continue;
 	}
 	log.log(time+"\t"+id+"\t"+msg+"\n");

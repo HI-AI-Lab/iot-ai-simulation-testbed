@@ -45,7 +45,7 @@
 #define SIM_END_MS       5000000UL
 
 /* ==== Energy Model ==== */
-#define INIT_ENERGY_J   1.1
+#define INIT_ENERGY_J   1.0
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
 #define EPS_MP          0.0013e-12
@@ -646,8 +646,8 @@ PROCESS_THREAD(status_refresher_process, ev, data)
   while(1) {
     apply_global_stop_if_needed();
 
-    /* If dead, exit immediately */
-    if(mote_dead) {
+    /* If dead or sim-time over, exit immediately */
+    if(mote_dead || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
     }
@@ -656,8 +656,8 @@ PROCESS_THREAD(status_refresher_process, ev, data)
 
     apply_global_stop_if_needed();
 
-    /* Death can occur while waiting; re-check before doing work */
-    if(mote_dead) {
+    /* Death/time-over can occur while waiting; re-check before work */
+    if(mote_dead || is_simulation_time_over()) {
       wrapup();
       PROCESS_EXIT();
     }

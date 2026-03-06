@@ -60,6 +60,8 @@ double   status_qlr             = 0.0;
 double   status_wr              = 0.0;
 uint16_t status_pc              = 0;
 uint32_t status_parent_switches = 0;
+uint8_t  status_global_stop     = 0;   /* set by simulation.js */
+static uint8_t wrapup_done      = 0;
 
 typedef struct {
   uint32_t t_sent;
@@ -80,6 +82,9 @@ static node_stats_t stats[NUM_NODES+1];   // index 0 dummy, 1 sink, 2..N motes
 
 static void
 wrapup(void) {
+  if(wrapup_done) return;
+  wrapup_done = 1;
+
   LOG_INFO("WRAPUP sink end_ms=%"PRIu32"\n",
            (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND));
 
@@ -103,6 +108,11 @@ static int
 is_simulation_time_over(void) {
   uint32_t now_ms = (uint32_t)(clock_time() * 1000UL / CLOCK_SECOND);
   return (now_ms >= SIM_END_MS);
+}
+
+static int
+should_sink_stop(void) {
+  return status_global_stop || is_simulation_time_over();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -164,9 +174,13 @@ PROCESS_THREAD(udp_server_process, ev, data)
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                       UDP_CLIENT_PORT, udp_rx_callback);
   while(1) {
-    etimer_set(&t, 60000); // check every ~60s of sim time
+    if(should_sink_stop()) {
+      wrapup();
+      PROCESS_EXIT();
+    }
+    etimer_set(&t, CLOCK_SECOND); // check every 1s of sim time
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
-	if(is_simulation_time_over()) {
+	if(should_sink_stop()) {
       wrapup();
       PROCESS_EXIT();
     }
@@ -179,11 +193,23 @@ PROCESS_THREAD(endphase_process, ev, data)
 {
   static struct etimer t;
   PROCESS_BEGIN();
+  if(should_sink_stop()) {
+    wrapup();
+    PROCESS_EXIT();
+  }
   LOG_INFO("ALL_NODES_TRAIN\n");
   while(1) {
+    if(should_sink_stop()) {
+      wrapup();
+      PROCESS_EXIT();
+    }
 	// 10 second interval
 	etimer_set(&t, CLOCK_SECOND * 10);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&t));
+    if(should_sink_stop()) {
+      wrapup();
+      PROCESS_EXIT();
+    }
     LOG_INFO("ALL_NODES_RETRAIN\n");
   }
   PROCESS_END();
