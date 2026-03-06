@@ -1,4 +1,4 @@
-<simconf version="2023090101">
+﻿<simconf version="2023090101">
   <simulation>
     <title>N60_topo01</title>
     <randomseed>10001</randomseed>
@@ -14,7 +14,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Sink Mote</description>
       <source>[CONFIG_DIR]/sink.c</source>
-      <commands>$(MAKE) -j$(CPUS) sink.cooja TARGET=cooja</commands>
+      <commands>$(MAKE) sink.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>
@@ -36,7 +36,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Cooja Node Mote</description>
       <source>[CONFIG_DIR]/node.c</source>
-      <commands>$(MAKE) -j$(CPUS) node.cooja TARGET=cooja</commands>
+      <commands>$(MAKE) node.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiMoteID</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiRS232</moteinterface>
@@ -645,3 +645,4 @@
       </plugin_config>
     </plugin>
   </simconf>
+
