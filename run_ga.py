@@ -35,7 +35,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 @dataclass
@@ -74,6 +74,7 @@ class GAConfig:
     error_log_tail: int
     keep_work: bool
     dry_run: bool
+    resume: bool
 
     # GA controls
     population: int
@@ -107,10 +108,27 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def dedupe_preserve_order(values: List[Any]) -> List[Any]:
+    seen = set()
+    out: List[Any] = []
+    for v in values:
+        if v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+    return out
+
+
 def recreate_dir(path: Path) -> None:
     if path.exists():
         shutil.rmtree(path, ignore_errors=True)
     path.mkdir(parents=True, exist_ok=True)
+
+def write_json_atomic(path: Path, payload: Dict[str, Any]) -> None:
+    ensure_dir(path.parent)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    tmp.replace(path)
 
 
 def run_cmd(cmd: Sequence[str], cwd: Optional[Path] = None) -> int:
@@ -196,10 +214,11 @@ def parse_args() -> GAConfig:
     ap.add_argument("--topologies", "--topology-count", dest="topologies", type=int, default=10,
                     help="Used when --topology-ids is not provided")
     ap.add_argument("--topology-ids", type=str, nargs="*", default=[])
-    ap.add_argument("--traffic-seeds", type=int, nargs="+", default=[1],
-                    help="Explicit traffic seed IDs, e.g. --traffic-seeds 1 2 3")
-    ap.add_argument("--seed-count", "--seeds", dest="seed_count", type=int, default=None,
-                    help="Number of traffic seeds to generate as 1..N (cannot be used with --traffic-seeds)")
+    seed_group = ap.add_mutually_exclusive_group()
+    seed_group.add_argument("--traffic-seeds", type=int, nargs="+", default=None,
+                            help="Explicit traffic seed IDs, e.g. --traffic-seeds 1 2 3")
+    seed_group.add_argument("--seed-count", "--seeds", dest="seed_count", type=int, default=None,
+                            help="Number of traffic seeds to generate as 1..N")
     ap.add_argument("--duration-sf", type=int, default=180)
     ap.add_argument("--warmup-sf", type=int, default=12)
     ap.add_argument("--sim-seed", type=int, default=67890)
@@ -212,6 +231,8 @@ def parse_args() -> GAConfig:
     ap.add_argument("--error-log-tail", type=int, default=50)
     ap.add_argument("--keep-work", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--resume", action="store_true",
+                    help="Resume GA from ga-out checkpoints (state/cache), and continue up to --generations.")
 
     ap.add_argument("--population", type=int, default=16)
     ap.add_argument("--generations", type=int, default=12)
@@ -261,14 +282,16 @@ def parse_args() -> GAConfig:
         die("--delay-scale-ms must be > 0")
     if a.duration_sf <= 0:
         die("--duration-sf must be > 0")
-    if a.topologies < 1:
+    if (not a.topology_ids) and a.topologies < 1:
         die("--topologies must be >= 1")
     if a.seed_count is not None and a.seed_count < 1:
         die("--seed-count must be >= 1")
-    if a.seed_count is not None and a.traffic_seeds != [1]:
-        die("Use either --traffic-seeds or --seed-count, not both.")
 
-    traffic_seeds = list(range(1, a.seed_count + 1)) if a.seed_count is not None else a.traffic_seeds
+    nodes = dedupe_preserve_order([int(x) for x in a.nodes])
+    ppms = dedupe_preserve_order([int(x) for x in a.ppm])
+    topology_ids = dedupe_preserve_order([str(x) for x in a.topology_ids])
+    traffic_seeds = list(range(1, a.seed_count + 1)) if a.seed_count is not None else (a.traffic_seeds or [1])
+    traffic_seeds = dedupe_preserve_order([int(x) for x in traffic_seeds])
     if any(s < 1 for s in traffic_seeds):
         die("--traffic-seeds values must be >= 1")
 
@@ -279,10 +302,10 @@ def parse_args() -> GAConfig:
         gradle_root=a.gradle_root.resolve(),
         work_root=a.work_root.resolve(),
         ga_out=a.ga_out.resolve(),
-        nodes=a.nodes,
-        ppms=a.ppm,
+        nodes=nodes,
+        ppms=ppms,
         topologies=a.topologies,
-        topology_ids=a.topology_ids,
+        topology_ids=topology_ids,
         traffic_seeds=traffic_seeds,
         duration_sf=a.duration_sf,
         warmup_sf=a.warmup_sf,
@@ -296,6 +319,7 @@ def parse_args() -> GAConfig:
         error_log_tail=max(0, a.error_log_tail),
         keep_work=a.keep_work,
         dry_run=a.dry_run,
+        resume=a.resume,
         population=a.population,
         generations=a.generations,
         elite=a.elite,
@@ -402,7 +426,19 @@ def _metric_mean(data: Dict, metric_name: str) -> Optional[float]:
         return None
 
 
-def compute_fitness(cfg: GAConfig, scenarios: List[Dict], expected_scenarios: int) -> Tuple[float, Dict]:
+def _runs_count(data: Dict, field: str) -> Optional[int]:
+    try:
+        return int(data["runs"][field])
+    except Exception:
+        return None
+
+
+def compute_fitness(
+    cfg: GAConfig,
+    scenarios: List[Dict],
+    expected_scenarios: int,
+    expected_runs_per_scenario: int,
+) -> Tuple[float, Dict]:
     if not scenarios:
         return -1e9, {
             "reason": "no_scenarios",
@@ -418,11 +454,16 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict], expected_scenarios: in
     prr_vals: List[float] = []
     nlt_vals: List[float] = []
     delay_vals: List[float] = []
+    runs_total_vals: List[int] = []
+    runs_valid_vals: List[int] = []
+    scenario_coverage_gaps: List[float] = []
 
     for sc in scenarios:
         prr_raw = sc.get("prr")
         nlt_raw = sc.get("nlt")
         delay_raw = sc.get("delay")
+        runs_total_raw = sc.get("runs_total")
+        runs_valid_raw = sc.get("runs_valid")
 
         prr_norm = min(1.0, max(0.0, float(prr_raw) if prr_raw is not None else 0.0))
         nlt_norm = min(1.0, max(0.0, (float(nlt_raw) / duration_ms) if nlt_raw is not None else 0.0))
@@ -441,6 +482,18 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict], expected_scenarios: in
             nlt_vals.append(float(nlt_raw))
         if delay_raw is not None:
             delay_vals.append(float(delay_raw))
+        if runs_total_raw is not None:
+            runs_total_vals.append(int(runs_total_raw))
+        if runs_valid_raw is not None:
+            runs_valid_vals.append(int(runs_valid_raw))
+
+        if expected_runs_per_scenario > 0:
+            observed = runs_valid_raw if runs_valid_raw is not None else runs_total_raw
+            observed_norm = max(0.0, float(observed) if observed is not None else 0.0)
+            coverage = min(1.0, observed_norm / float(expected_runs_per_scenario))
+        else:
+            coverage = 1.0
+        scenario_coverage_gaps.append(1.0 - coverage)
 
     if not per_s_scores:
         return -1e9, {
@@ -454,7 +507,10 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict], expected_scenarios: in
     prr_pen = cfg.beta_prr_penalty * (sum(prr_shortfalls) / len(prr_shortfalls))
 
     if expected_scenarios > 0:
-        missing_fraction = max(0.0, (expected_scenarios - len(scenarios)) / expected_scenarios)
+        structural_missing = max(0.0, expected_scenarios - len(scenarios))
+        partial_missing = sum(scenario_coverage_gaps)
+        missing_fraction = (structural_missing + partial_missing) / expected_scenarios
+        missing_fraction = min(1.0, max(0.0, missing_fraction))
     else:
         missing_fraction = 0.0
     miss_pen = cfg.gamma_missing_penalty * missing_fraction
@@ -471,6 +527,12 @@ def compute_fitness(cfg: GAConfig, scenarios: List[Dict], expected_scenarios: in
         "prr_mean": (sum(prr_vals) / len(prr_vals)) if prr_vals else None,
         "nlt_mean": (sum(nlt_vals) / len(nlt_vals)) if nlt_vals else None,
         "delay_mean": (sum(delay_vals) / len(delay_vals)) if delay_vals else None,
+        "runs_total_mean": (sum(runs_total_vals) / len(runs_total_vals)) if runs_total_vals else None,
+        "runs_valid_mean": (sum(runs_valid_vals) / len(runs_valid_vals)) if runs_valid_vals else None,
+        "expected_runs_per_scenario": expected_runs_per_scenario,
+        "scenario_coverage_mean": (1.0 - (sum(scenario_coverage_gaps) / len(scenario_coverage_gaps)))
+        if scenario_coverage_gaps
+        else None,
         "expected_scenarios": expected_scenarios,
         "found_scenarios": len(scenarios),
     }
@@ -541,6 +603,8 @@ def collect_scenarios_for_mask(cfg: GAConfig, logs_dir: Path, mid: str) -> List[
                     "prr": _metric_mean(obj, "PRR"),
                     "nlt": _metric_mean(obj, "NLT"),
                     "delay": _metric_mean(obj, "Delay"),
+                    "runs_total": _runs_count(obj, "total"),
+                    "runs_valid": _runs_count(obj, "valid"),
                     "path": str(jpath),
                 }
             )
@@ -549,7 +613,7 @@ def collect_scenarios_for_mask(cfg: GAConfig, logs_dir: Path, mid: str) -> List[
 
 def cache_meta(cfg: GAConfig) -> Dict:
     return {
-        "version": 1,
+        "version": 2,
         "mask_file": str(cfg.mask_file),
         "search_features": cfg.search_space.search_features,
         "feature_order": cfg.search_space.feature_order,
@@ -560,6 +624,11 @@ def cache_meta(cfg: GAConfig) -> Dict:
         "topology_ids": cfg.topology_ids,
         "traffic_seeds": cfg.traffic_seeds,
         "duration_sf": cfg.duration_sf,
+        "warmup_sf": cfg.warmup_sf,
+        "sim_seed": cfg.sim_seed,
+        "agent_seed": cfg.agent_seed,
+        "tx_range": cfg.tx_range,
+        "int_range": cfg.int_range,
         "weights": {"w_nlt": cfg.w_nlt, "w_prr": cfg.w_prr, "w_dly": cfg.w_dly},
         "delay_scale_ms": cfg.delay_scale_ms,
         "prr_min": cfg.prr_min,
@@ -589,9 +658,120 @@ def load_cache(path: Path, expected_meta: Dict) -> Dict[str, Dict]:
 
 
 def save_cache(path: Path, meta: Dict, masks: Dict[str, Dict]) -> None:
-    ensure_dir(path.parent)
-    payload = {"meta": meta, "masks": masks}
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    write_json_atomic(path, {"meta": meta, "masks": masks})
+
+
+def resume_meta(cfg: GAConfig, cache_meta_payload: Dict) -> Dict:
+    return {
+        "version": 2,
+        "cache_meta": cache_meta_payload,
+        "population": cfg.population,
+        "elite": cfg.elite,
+        "cx_rate": cfg.cx_rate,
+        "mut_rate": cfg.mut_rate,
+        "random_seed": cfg.random_seed,
+    }
+
+
+def _encode_rng_state(state: object) -> Optional[Dict[str, Any]]:
+    # Persist RNG state in JSON-safe primitives (no pickle deserialization risk).
+    if not isinstance(state, tuple) or len(state) != 3:
+        return None
+    version, internal_state, gauss_next = state
+    if not isinstance(version, int):
+        return None
+    if not isinstance(internal_state, tuple):
+        return None
+    try:
+        internal_list = [int(x) for x in internal_state]
+    except Exception:
+        return None
+    if gauss_next is not None and not isinstance(gauss_next, (int, float)):
+        return None
+    return {
+        "version": int(version),
+        "internal_state": internal_list,
+        "gauss_next": (float(gauss_next) if gauss_next is not None else None),
+    }
+
+
+def _decode_rng_state(value: object) -> Optional[Tuple[int, Tuple[int, ...], Optional[float]]]:
+    # Legacy string values were pickle blobs; refuse to deserialize for safety.
+    if isinstance(value, str):
+        return None
+    if not isinstance(value, dict):
+        return None
+
+    version = value.get("version")
+    internal_raw = value.get("internal_state")
+    gauss_next = value.get("gauss_next")
+    if not isinstance(version, int):
+        return None
+    if not isinstance(internal_raw, list):
+        return None
+    if len(internal_raw) == 0 or len(internal_raw) > 10000:
+        return None
+    try:
+        internal_state = tuple(int(x) for x in internal_raw)
+    except Exception:
+        return None
+    if gauss_next is not None and not isinstance(gauss_next, (int, float)):
+        return None
+
+    return (
+        int(version),
+        internal_state,
+        (float(gauss_next) if gauss_next is not None else None),
+    )
+
+
+def load_resume_state(path: Path, expected_meta: Dict) -> Optional[Dict]:
+    if not path.is_file():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(raw, dict):
+        return None
+    if raw.get("meta") != expected_meta:
+        print("[INFO] Resume metadata mismatch; ignoring previous state.")
+        return None
+    state = raw.get("state")
+    if not isinstance(state, dict):
+        return None
+    return state
+
+
+def save_resume_state(path: Path, meta: Dict, state: Dict[str, Any]) -> None:
+    write_json_atomic(path, {"meta": meta, "state": state})
+
+
+def _normalize_population_from_state(
+    raw_population: object,
+    expected_size: int,
+    num_features: int,
+    allow_empty_mask: bool,
+) -> Optional[List[List[int]]]:
+    if not isinstance(raw_population, list):
+        return None
+    if len(raw_population) != expected_size:
+        return None
+
+    out: List[List[int]] = []
+    for item in raw_population:
+        if not isinstance(item, list):
+            return None
+        if len(item) != num_features:
+            return None
+        try:
+            bits = [1 if int(x) != 0 else 0 for x in item]
+        except Exception:
+            return None
+        if not valid_bits(bits, allow_empty_mask):
+            return None
+        out.append(bits)
+    return out
 
 
 def init_history_csv(path: Path) -> None:
@@ -634,6 +814,8 @@ def evaluate_generation(
 ) -> List[Tuple[List[int], float, Dict, bool]]:
     search_features = cfg.search_space.search_features
     expected_scenarios = len(cfg.nodes) * len(cfg.ppms)
+    topology_count = len(cfg.topology_ids) if cfg.topology_ids else cfg.topologies
+    expected_runs_per_scenario = max(1, topology_count * len(cfg.traffic_seeds))
 
     unique_by_mid: Dict[str, List[int]] = {}
     for bits in population:
@@ -648,9 +830,14 @@ def evaluate_generation(
     masks_dir = gen_root / "masks"
 
     if pending:
-        recreate_dir(gen_root)
-        recreate_dir(logs_dir)
-        recreate_dir(masks_dir)
+        if cfg.resume:
+            ensure_dir(gen_root)
+            ensure_dir(logs_dir)
+            recreate_dir(masks_dir)
+        else:
+            recreate_dir(gen_root)
+            recreate_dir(logs_dir)
+            recreate_dir(masks_dir)
 
         for mid, bits in pending:
             yml = build_submask_yaml(
@@ -668,7 +855,7 @@ def evaluate_generation(
 
         for mid, bits in pending:
             scenarios = collect_scenarios_for_mask(cfg, logs_dir, mid)
-            fitness, detail = compute_fitness(cfg, scenarios, expected_scenarios)
+            fitness, detail = compute_fitness(cfg, scenarios, expected_scenarios, expected_runs_per_scenario)
             cache[mid] = {
                 "mask_id": mid,
                 "mask_label": mask_label(bits, search_features),
@@ -743,9 +930,14 @@ def main() -> None:
 
     cache_path = cfg.ga_out / "cache.json"
     history_path = cfg.ga_out / "ga_history.csv"
+    state_path = cfg.ga_out / "ga_state.json"
 
     meta = cache_meta(cfg)
     cache = load_cache(cache_path, meta)
+    state_meta = resume_meta(cfg, meta)
+
+    if not cfg.resume and history_path.is_file():
+        history_path.unlink()
     init_history_csv(history_path)
 
     num_features = len(cfg.search_space.search_features)
@@ -753,14 +945,90 @@ def main() -> None:
         die("No searchable features available and empty mask is not allowed.")
 
     population: List[List[int]] = []
-    while len(population) < cfg.population:
-        population.append(random_valid_bits(num_features, cfg.allow_empty_mask))
-
+    start_gen = 0
     best_bits: Optional[List[int]] = None
     best_fit = -1e18
     best_info: Dict = {}
 
-    for gen in range(cfg.generations):
+    if cfg.resume:
+        state = load_resume_state(state_path, state_meta)
+        if state is None:
+            print("[INFO] Resume requested but no compatible state found; starting from generation 1.")
+        else:
+            loaded_pop = _normalize_population_from_state(
+                state.get("next_population"),
+                expected_size=cfg.population,
+                num_features=num_features,
+                allow_empty_mask=cfg.allow_empty_mask,
+            )
+            if loaded_pop is None:
+                print("[WARN] Saved resume population is invalid; starting from generation 1.")
+            else:
+                population = loaded_pop
+                try:
+                    start_gen = max(0, int(state.get("completed_generations", 0)))
+                except Exception:
+                    start_gen = 0
+
+                raw_best_bits = state.get("best_bits")
+                if isinstance(raw_best_bits, list) and len(raw_best_bits) == num_features:
+                    try:
+                        candidate = [1 if int(x) != 0 else 0 for x in raw_best_bits]
+                        if valid_bits(candidate, cfg.allow_empty_mask):
+                            best_bits = candidate
+                    except Exception:
+                        best_bits = None
+                try:
+                    best_fit = float(state.get("best_fit", -1e18))
+                except Exception:
+                    best_fit = -1e18
+                if isinstance(state.get("best_info"), dict):
+                    best_info = dict(state["best_info"])
+
+                rng_blob = state.get("rng_state")
+                if rng_blob is not None:
+                    restored = _decode_rng_state(rng_blob)
+                    if restored is None:
+                        if isinstance(rng_blob, str):
+                            print("[WARN] Ignoring legacy pickled RNG state in ga_state.json; continuation may diverge.")
+                        else:
+                            print("[WARN] Could not restore RNG state; continuation may diverge.")
+                    else:
+                        try:
+                            random.setstate(restored)
+                        except Exception:
+                            print("[WARN] Could not restore RNG state; continuation may diverge.")
+
+                print(
+                    f"[INFO] Resuming at generation {start_gen + 1} "
+                    f"(completed={start_gen}, target={cfg.generations})."
+                )
+
+    if not population:
+        while len(population) < cfg.population:
+            population.append(random_valid_bits(num_features, cfg.allow_empty_mask))
+
+    if best_bits is None and cache:
+        try:
+            cached_best = max(cache.values(), key=lambda x: float(x.get("fitness", -1e18)))
+            maybe_bits = cached_best.get("bits")
+            maybe_fit = float(cached_best.get("fitness", -1e18))
+            if isinstance(maybe_bits, list) and len(maybe_bits) == num_features:
+                candidate = [1 if int(x) != 0 else 0 for x in maybe_bits]
+                if valid_bits(candidate, cfg.allow_empty_mask):
+                    best_bits = candidate
+                    best_fit = maybe_fit
+                    best_info = dict(cached_best)
+        except Exception:
+            pass
+
+    if start_gen >= cfg.generations:
+        print(
+            f"[INFO] Completed generations in state ({start_gen}) already meet/exceed "
+            f"--generations ({cfg.generations}); no new generations to run."
+        )
+
+    for gen in range(start_gen, cfg.generations):
         print(f"\n=== Generation {gen + 1}/{cfg.generations} ===")
         scored = evaluate_generation(cfg, population, gen, cache)
         scored.sort(key=lambda x: x[1], reverse=True)
@@ -826,6 +1094,18 @@ def main() -> None:
                     next_pop.append(c)
 
         population = next_pop[: cfg.population]
+        save_resume_state(
+            state_path,
+            state_meta,
+            {
+                "completed_generations": gen + 1,
+                "next_population": population,
+                "best_bits": best_bits,
+                "best_fit": best_fit,
+                "best_info": best_info,
+                "rng_state": _encode_rng_state(random.getstate()),
+            },
+        )
 
     print("\n=== DONE ===")
     if best_bits is None:
@@ -836,6 +1116,7 @@ def main() -> None:
     print(f"Best YAML   : {cfg.ga_out / 'best' / 'best_mask.yaml'}")
     print(f"History CSV : {history_path}")
     print(f"Cache JSON  : {cache_path}")
+    print(f"State JSON  : {state_path}")
 
 
 if __name__ == "__main__":

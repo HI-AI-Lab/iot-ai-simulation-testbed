@@ -102,6 +102,16 @@ CHECKPOINT_VERSION = 1
 def die(msg: str, code: int = 2) -> None:
     print(f"[FATAL] {msg}", file=sys.stderr); sys.exit(code)
 
+def dedupe_preserve_order(values: List[Any]) -> List[Any]:
+    seen: Set[Any] = set()
+    out: List[Any] = []
+    for v in values:
+        if v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+    return out
+
 def sh(
     cmd: List[str],
     cwd: Optional[Path] = None,
@@ -242,22 +252,28 @@ def config_from_dict(d: Dict[str, Any]) -> RunnerConfig:
             continue
         masks.append(MaskSpec(name=name, file=Path(str(f)).resolve()))
     if not masks:
-        die("Checkpoint has no valid masks configuration.")
+        raise ValueError("Checkpoint has no valid masks configuration.")
+    if len({m.name for m in masks}) != len(masks):
+        raise ValueError("Checkpoint has duplicate mask names.")
 
     gradle_user_home_val = d.get("gradle_user_home")
+    nodes = dedupe_preserve_order([int(x) for x in d["nodes"]])
+    ppms = dedupe_preserve_order([int(x) for x in d["ppms"]])
+    topology_ids = dedupe_preserve_order([str(x) for x in d["topology_ids"]])
+    traffic_seeds = dedupe_preserve_order([int(x) for x in d["traffic_seeds"]])
     return RunnerConfig(
         ararl_dir=Path(str(d["ararl_dir"])).resolve(),
         logs_dir=Path(str(d["logs_dir"])).resolve(),
         gradle_root=Path(str(d["gradle_root"])).resolve(),
-        nodes=[int(x) for x in d["nodes"]],
-        ppms=[int(x) for x in d["ppms"]],
-        topology_ids=[str(x) for x in d["topology_ids"]],
+        nodes=nodes,
+        ppms=ppms,
+        topology_ids=topology_ids,
         masks=masks,
         duration_sf=int(d["duration_sf"]),
         warmup_sf=int(d["warmup_sf"]),
         sim_seed=int(d["sim_seed"]),
         agent_seed=int(d["agent_seed"]),
-        traffic_seeds=[int(x) for x in d["traffic_seeds"]],
+        traffic_seeds=traffic_seeds,
         tx_range=(float(d["tx_range"]) if d.get("tx_range") is not None else None),
         int_range=(float(d["int_range"]) if d.get("int_range") is not None else None),
         gradle_user_home=(Path(str(gradle_user_home_val)).resolve() if gradle_user_home_val else None),
@@ -271,13 +287,18 @@ def config_from_dict(d: Dict[str, Any]) -> RunnerConfig:
     )
 
 def build_tasks(cfg: RunnerConfig) -> List[TaskKey]:
+    seen: Set[TaskKey] = set()
     tasks: List[TaskKey] = []
     for mask in cfg.masks:
         for n in cfg.nodes:
             for ppm in cfg.ppms:
                 for topo in cfg.topology_ids:
                     for seed in cfg.traffic_seeds:
-                        tasks.append((mask.name, n, ppm, topo, seed))
+                        t = (mask.name, n, ppm, topo, seed)
+                        if t in seen:
+                            continue
+                        seen.add(t)
+                        tasks.append(t)
     return tasks
 
 def inspect_checkpoint(path: Path) -> Tuple[str, Optional[Dict[str, Any]], Optional[str]]:
@@ -290,7 +311,7 @@ def inspect_checkpoint(path: Path) -> Tuple[str, Optional[Dict[str, Any]], Optio
     if not path.is_file():
         return ("missing", None, None)
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception as e:
         return ("invalid", None, f"failed to parse JSON: {e}")
     if not isinstance(raw, dict):
@@ -602,7 +623,7 @@ class AggregatedMetrics:
     prr_mean: Optional[float]=None; prr_std: Optional[float]=None; prr_min: Optional[float]=None; prr_max: Optional[float]=None
     run_count: int = 0; valid_runs: int = 0
 
-def aggregate_metrics(items: List[RunMetrics]) -> AggregatedMetrics:
+def aggregate_metrics(items: List[Optional[RunMetrics]]) -> AggregatedMetrics:
     agg = AggregatedMetrics()
     vals_delay: List[float]=[]; vals_nlt: List[float]=[]; vals_prr: List[float]=[]
     agg.run_count = len(items); agg.valid_runs = len([x for x in items if x is not None])
@@ -859,10 +880,11 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--warmup-sf", type=int, default=12)
     ap.add_argument("--sim-seed", type=int, default=67890)
     ap.add_argument("--agent-seed", type=int, default=12345)
-    ap.add_argument("--traffic-seeds", type=int, nargs="+", default=[1],
-                    help="Explicit traffic seed IDs, e.g. --traffic-seeds 1 2 3")
-    ap.add_argument("--seed-count", "--seeds", dest="seed_count", type=int, default=None,
-                    help="Number of traffic seeds to generate as 1..N (cannot be used with --traffic-seeds)")
+    seed_group = ap.add_mutually_exclusive_group()
+    seed_group.add_argument("--traffic-seeds", type=int, nargs="+", default=None,
+                            help="Explicit traffic seed IDs, e.g. --traffic-seeds 1 2 3")
+    seed_group.add_argument("--seed-count", "--seeds", dest="seed_count", type=int, default=None,
+                            help="Number of traffic seeds to generate as 1..N")
     ap.add_argument("--tx-range", type=float, default=None)
     ap.add_argument("--int-range", type=float, default=None)
     ap.add_argument("--gradle-user-home", type=Path, default=None,
@@ -885,7 +907,13 @@ def parse_args() -> RunnerConfig:
     if a.resume:
         ck_status, ck, ck_reason = inspect_checkpoint(ck_path)
         if ck_status == "ok" and ck is not None:
-            cfg = config_from_dict(ck["config"])
+            try:
+                cfg = config_from_dict(ck["config"])
+            except BaseException as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise
+                detail = str(e) if str(e) else e.__class__.__name__
+                die(f"--resume requested but checkpoint at {ck_path} has invalid config: {detail}")
             cfg.resume = True
             cfg.logs_dir = logs_dir_resolved
             print(f"[INFO] Loaded resume config from checkpoint: {ck_path}")
@@ -904,20 +932,21 @@ def parse_args() -> RunnerConfig:
     if a.mask_file is None:
         die("--mask-file is required unless --resume can load an existing checkpoint.")
 
-    if a.topologies < 1:
+    if (not a.topology_ids) and a.topologies < 1:
         die("--topologies must be >= 1")
     if a.seed_count is not None and a.seed_count < 1:
         die("--seed-count must be >= 1")
-    if a.seed_count is not None and a.traffic_seeds != [1]:
-        die("Use either --traffic-seeds or --seed-count, not both.")
 
-    traffic_seeds = list(range(1, a.seed_count + 1)) if a.seed_count is not None else a.traffic_seeds
+    nodes = dedupe_preserve_order([int(x) for x in a.nodes])
+    ppms = dedupe_preserve_order([int(x) for x in a.ppm])
+    traffic_seeds = list(range(1, a.seed_count + 1)) if a.seed_count is not None else (a.traffic_seeds or [1])
+    traffic_seeds = dedupe_preserve_order([int(x) for x in traffic_seeds])
     if any(s < 1 for s in traffic_seeds):
         die("--traffic-seeds values must be >= 1")
 
     # topology id list
     if a.topology_ids:
-        topo_ids = a.topology_ids
+        topo_ids = dedupe_preserve_order([str(x) for x in a.topology_ids])
     else:
         width = max(2, len(str(a.topologies)))   # always at least 2 digits
         topo_ids = [str(i).zfill(width) for i in range(1, a.topologies + 1)]
@@ -930,8 +959,8 @@ def parse_args() -> RunnerConfig:
         ararl_dir=a.ararl_dir.resolve(),
         logs_dir=logs_dir_resolved,
         gradle_root=a.gradle_root.resolve(),
-        nodes=a.nodes,
-        ppms=a.ppm,
+        nodes=nodes,
+        ppms=ppms,
         topology_ids=topo_ids,
         masks=masks,
         duration_sf=a.duration_sf,
@@ -1112,7 +1141,7 @@ def main() -> None:
                     flush=True,
                 )
 
-    mask_metrics: Dict[Tuple[str, int, int], List[RunMetrics]] = {}
+    mask_metrics: Dict[Tuple[str, int, int], List[Optional[RunMetrics]]] = {}
 
     # Strict latest-only outputs: rewrite summary and clear stale aggregate files for this config.
     summary_csv = cfg.logs_dir / "summary.csv"
@@ -1136,17 +1165,19 @@ def main() -> None:
     # Parse + aggregate per (nodes, ppm) and append per-run summary
     for (mask_name, n, ppm, topo, seed) in sorted(results.keys()):
         ok, rdir = results[(mask_name, n, ppm, topo, seed)]
+        bucket = mask_metrics.setdefault((mask_name, n, ppm), [])
         if not rdir:
+            bucket.append(None)
             continue
 
         log_path = Path(rdir) / "COOJA.testlog"
         m = parse_log(log_path)
+        bucket.append(m)
 
         if not m:
             continue
 
         # even if ok==False, still include it in aggregation
-        mask_metrics.setdefault((mask_name, n, ppm), []).append(m)
         append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m, existing_keys=None)
 
     for (mask_name, n, ppm), lst in sorted(mask_metrics.items()):
