@@ -95,7 +95,8 @@ class RunnerConfig:
 
 SummaryKey = Tuple[int, int, str, int, str]
 TaskKey = Tuple[str, int, int, str, int]
-CHECKPOINT_VERSION = 1
+CHECKPOINT_VERSION = 2
+SUPPORTED_CHECKPOINT_VERSIONS = {1, CHECKPOINT_VERSION}
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -241,6 +242,11 @@ def config_to_dict(cfg: RunnerConfig) -> Dict[str, Any]:
     }
 
 def config_from_dict(d: Dict[str, Any]) -> RunnerConfig:
+    def _required(key: str) -> Any:
+        if key not in d:
+            raise ValueError(f"Checkpoint config missing '{key}'.")
+        return d[key]
+
     masks_raw = d.get("masks", [])
     masks: List[MaskSpec] = []
     for item in masks_raw:
@@ -252,33 +258,81 @@ def config_from_dict(d: Dict[str, Any]) -> RunnerConfig:
             continue
         masks.append(MaskSpec(name=name, file=Path(str(f)).resolve()))
     if not masks:
+        legacy_name = str(d.get("mask_name", "")).strip()
+        legacy_file = d.get("mask_file")
+        if legacy_name and legacy_file:
+            masks.append(MaskSpec(name=legacy_name, file=Path(str(legacy_file)).resolve()))
+    if not masks:
         raise ValueError("Checkpoint has no valid masks configuration.")
     if len({m.name for m in masks}) != len(masks):
         raise ValueError("Checkpoint has duplicate mask names.")
 
     gradle_user_home_val = d.get("gradle_user_home")
-    nodes = dedupe_preserve_order([int(x) for x in d["nodes"]])
-    ppms = dedupe_preserve_order([int(x) for x in d["ppms"]])
-    topology_ids = dedupe_preserve_order([str(x) for x in d["topology_ids"]])
-    traffic_seeds = dedupe_preserve_order([int(x) for x in d["traffic_seeds"]])
+    nodes = dedupe_preserve_order([int(x) for x in d.get("nodes", [])])
+    ppms = dedupe_preserve_order([int(x) for x in d.get("ppms", [])])
+    if not nodes or any(x < 1 for x in nodes):
+        raise ValueError("Checkpoint has invalid nodes list.")
+    if not ppms or any(x < 1 for x in ppms):
+        raise ValueError("Checkpoint has invalid ppm list.")
+
+    topology_ids_raw = d.get("topology_ids")
+    if topology_ids_raw is not None:
+        if isinstance(topology_ids_raw, str):
+            topology_ids = [topology_ids_raw]
+        elif isinstance(topology_ids_raw, list):
+            topology_ids = [str(x) for x in topology_ids_raw]
+        else:
+            raise ValueError("Checkpoint has invalid topology_ids type.")
+        topology_ids = dedupe_preserve_order([x.strip() for x in topology_ids if str(x).strip()])
+    else:
+        topo_count_raw = d.get("topologies")
+        try:
+            topo_count = int(topo_count_raw)
+        except Exception:
+            topo_count = 0
+        if topo_count < 1:
+            raise ValueError("Checkpoint has no topology_ids/topologies configuration.")
+        width = max(2, len(str(topo_count)))
+        topology_ids = [str(i).zfill(width) for i in range(1, topo_count + 1)]
+    if not topology_ids:
+        raise ValueError("Checkpoint has empty topology_ids.")
+
+    traffic_seeds_raw = d.get("traffic_seeds")
+    if traffic_seeds_raw is None:
+        if d.get("traffic_seed") is not None:
+            traffic_seeds_raw = [d.get("traffic_seed")]
+        elif d.get("seed_count") is not None:
+            try:
+                seed_count = int(d.get("seed_count"))
+            except Exception:
+                seed_count = 0
+            traffic_seeds_raw = list(range(1, seed_count + 1)) if seed_count > 0 else []
+        else:
+            traffic_seeds_raw = [1]
+    if isinstance(traffic_seeds_raw, list):
+        traffic_seeds = dedupe_preserve_order([int(x) for x in traffic_seeds_raw])
+    else:
+        traffic_seeds = [int(traffic_seeds_raw)]
+    if not traffic_seeds or any(s < 1 for s in traffic_seeds):
+        raise ValueError("Checkpoint has invalid traffic_seeds configuration.")
     return RunnerConfig(
-        ararl_dir=Path(str(d["ararl_dir"])).resolve(),
-        logs_dir=Path(str(d["logs_dir"])).resolve(),
-        gradle_root=Path(str(d["gradle_root"])).resolve(),
+        ararl_dir=Path(str(_required("ararl_dir"))).resolve(),
+        logs_dir=Path(str(_required("logs_dir"))).resolve(),
+        gradle_root=Path(str(_required("gradle_root"))).resolve(),
         nodes=nodes,
         ppms=ppms,
         topology_ids=topology_ids,
         masks=masks,
-        duration_sf=int(d["duration_sf"]),
-        warmup_sf=int(d["warmup_sf"]),
-        sim_seed=int(d["sim_seed"]),
-        agent_seed=int(d["agent_seed"]),
+        duration_sf=int(_required("duration_sf")),
+        warmup_sf=int(_required("warmup_sf")),
+        sim_seed=int(_required("sim_seed")),
+        agent_seed=int(_required("agent_seed")),
         traffic_seeds=traffic_seeds,
         tx_range=(float(d["tx_range"]) if d.get("tx_range") is not None else None),
         int_range=(float(d["int_range"]) if d.get("int_range") is not None else None),
         gradle_user_home=(Path(str(gradle_user_home_val)).resolve() if gradle_user_home_val else None),
-        jobs=max(1, int(d["jobs"])),
-        work_root=Path(str(d["work_root"])).resolve(),
+        jobs=max(1, int(d.get("jobs", 1))),
+        work_root=Path(str(d.get("work_root", "testbed/_work"))).resolve(),
         keep_work=bool(d.get("keep_work", False)),
         dry_run=bool(d.get("dry_run", False)),
         resume=True,
@@ -320,8 +374,9 @@ def inspect_checkpoint(path: Path) -> Tuple[str, Optional[Dict[str, Any]], Optio
         version = int(raw.get("version", -1))
     except Exception:
         return ("invalid", None, f"invalid version value: {raw.get('version')!r}")
-    if version != CHECKPOINT_VERSION:
-        return ("invalid", None, f"unsupported version {version}; expected {CHECKPOINT_VERSION}")
+    if version not in SUPPORTED_CHECKPOINT_VERSIONS:
+        supported = ", ".join(str(v) for v in sorted(SUPPORTED_CHECKPOINT_VERSIONS))
+        return ("invalid", None, f"unsupported version {version}; supported: {supported}")
     if not isinstance(raw.get("config"), dict):
         return ("invalid", None, "missing or invalid 'config' object")
     if not isinstance(raw.get("task_state"), dict):
@@ -1015,6 +1070,9 @@ def main() -> None:
         loaded_existing_checkpoint = True
         cfg_dump = config_to_dict(cfg)
         checkpoint_changed = (checkpoint.get("config") != cfg_dump)
+        if checkpoint.get("version") != CHECKPOINT_VERSION:
+            checkpoint["version"] = CHECKPOINT_VERSION
+            checkpoint_changed = True
         checkpoint["config"] = cfg_dump
         task_state = checkpoint.setdefault("task_state", {})
         for task in tasks:

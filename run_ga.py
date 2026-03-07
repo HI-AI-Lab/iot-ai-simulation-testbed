@@ -37,6 +37,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+try:
+    import yaml  # optional, for robust mask parsing
+except Exception:
+    yaml = None
+
 
 @dataclass
 class SearchSpace:
@@ -142,6 +147,65 @@ def run_cmd(cmd: Sequence[str], cwd: Optional[Path] = None) -> int:
 
 def _parse_features_block(mask_path: Path) -> SearchSpace:
     text = mask_path.read_text(encoding="utf-8")
+    if yaml is not None:
+        try:
+            raw = yaml.safe_load(text)
+        except Exception as e:
+            die(f"Mask YAML parse failed for {mask_path}: {e}")
+
+        if not isinstance(raw, dict):
+            die(f"Mask root must be a mapping: {mask_path}")
+        feats_raw = raw.get("features")
+        if not isinstance(feats_raw, dict):
+            die(f"Mask has no valid 'features:' mapping: {mask_path}")
+
+        seen: Dict[str, bool] = {}
+        order: List[str] = []
+        for k_raw, v_raw in feats_raw.items():
+            key = str(k_raw).strip()
+            if not key:
+                continue
+
+            val: Optional[bool]
+            if isinstance(v_raw, bool):
+                val = v_raw
+            elif isinstance(v_raw, (int, float)) and not isinstance(v_raw, bool):
+                val = bool(v_raw)
+            elif isinstance(v_raw, str):
+                vv = v_raw.strip().lower()
+                if vv in {"true", "yes", "on", "1"}:
+                    val = True
+                elif vv in {"false", "no", "off", "0"}:
+                    val = False
+                else:
+                    val = None
+            else:
+                val = None
+
+            if val is None:
+                die(f"Feature '{key}' in {mask_path} must be true/false.")
+
+            if key not in seen:
+                order.append(key)
+            seen[key] = val
+
+        if not seen:
+            die(f"Mask features block is empty: {mask_path}")
+
+        all_flag = bool(seen.get("all", False))
+        feature_order = [k for k in order if k != "all"]
+        if not feature_order:
+            die(f"No feature keys found under 'features:' in {mask_path}")
+
+        search_features = [f for f in feature_order if seen.get(f, False)]
+        return SearchSpace(
+            mask_source=mask_path,
+            feature_order=feature_order,
+            search_features=search_features,
+            all_flag=all_flag,
+        )
+
+    # Fallback parser when PyYAML is unavailable.
     lines = text.splitlines()
 
     in_features = False
