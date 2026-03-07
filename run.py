@@ -18,7 +18,7 @@ import argparse, csv, json, os, re, shutil, statistics, subprocess, sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import time, selectors
 
@@ -26,13 +26,6 @@ try:
     import yaml  # optional, for nicer meta YAML
 except Exception:
     yaml = None
-
-def backup_if_exists(p: Path) -> None:
-    if not p.exists():
-        return
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    bak = p.with_name(p.name + f".bak_{ts}")
-    p.rename(bak)
 
 def auto_mask_name_from_file(mask_path: Path) -> str:
     enabled = read_mask_enabled(mask_path)
@@ -101,6 +94,8 @@ class RunnerConfig:
     heartbeat_secs: int
 
 SummaryKey = Tuple[int, int, str, int, str]
+TaskKey = Tuple[str, int, int, str, int]
+CHECKPOINT_VERSION = 1
 
 # ------------------------------ Helpers ------------------------------ #
 
@@ -191,32 +186,258 @@ def fmt_hms(total_seconds: int) -> str:
     mm, ss = divmod(rem, 60)
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
+def write_json_atomic(path: Path, payload: Dict[str, Any]) -> None:
+    ensure_dir(path.parent)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
 def run_dir_for(logs_dir: Path, mask_name: str, n: int, ppm: int, topo: str, seed: int) -> Path:
     return logs_dir / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask_name
 
 def _summary_key(n: int, ppm: int, topo: str, seed: int, mask: str) -> SummaryKey:
     return (n, ppm, topo, seed, mask)
 
-def load_existing_summary_keys(csv_path: Path) -> Set[SummaryKey]:
-    keys: Set[SummaryKey] = set()
-    if not csv_path.is_file():
-        return keys
+def checkpoint_path_for(logs_dir: Path) -> Path:
+    return logs_dir / "run_checkpoint.json"
+
+def task_id(mask_name: str, n: int, ppm: int, topo: str, seed: int) -> str:
+    return f"{mask_name}|{n}|{ppm}|{topo}|{seed}"
+
+def config_to_dict(cfg: RunnerConfig) -> Dict[str, Any]:
+    return {
+        "ararl_dir": str(cfg.ararl_dir),
+        "logs_dir": str(cfg.logs_dir),
+        "gradle_root": str(cfg.gradle_root),
+        "nodes": cfg.nodes,
+        "ppms": cfg.ppms,
+        "topology_ids": cfg.topology_ids,
+        "masks": [{"name": m.name, "file": str(m.file)} for m in cfg.masks],
+        "duration_sf": cfg.duration_sf,
+        "warmup_sf": cfg.warmup_sf,
+        "sim_seed": cfg.sim_seed,
+        "agent_seed": cfg.agent_seed,
+        "traffic_seeds": cfg.traffic_seeds,
+        "tx_range": cfg.tx_range,
+        "int_range": cfg.int_range,
+        "gradle_user_home": str(cfg.gradle_user_home) if cfg.gradle_user_home is not None else None,
+        "jobs": cfg.jobs,
+        "work_root": str(cfg.work_root),
+        "keep_work": cfg.keep_work,
+        "dry_run": cfg.dry_run,
+        "resume": cfg.resume,
+        "error_log_tail": cfg.error_log_tail,
+        "heartbeat_secs": cfg.heartbeat_secs,
+    }
+
+def config_from_dict(d: Dict[str, Any]) -> RunnerConfig:
+    masks_raw = d.get("masks", [])
+    masks: List[MaskSpec] = []
+    for item in masks_raw:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        f = item.get("file")
+        if not name or not f:
+            continue
+        masks.append(MaskSpec(name=name, file=Path(str(f)).resolve()))
+    if not masks:
+        die("Checkpoint has no valid masks configuration.")
+
+    gradle_user_home_val = d.get("gradle_user_home")
+    return RunnerConfig(
+        ararl_dir=Path(str(d["ararl_dir"])).resolve(),
+        logs_dir=Path(str(d["logs_dir"])).resolve(),
+        gradle_root=Path(str(d["gradle_root"])).resolve(),
+        nodes=[int(x) for x in d["nodes"]],
+        ppms=[int(x) for x in d["ppms"]],
+        topology_ids=[str(x) for x in d["topology_ids"]],
+        masks=masks,
+        duration_sf=int(d["duration_sf"]),
+        warmup_sf=int(d["warmup_sf"]),
+        sim_seed=int(d["sim_seed"]),
+        agent_seed=int(d["agent_seed"]),
+        traffic_seeds=[int(x) for x in d["traffic_seeds"]],
+        tx_range=(float(d["tx_range"]) if d.get("tx_range") is not None else None),
+        int_range=(float(d["int_range"]) if d.get("int_range") is not None else None),
+        gradle_user_home=(Path(str(gradle_user_home_val)).resolve() if gradle_user_home_val else None),
+        jobs=max(1, int(d["jobs"])),
+        work_root=Path(str(d["work_root"])).resolve(),
+        keep_work=bool(d.get("keep_work", False)),
+        dry_run=bool(d.get("dry_run", False)),
+        resume=True,
+        error_log_tail=max(0, int(d.get("error_log_tail", 50))),
+        heartbeat_secs=max(0, int(d.get("heartbeat_secs", 60))),
+    )
+
+def build_tasks(cfg: RunnerConfig) -> List[TaskKey]:
+    tasks: List[TaskKey] = []
+    for mask in cfg.masks:
+        for n in cfg.nodes:
+            for ppm in cfg.ppms:
+                for topo in cfg.topology_ids:
+                    for seed in cfg.traffic_seeds:
+                        tasks.append((mask.name, n, ppm, topo, seed))
+    return tasks
+
+def inspect_checkpoint(path: Path) -> Tuple[str, Optional[Dict[str, Any]], Optional[str]]:
+    """
+    Returns (status, checkpoint, reason):
+      - status="ok": checkpoint is valid and returned
+      - status="missing": file does not exist
+      - status="invalid": file exists but is malformed/incompatible
+    """
+    if not path.is_file():
+        return ("missing", None, None)
     try:
-        with csv_path.open("r", newline="") as f:
-            rd = csv.DictReader(f)
-            for row in rd:
-                try:
-                    n = int(row["nodes"])
-                    ppm = int(row["ppm"])
-                    topo = row["topo"]
-                    seed = int(row["seed"])
-                    mask = row["mask"]
-                    keys.add(_summary_key(n, ppm, topo, seed, mask))
-                except Exception:
-                    continue
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return ("invalid", None, f"failed to parse JSON: {e}")
+    if not isinstance(raw, dict):
+        return ("invalid", None, "root must be a JSON object")
+    try:
+        version = int(raw.get("version", -1))
     except Exception:
-        return set()
-    return keys
+        return ("invalid", None, f"invalid version value: {raw.get('version')!r}")
+    if version != CHECKPOINT_VERSION:
+        return ("invalid", None, f"unsupported version {version}; expected {CHECKPOINT_VERSION}")
+    if not isinstance(raw.get("config"), dict):
+        return ("invalid", None, "missing or invalid 'config' object")
+    if not isinstance(raw.get("task_state"), dict):
+        return ("invalid", None, "missing or invalid 'task_state' object")
+    return ("ok", raw, None)
+
+def init_checkpoint(cfg: RunnerConfig, tasks: List[TaskKey]) -> Dict[str, Any]:
+    state: Dict[str, Any] = {}
+    for (mask_name, n, ppm, topo, seed) in tasks:
+        tid = task_id(mask_name, n, ppm, topo, seed)
+        state[tid] = {
+            "status": "pending",
+            "ok": None,
+            "run_dir": str(run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed)),
+            "updated_at": now_stamp(),
+        }
+    return {
+        "version": CHECKPOINT_VERSION,
+        "created_at": now_stamp(),
+        "updated_at": now_stamp(),
+        "config": config_to_dict(cfg),
+        "task_state": state,
+    }
+
+def save_checkpoint(path: Path, checkpoint: Dict[str, Any]) -> None:
+    checkpoint["updated_at"] = now_stamp()
+    write_json_atomic(path, checkpoint)
+
+def set_task_state(
+    checkpoint: Dict[str, Any],
+    task: TaskKey,
+    status: str,
+    ok: Optional[bool] = None,
+    run_dir: Optional[str] = None,
+) -> None:
+    (mask_name, n, ppm, topo, seed) = task
+    tid = task_id(mask_name, n, ppm, topo, seed)
+    task_state = checkpoint.setdefault("task_state", {})
+    entry = task_state.get(tid, {})
+    if not isinstance(entry, dict):
+        entry = {}
+    entry["status"] = status
+    if ok is not None:
+        entry["ok"] = bool(ok)
+    if run_dir is not None:
+        entry["run_dir"] = run_dir
+    elif "run_dir" not in entry:
+        cfg_d = checkpoint.get("config", {})
+        logs_dir = Path(str(cfg_d.get("logs_dir", ".")))
+        entry["run_dir"] = str(run_dir_for(logs_dir, mask_name, n, ppm, topo, seed))
+    entry["updated_at"] = now_stamp()
+    task_state[tid] = entry
+
+def load_run_meta(meta_path: Path) -> Optional[Dict[str, Any]]:
+    if not meta_path.is_file():
+        return None
+    text = meta_path.read_text(encoding="utf-8", errors="ignore")
+    if yaml is not None:
+        try:
+            d = yaml.safe_load(text)
+            if isinstance(d, dict):
+                return d
+        except Exception:
+            return None
+    out: Dict[str, Any] = {}
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or ":" not in line:
+            continue
+        k, v = [x.strip() for x in line.split(":", 1)]
+        if not k:
+            continue
+        out[k] = v
+    return out if out else None
+
+def _eq_path(a: Any, b: Path) -> bool:
+    if a is None:
+        return False
+    try:
+        return Path(str(a)).resolve() == b.resolve()
+    except Exception:
+        return False
+
+def _to_int(v: Any) -> Optional[int]:
+    try:
+        return int(v)
+    except Exception:
+        return None
+
+def _to_float(v: Any) -> Optional[float]:
+    try:
+        return float(v)
+    except Exception:
+        return None
+
+def run_meta_matches(cfg: RunnerConfig, mask: MaskSpec, n: int, ppm: int, topo: str, seed: int, meta: Dict[str, Any]) -> bool:
+    if _to_int(meta.get("nodes")) != n:
+        return False
+    if _to_int(meta.get("ppm")) != ppm:
+        return False
+    if str(meta.get("topology_id")) != str(topo):
+        return False
+    if _to_int(meta.get("traffic_seed")) != seed:
+        return False
+    if _to_int(meta.get("sim_seed")) != cfg.sim_seed:
+        return False
+    if _to_int(meta.get("agent_seed")) != cfg.agent_seed:
+        return False
+    if _to_int(meta.get("duration_sf")) != cfg.duration_sf:
+        return False
+    if _to_int(meta.get("warmup_sf")) != cfg.warmup_sf:
+        return False
+    if str(meta.get("mask_name")) != mask.name:
+        return False
+    if not _eq_path(meta.get("mask_file"), mask.file):
+        return False
+
+    has_tx = "tx_range" in meta
+    has_int = "int_range" in meta
+    if not has_tx and not has_int:
+        # Backward compatibility for older run_meta.yaml files (pre-range fields).
+        # These are only compatible with default (unset) ranges.
+        return cfg.tx_range is None and cfg.int_range is None
+    if has_tx != has_int:
+        return False
+
+    tx_m = _to_float(meta.get("tx_range"))
+    int_m = _to_float(meta.get("int_range"))
+    if (cfg.tx_range is None) != (tx_m is None):
+        return False
+    if (cfg.int_range is None) != (int_m is None):
+        return False
+    if cfg.tx_range is not None and tx_m is not None and abs(cfg.tx_range - tx_m) > 1e-12:
+        return False
+    if cfg.int_range is not None and int_m is not None and abs(cfg.int_range - int_m) > 1e-12:
+        return False
+    return True
 
 # ------------------------------ CPU / jobs auto-detection ------------------------------ #
 
@@ -263,18 +484,19 @@ def csc_path_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     if p.is_file(): return p
     p_single = ararl_dir / f"simulation-nodes{nodes}.csc"
     if p_single.is_file() and topo_id in ("01", "1"): return p_single
-    die(f"CSC not found for N{nodes}, topo {topo_id}: {p} or {p_single}")
+    raise FileNotFoundError(f"CSC not found for N{nodes}, topo {topo_id}: {p} or {p_single}")
 
 def pos_header_for(ararl_dir: Path, nodes: int, topo_id: str) -> Path:
     p = ararl_dir / f"topologies/N{nodes}/positions-simulation-nodes{nodes}-topo{topo_id}.h"
     if p.is_file(): return p
     p_single = ararl_dir / f"positions-simulation-nodes{nodes}.h"
     if p_single.is_file() and topo_id in ("01", "1"): return p_single
-    die(f"Positions header not found for N{nodes}, topo {topo_id}: {p} or {p_single}")
+    raise FileNotFoundError(f"Positions header not found for N{nodes}, topo {topo_id}: {p} or {p_single}")
 
 def makefile_for_ppm(ararl_dir: Path, ppm: int) -> Path:
     p = ararl_dir / f"Makefile-ppm{ppm}"
-    if not p.is_file(): die(f"Makefile for ppm {ppm} not found: {p}")
+    if not p.is_file():
+        raise FileNotFoundError(f"Makefile for ppm {ppm} not found: {p}")
     return p
 
 # ------------------------------ Health check ------------------------------ #
@@ -464,114 +686,124 @@ def _clone_workspace(src: Path, dst: Path) -> None:
         shutil.copytree(src, dst)
 
 def run_block(cfg: RunnerConfig, mask: MaskSpec, n: int, ppm: int, topo: str, seed: int) -> Tuple[bool, str]:
-    # Resolve inputs
-    csc_src = csc_path_for(cfg.ararl_dir, n, topo)
-    pos_src = pos_header_for(cfg.ararl_dir, n, topo)
-    mk_src  = makefile_for_ppm(cfg.ararl_dir, ppm)
-    if not mask.file.is_file():
-        die(f"Mask file not found: {mask.file}")
-
     # Prepare paths
     run_dir = run_dir_for(cfg.logs_dir, mask.name, n, ppm, topo, seed)
-    backup_if_exists(run_dir)
+    work_dir = cfg.work_root / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask.name
+
+    if run_dir.exists():
+        if run_dir.is_dir():
+            shutil.rmtree(run_dir, ignore_errors=True)
+        else:
+            try:
+                run_dir.unlink()
+            except Exception:
+                pass
     ensure_dir(run_dir)
 
-    # Isolated workspace
-    work_dir = cfg.work_root / f"N{n}_PPM{ppm}" / f"topo{topo}" / f"seed{seed}" / mask.name
-    _clone_workspace(cfg.ararl_dir, work_dir)
+    try:
+        # Resolve inputs
+        csc_src = csc_path_for(cfg.ararl_dir, n, topo)
+        pos_src = pos_header_for(cfg.ararl_dir, n, topo)
+        mk_src  = makefile_for_ppm(cfg.ararl_dir, ppm)
+        if not mask.file.is_file():
+            raise FileNotFoundError(f"Mask file not found: {mask.file}")
 
-    # Drop scenario files into workspace
-    shutil.copy2(csc_src, work_dir / "simulation.csc")
-    shutil.copy2(pos_src, work_dir / "positions-simulation.h")
-    shutil.copy2(mk_src,  work_dir / "Makefile")
+        # Isolated workspace
+        _clone_workspace(cfg.ararl_dir, work_dir)
 
-    # Env
-    env = os.environ.copy()
-    env.update({
-        "NODES": str(n),
-        "PPM": str(ppm),
-        "TOPOLOGY_ID": topo,
-        "TRAFFIC_SEED": str(seed),
-        "SIM_SEED": str(cfg.sim_seed),
-        "AGENT_SEED": str(cfg.agent_seed),
-        "DURATION_SF": str(cfg.duration_sf),
-        "WARMUP_SF": str(cfg.warmup_sf),
-        "MASK_NAME": mask.name,
-        "MASK_FILE": str(mask.file.resolve()),
-        "AGENT_LOG_PATH": str((work_dir / "agent.log").resolve()),
-        # avoid BLAS over-subscription
-        "OMP_NUM_THREADS": "1",
-        "OPENBLAS_NUM_THREADS": "1",
-        "MKL_NUM_THREADS": "1",
-        "OPENMP_NUM_THREADS": "1",
-    })
-    if cfg.gradle_user_home is not None:
-        env["GRADLE_USER_HOME"] = str(cfg.gradle_user_home.resolve())
-    if cfg.tx_range is not None: env["TX_RANGE"] = str(cfg.tx_range)
-    if cfg.int_range is not None: env["INT_RANGE"] = str(cfg.int_range)
+        # Drop scenario files into workspace
+        shutil.copy2(csc_src, work_dir / "simulation.csc")
+        shutil.copy2(pos_src, work_dir / "positions-simulation.h")
+        shutil.copy2(mk_src,  work_dir / "Makefile")
 
-    # Command (single-token --args=..., and -p points at gradle root)
-    gradlew = cfg.gradle_root / "gradlew"
-    cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", f"--args=--no-gui {work_dir/'simulation.csc'}"]
+        # Env
+        env = os.environ.copy()
+        env.update({
+            "NODES": str(n),
+            "PPM": str(ppm),
+            "TOPOLOGY_ID": topo,
+            "TRAFFIC_SEED": str(seed),
+            "SIM_SEED": str(cfg.sim_seed),
+            "AGENT_SEED": str(cfg.agent_seed),
+            "DURATION_SF": str(cfg.duration_sf),
+            "WARMUP_SF": str(cfg.warmup_sf),
+            "MASK_NAME": mask.name,
+            "MASK_FILE": str(mask.file.resolve()),
+            "AGENT_LOG_PATH": str((work_dir / "agent.log").resolve()),
+            # avoid BLAS over-subscription
+            "OMP_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "OPENMP_NUM_THREADS": "1",
+        })
+        if cfg.gradle_user_home is not None:
+            env["GRADLE_USER_HOME"] = str(cfg.gradle_user_home.resolve())
+        if cfg.tx_range is not None: env["TX_RANGE"] = str(cfg.tx_range)
+        if cfg.int_range is not None: env["INT_RANGE"] = str(cfg.int_range)
 
-    # Meta
-    meta = {
-        "timestamp": now_stamp(),
-        "nodes": n, "ppm": ppm, "topology_id": topo, "traffic_seed": seed,
-        "sim_seed": cfg.sim_seed, "agent_seed": cfg.agent_seed,
-        "duration_sf": cfg.duration_sf, "warmup_sf": cfg.warmup_sf,
-        "mask_name": mask.name, "mask_file": str(mask.file),
-        "mask_enabled": read_mask_enabled(mask.file),
-        "ararl_dir": str(cfg.ararl_dir.resolve()),
-        "csc_src": str(csc_src), "pos_header_src": str(pos_src),
-        "ppm_makefile_src": str(mk_src), "gradle_root": str(cfg.gradle_root.resolve()),
-        "work_dir": str(work_dir.resolve()), "run_dir": str(run_dir.resolve()),
-    }
-    write_text(run_dir / "run_meta.yaml", yaml_dump(meta))
+        # Command (single-token --args=..., and -p points at gradle root)
+        gradlew = cfg.gradle_root / "gradlew"
+        cmd = [str(gradlew), "-p", str(cfg.gradle_root), "run", f"--args=--no-gui {work_dir/'simulation.csc'}"]
 
-    if cfg.dry_run:
-        print(f"[DRY-RUN] {' '.join(cmd)}")
-        return True, str(run_dir)
+        # Meta
+        meta = {
+            "timestamp": now_stamp(),
+            "nodes": n, "ppm": ppm, "topology_id": topo, "traffic_seed": seed,
+            "sim_seed": cfg.sim_seed, "agent_seed": cfg.agent_seed,
+            "duration_sf": cfg.duration_sf, "warmup_sf": cfg.warmup_sf,
+            "tx_range": cfg.tx_range, "int_range": cfg.int_range,
+            "mask_name": mask.name, "mask_file": str(mask.file),
+            "mask_enabled": read_mask_enabled(mask.file),
+            "ararl_dir": str(cfg.ararl_dir.resolve()),
+            "csc_src": str(csc_src), "pos_header_src": str(pos_src),
+            "ppm_makefile_src": str(mk_src), "gradle_root": str(cfg.gradle_root.resolve()),
+            "work_dir": str(work_dir.resolve()), "run_dir": str(run_dir.resolve()),
+        }
+        write_text(run_dir / "run_meta.yaml", yaml_dump(meta))
 
-    # Execute in the workspace (so COOJA.testlog is unique)
-    exit_code = sh(
-        cmd,
-        cwd=work_dir,
-        env=env,
-        out_path=run_dir / "runner.log",
-    )
-    if exit_code != 0:
-        print(f"[ERR] Runner exited non-zero: code={exit_code} run={run_dir}", file=sys.stderr)
-        tail = tail_lines(run_dir / "runner.log", n=cfg.error_log_tail)
-        if tail:
-            if cfg.error_log_tail == 0:
-                print("[ERR] Full runner.log:", file=sys.stderr)
+        if cfg.dry_run:
+            print(f"[DRY-RUN] {' '.join(cmd)}", flush=True)
+            return True, str(run_dir)
+
+        # Execute in the workspace (so COOJA.testlog is unique)
+        exit_code = sh(
+            cmd,
+            cwd=work_dir,
+            env=env,
+            out_path=run_dir / "runner.log",
+        )
+        if exit_code != 0:
+            print(f"[ERR] Runner exited non-zero: code={exit_code} run={run_dir}", flush=True)
+            tail = tail_lines(run_dir / "runner.log", n=cfg.error_log_tail)
+            if tail:
+                if cfg.error_log_tail == 0:
+                    print("[ERR] Full runner.log:", flush=True)
+                else:
+                    print(f"[ERR] Last {cfg.error_log_tail} lines of runner.log:", flush=True)
+                for ln in tail:
+                    print(f"  {ln}", flush=True)
             else:
-                print(f"[ERR] Last {cfg.error_log_tail} lines of runner.log:", file=sys.stderr)
-            for ln in tail:
-                print(f"  {ln}", file=sys.stderr)
-        else:
-            print("[ERR] runner.log not found or unreadable.", file=sys.stderr)
+                print("[ERR] runner.log not found or unreadable.", flush=True)
+            return False, str(run_dir)
+
+        # Handle logs
+        log_src = work_dir / "COOJA.testlog"
+        if log_src.exists():
+            shutil.move(str(log_src), str(run_dir / "COOJA.testlog"))
+
+        ok, _stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
+
+        agent_src = work_dir / "agent.log"
+        if agent_src.exists():
+            shutil.copy2(agent_src, run_dir / "agent.log")
+
+        return ok, str(run_dir)
+    except Exception as e:
+        print(f"[ERR] run failed ({mask.name}, N{n}, PPM{ppm}, topo{topo}, seed{seed}): {e}", flush=True)
+        return False, str(run_dir)
+    finally:
         if not cfg.keep_work:
             shutil.rmtree(work_dir, ignore_errors=True)
-        return False, str(run_dir)
-
-    # Handle logs
-    log_src = work_dir / "COOJA.testlog"
-    if log_src.exists():
-        shutil.move(str(log_src), str(run_dir / "COOJA.testlog"))
-
-    ok, _stats = basic_log_health(run_dir / "COOJA.testlog", expected_nodes=n)
-
-    agent_src = work_dir / "agent.log"
-    if agent_src.exists():
-        shutil.copy2(agent_src, run_dir / "agent.log")
-
-    # Cleanup workspace unless requested to keep
-    if not cfg.keep_work:
-        shutil.rmtree(work_dir, ignore_errors=True)
-
-    return ok, str(run_dir)
 
 # ------------------------------ CLI/Main ------------------------------ #
 
@@ -613,7 +845,7 @@ def parse_args() -> RunnerConfig:
         description="Parallel Cooja runner with isolated workspaces + aggregation (paper metrics).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ap.add_argument("--ararl-dir", type=Path, required=True, help="experiments/ararl dir (contains topologies/, *.c, Makefile-ppm*)")
+    ap.add_argument("--ararl-dir", type=Path, required=False, help="experiments/ararl dir (contains topologies/, *.c, Makefile-ppm*)")
     ap.add_argument("--logs-dir", type=Path, default=Path("testbed/logs"))
     ap.add_argument("--gradle-root", type=Path, default=Path("contiki-ng/tools/cooja"))
     ap.add_argument("--nodes", type=int, nargs="+", default=[60,80,100])
@@ -621,7 +853,7 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--topologies", "--topology-count", dest="topologies", type=int, default=10,
                     help="Number of topo IDs (01..NN) if --topology-ids not given")
     ap.add_argument("--topology-ids", type=str, nargs="*", help="Explicit topo IDs like 01 02 03")
-    ap.add_argument("--mask-file", type=Path, required=True, help="Mask YAML file OR directory containing multiple mask YAML files")
+    ap.add_argument("--mask-file", type=Path, required=False, help="Mask YAML file OR directory containing multiple mask YAML files")
     ap.add_argument("--mask-name", type=str, default=None, help="Name tag for single mask mode only")
     ap.add_argument("--duration-sf", type=int, default=180)
     ap.add_argument("--warmup-sf", type=int, default=12)
@@ -642,11 +874,36 @@ def parse_args() -> RunnerConfig:
     ap.add_argument("--keep-work", action="store_true", help="Keep workspaces (debug)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--resume", action="store_true",
-                    help="Skip tasks with an existing healthy COOJA.testlog in logs-dir and run only missing/incomplete tasks.")
+                    help="Resume from logs-dir/run_checkpoint.json and run only unfinished/invalid tasks.")
     ap.add_argument("--error-log-tail", type=int, default=50,
                     help="Lines from end of runner.log to print on non-zero exit. 0 = print full file.")
 
     a = ap.parse_args()
+
+    logs_dir_resolved = a.logs_dir.resolve()
+    ck_path = checkpoint_path_for(logs_dir_resolved)
+    if a.resume:
+        ck_status, ck, ck_reason = inspect_checkpoint(ck_path)
+        if ck_status == "ok" and ck is not None:
+            cfg = config_from_dict(ck["config"])
+            cfg.resume = True
+            cfg.logs_dir = logs_dir_resolved
+            print(f"[INFO] Loaded resume config from checkpoint: {ck_path}")
+            return cfg
+        if ck_status == "invalid":
+            die(f"--resume requested but checkpoint at {ck_path} is invalid: {ck_reason}")
+        if a.ararl_dir is None or a.mask_file is None:
+            die(
+                f"--resume requested but checkpoint not found at {ck_path}. "
+                "Provide full run config to start a new checkpointed run."
+            )
+        print(f"[INFO] No checkpoint found at {ck_path}; starting a fresh run and creating checkpoint.")
+
+    if a.ararl_dir is None:
+        die("--ararl-dir is required unless --resume can load an existing checkpoint.")
+    if a.mask_file is None:
+        die("--mask-file is required unless --resume can load an existing checkpoint.")
+
     if a.topologies < 1:
         die("--topologies must be >= 1")
     if a.seed_count is not None and a.seed_count < 1:
@@ -671,7 +928,7 @@ def parse_args() -> RunnerConfig:
 
     return RunnerConfig(
         ararl_dir=a.ararl_dir.resolve(),
-        logs_dir=a.logs_dir.resolve(),
+        logs_dir=logs_dir_resolved,
         gradle_root=a.gradle_root.resolve(),
         nodes=a.nodes,
         ppms=a.ppm,
@@ -706,36 +963,89 @@ def main() -> None:
     ensure_dir(cfg.work_root)
 
     # Prepare all tasks
-    tasks: List[Tuple[str, int, int, str, int]] = []
-    mask_by_name = {m.name: m for m in cfg.masks}
-    for mask in cfg.masks:
-        for n in cfg.nodes:
-            for ppm in cfg.ppms:
-                for topo in cfg.topology_ids:
-                    for seed in cfg.traffic_seeds:
-                        tasks.append((mask.name, n, ppm, topo, seed))
+    tasks = build_tasks(cfg)
     total_tasks = len(tasks)
+    mask_by_name = {m.name: m for m in cfg.masks}
 
-    # Resume support: treat already-complete runs as done and only schedule missing/incomplete ones.
-    results: Dict[Tuple[str,int,int,str,int], Tuple[bool,str]] = {}
-    resumed_tasks = 0
-    tasks_to_run: List[Tuple[str, int, int, str, int]] = tasks
+    # Checkpoint setup
+    ck_path = checkpoint_path_for(cfg.logs_dir)
+    loaded_existing_checkpoint = False
+    checkpoint: Optional[Dict[str, Any]] = None
     if cfg.resume:
-        pending: List[Tuple[str, int, int, str, int]] = []
-        for (mask_name, n, ppm, topo, seed) in tasks:
-            run_dir = run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed)
+        ck_status, ck, ck_reason = inspect_checkpoint(ck_path)
+        if ck_status == "ok":
+            checkpoint = ck
+        elif ck_status == "invalid":
+            die(f"Checkpoint at {ck_path} is invalid: {ck_reason}")
+    if checkpoint is None:
+        checkpoint = init_checkpoint(cfg, tasks)
+        save_checkpoint(ck_path, checkpoint)
+        msg = "Created new checkpoint" if cfg.resume else "Initialized checkpoint"
+        print(f"[INFO] {msg}: {ck_path}", flush=True)
+    else:
+        loaded_existing_checkpoint = True
+        cfg_dump = config_to_dict(cfg)
+        checkpoint_changed = (checkpoint.get("config") != cfg_dump)
+        checkpoint["config"] = cfg_dump
+        task_state = checkpoint.setdefault("task_state", {})
+        for task in tasks:
+            tid = task_id(*task)
+            if not isinstance(task_state.get(tid), dict):
+                set_task_state(checkpoint, task, "pending", ok=False)
+                checkpoint_changed = True
+        if checkpoint_changed:
+            save_checkpoint(ck_path, checkpoint)
+
+    # Resume support (checkpoint + log/meta validation)
+    results: Dict[TaskKey, Tuple[bool, str]] = {}
+    resumed_tasks = 0
+    tasks_to_run: List[TaskKey] = list(tasks)
+    if cfg.resume and loaded_existing_checkpoint:
+        pending: List[TaskKey] = []
+        checkpoint_changed = False
+        task_state = checkpoint.get("task_state", {})
+        for task in tasks:
+            (mask_name, n, ppm, topo, seed) = task
+            tid = task_id(mask_name, n, ppm, topo, seed)
+            entry = task_state.get(tid, {})
+            if not isinstance(entry, dict):
+                entry = {}
+            run_dir_str = str(entry.get("run_dir") or run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed))
+            run_dir = Path(run_dir_str)
             log_path = run_dir / "COOJA.testlog"
-            ok_existing, _stats = basic_log_health(log_path, expected_nodes=n)
-            if ok_existing:
-                results[(mask_name, n, ppm, topo, seed)] = (True, str(run_dir))
+            meta = load_run_meta(run_dir / "run_meta.yaml")
+            meta_ok = meta is not None and run_meta_matches(cfg, mask_by_name[mask_name], n, ppm, topo, seed, meta)
+            health_ok, _stats = basic_log_health(log_path, expected_nodes=n)
+            status = str(entry.get("status", "pending"))
+            ok_flag = (entry.get("ok") is True)
+
+            if status == "done" and ok_flag and health_ok and meta_ok:
+                results[task] = (True, str(run_dir))
                 resumed_tasks += 1
             else:
-                pending.append((mask_name, n, ppm, topo, seed))
+                pending.append(task)
+                set_task_state(checkpoint, task, "pending", ok=False, run_dir=str(run_dir))
+                checkpoint_changed = True
         tasks_to_run = pending
+        if checkpoint_changed:
+            save_checkpoint(ck_path, checkpoint)
         print(
             f"RESUME STATUS: recovered={resumed_tasks}, to_run={len(tasks_to_run)}, total={total_tasks}",
             flush=True,
         )
+
+    # Mark scheduled tasks as running before execution so crash recovery can retry them.
+    if tasks_to_run:
+        for task in tasks_to_run:
+            (mask_name, n, ppm, topo, seed) = task
+            set_task_state(
+                checkpoint,
+                task,
+                "running",
+                ok=False,
+                run_dir=str(run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed)),
+            )
+        save_checkpoint(ck_path, checkpoint)
 
     # Run in parallel
     max_workers = min(cfg.jobs, len(tasks_to_run)) if tasks_to_run else 1
@@ -774,12 +1084,25 @@ def main() -> None:
 
             for fut in done:
                 key = futs[fut]
+                (mask_name, n, ppm, topo, seed) = key
                 try:
                     ok, rdir = fut.result()
-                except Exception as e:
+                except BaseException as e:
+                    if isinstance(e, KeyboardInterrupt):
+                        raise
                     ok, rdir = False, ""
-                    print(f"[ERR] run failed {key}: {e}", file=sys.stderr)
+                    print(f"[ERR] run failed ({mask_name}, N{n}, PPM{ppm}, topo{topo}, seed{seed}): {e}", flush=True)
+                if not rdir:
+                    rdir = str(run_dir_for(cfg.logs_dir, mask_name, n, ppm, topo, seed))
                 results[key] = (ok, rdir)
+                set_task_state(
+                    checkpoint,
+                    key,
+                    "done" if ok else "failed",
+                    ok=ok,
+                    run_dir=rdir,
+                )
+                save_checkpoint(ck_path, checkpoint)
                 completed_tasks += 1
                 last_completion_ts = time.time()
                 remaining_tasks = max(0, total_tasks - completed_tasks)
@@ -789,10 +1112,28 @@ def main() -> None:
                     flush=True,
                 )
 
-    mask_metrics: Dict[Tuple[str,int,int], List[RunMetrics]] = {}
-    
+    mask_metrics: Dict[Tuple[str, int, int], List[RunMetrics]] = {}
+
+    # Strict latest-only outputs: rewrite summary and clear stale aggregate files for this config.
+    summary_csv = cfg.logs_dir / "summary.csv"
+    if summary_csv.exists():
+        try:
+            summary_csv.unlink()
+        except Exception:
+            pass
+    for mask in cfg.masks:
+        for n in cfg.nodes:
+            for ppm in cfg.ppms:
+                base = cfg.logs_dir / f"N{n}_PPM{ppm}" / mask.name
+                for fname in ("aggregated_results.csv", "aggregated_results.json"):
+                    p = base / fname
+                    if p.exists():
+                        try:
+                            p.unlink()
+                        except Exception:
+                            pass
+
     # Parse + aggregate per (nodes, ppm) and append per-run summary
-    summary_keys = load_existing_summary_keys(cfg.logs_dir / "summary.csv")
     for (mask_name, n, ppm, topo, seed) in sorted(results.keys()):
         ok, rdir = results[(mask_name, n, ppm, topo, seed)]
         if not rdir:
@@ -806,7 +1147,7 @@ def main() -> None:
 
         # even if ok==False, still include it in aggregation
         mask_metrics.setdefault((mask_name, n, ppm), []).append(m)
-        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m, existing_keys=summary_keys)
+        append_run_summary_row(cfg.logs_dir, n, ppm, topo, seed, mask_name, m, existing_keys=None)
 
     for (mask_name, n, ppm), lst in sorted(mask_metrics.items()):
         agg = aggregate_metrics(lst)
@@ -815,6 +1156,7 @@ def main() -> None:
         write_aggregated_json(agg, base / "aggregated_results.json")
 
     total = total_tasks; ok_count = sum(1 for v in results.values() if v[0])
+    failed_count = max(0, total - ok_count)
     completed = len(results)
     remaining = max(0, total_tasks - completed)
     in_progress = 0
@@ -823,7 +1165,13 @@ def main() -> None:
     mm, ss = divmod(rem, 60)
     print("\n" + "="*78)
     print(f"TASK STATUS: total={total_tasks}, in_progress={in_progress}, remaining={remaining}, completed={completed}")
-    print(f"DONE. Runs attempted: {len(tasks_to_run)}, resumed existing: {resumed_tasks}, passed basic health: {ok_count}/{total}.")
+    if failed_count == 0:
+        print(f"DONE. Runs attempted: {len(tasks_to_run)}, resumed existing: {resumed_tasks}, passed basic health: {ok_count}/{total}.")
+    else:
+        print(
+            f"FAILED. Runs attempted: {len(tasks_to_run)}, resumed existing: {resumed_tasks}, "
+            f"passed basic health: {ok_count}/{total}, failed: {failed_count}."
+        )
     print(f"Elapsed wall time: {hh:02d}:{mm:02d}:{ss:02d} ({elapsed_s}s)")
     print("="*78)
 
@@ -831,6 +1179,9 @@ def main() -> None:
     if not cfg.keep_work:
         try: shutil.rmtree(cfg.work_root, ignore_errors=True)
         except Exception: pass
+
+    if failed_count > 0:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
