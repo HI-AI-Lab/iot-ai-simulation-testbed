@@ -112,7 +112,7 @@ is_simulation_time_over(void) {
 
 static int
 should_sink_stop(void) {
-  return status_global_stop || is_simulation_time_over();
+  return is_simulation_time_over();
 }
 
 /*---------------------------------------------------------------------------*/

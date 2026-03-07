@@ -185,16 +185,8 @@ static inline void consume_energy(double dj) {
 }
 
 static inline void apply_global_stop_if_needed(void) {
-  if(mote_dead || !status_global_stop) return;
-
-  if(state.end_reason == END_NONE) {
-    state.end_reason = END_GLOBAL;
-    state.end_time_ms = (uint32_t)(clock_time()*1000UL/CLOCK_SECOND);
-  }
-
-  mote_dead = 1;
-  NETSTACK_MAC.off();
-  NETSTACK_RADIO.off();
+  (void)status_global_stop;
+  return;
 }
 
 /* ============================================================
