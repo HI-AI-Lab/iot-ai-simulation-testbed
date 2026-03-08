@@ -45,10 +45,10 @@
 #define SIM_END_MS       5000000UL
 
 /* ==== Energy Model ==== */
-#define INIT_ENERGY_J   1.0
+#define INIT_ENERGY_J   10.0
 #define E_ELEC          50e-9
 #define EPS_FS          10e-12
-#define EPS_MP          0.0013e-12
+#define EPS_MP          10e-12
 #define PKT_BITS       (64*8)
 
 /* ==== Parent table ==== */
@@ -267,48 +267,29 @@ static void sniff_input(void) {
 static void sniff_output(int mac_status) {
   apply_global_stop_if_needed();
   if(mote_dead) return;
-
-  /* Prefer actual transmission attempts; fall back safely. */
-  uint8_t attempts = 1;
-#if defined(PACKETBUF_ATTR_TRANSMISSIONS)
-  attempts = packetbuf_attr(PACKETBUF_ATTR_TRANSMISSIONS);
-#elif defined(PACKETBUF_ATTR_MAC_TRANSMISSIONS)
-  attempts = packetbuf_attr(PACKETBUF_ATTR_MAC_TRANSMISSIONS);
-#elif defined(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS)
-  attempts = packetbuf_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS);
-#endif
-  
-  /* Safety: if it's 0, at least 1 attempt happened */
-  if(attempts == 0) attempts = 1;
-
+  enforce_agent_parent_if_needed();
   uint16_t len = packetbuf_datalen();
   unsigned parent_id = get_parent_id();
-  if(parent_id < 256) parent_tx_attempts[parent_id] += attempts;
+
+  if(parent_id < 256) parent_tx_attempts[parent_id]++;
 
   double d = 0.0;
   if(parent_id != (unsigned)-1)
     d = distance_nodes(node_id, parent_id);
 
-  /* This is your 'First-Order' energy cost per single try */
-  double energy_per_attempt = tx_energy(d, len * 8);
-
   switch(mac_status) {
     case MAC_TX_QUEUE_FULL:
-      /* Penalty for listening/waiting even if we didn't fire the radio */
-      consume_energy(energy_per_attempt); 
       state.q_loss_count++;
       return;
 
     case MAC_TX_OK:
-      /* Successful TX: Charge for ALL the attempts it took */
-      consume_energy(attempts * energy_per_attempt);
       if(parent_id < 256) parent_tx_ok[parent_id]++;
+      if(len) consume_energy(tx_energy(d, len*8));
       state.fwd_count++;
       return;
 
     default:
-      /* Failed TX (No ACK / Collision): Still charge for the attempts made */
-      consume_energy(attempts * energy_per_attempt);
+      if(len) consume_energy(tx_energy(d, len*8));
       return;
   }
 }
