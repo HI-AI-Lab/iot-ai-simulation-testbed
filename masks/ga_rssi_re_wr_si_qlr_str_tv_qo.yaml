@@ -1,0 +1,25 @@
+run:
+  id: ga_rssi_re_wr_si_qlr_str_tv_qo
+  notes: "GA search-space mask: rssi,re,wr,si,qlr,str,tv,qo enabled"
+
+features:
+  all: false
+
+  # LINK
+  etx:  false
+  rssi: true
+  pfi:  false
+
+  # NODE
+  re:   true
+  bdi:  false
+  qo:   true
+  qlr:  true
+  hc:   false
+  si:   true
+  tv:   true
+  pc:   false
+
+  # NETWORK
+  wr:   true
+  str:  true
