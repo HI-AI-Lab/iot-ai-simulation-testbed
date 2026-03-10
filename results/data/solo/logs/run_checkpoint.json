@@ -1,0 +1,881 @@
+{
+  "version": 2,
+  "created_at": "2026-03-09 21:30:42",
+  "updated_at": "2026-03-10 10:27:54",
+  "config": {
+    "ararl_dir": "/workspace/testbed/experiments/ararl",
+    "logs_dir": "/workspace/testbed/results/data/solo/logs",
+    "gradle_root": "/workspace/contiki-ng/tools/cooja",
+    "nodes": [
+      100
+    ],
+    "ppms": [
+      120
+    ],
+    "topology_ids": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10"
+    ],
+    "masks": [
+      {
+        "name": "bdi",
+        "file": "/workspace/testbed/masks/solo/bdi.yaml"
+      },
+      {
+        "name": "etx",
+        "file": "/workspace/testbed/masks/solo/etx.yaml"
+      },
+      {
+        "name": "hc",
+        "file": "/workspace/testbed/masks/solo/hc.yaml"
+      },
+      {
+        "name": "pc",
+        "file": "/workspace/testbed/masks/solo/pc.yaml"
+      },
+      {
+        "name": "pfi",
+        "file": "/workspace/testbed/masks/solo/pfi.yaml"
+      },
+      {
+        "name": "qlr",
+        "file": "/workspace/testbed/masks/solo/qlr.yaml"
+      },
+      {
+        "name": "qo",
+        "file": "/workspace/testbed/masks/solo/qo.yaml"
+      },
+      {
+        "name": "re",
+        "file": "/workspace/testbed/masks/solo/re.yaml"
+      },
+      {
+        "name": "rssi",
+        "file": "/workspace/testbed/masks/solo/rssi.yaml"
+      },
+      {
+        "name": "si",
+        "file": "/workspace/testbed/masks/solo/si.yaml"
+      },
+      {
+        "name": "str",
+        "file": "/workspace/testbed/masks/solo/str.yaml"
+      },
+      {
+        "name": "tv",
+        "file": "/workspace/testbed/masks/solo/tv.yaml"
+      },
+      {
+        "name": "wr",
+        "file": "/workspace/testbed/masks/solo/wr.yaml"
+      }
+    ],
+    "duration_sf": 180,
+    "warmup_sf": 12,
+    "sim_seed": 67890,
+    "agent_seed": 12345,
+    "traffic_seeds": [
+      1
+    ],
+    "tx_range": null,
+    "int_range": null,
+    "gradle_user_home": null,
+    "jobs": 19,
+    "work_root": "/workspace/testbed/_work/solo",
+    "keep_work": false,
+    "dry_run": false,
+    "resume": false,
+    "error_log_tail": 50,
+    "heartbeat_secs": 60
+  },
+  "task_state": {
+    "bdi|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/bdi",
+      "updated_at": "2026-03-09 23:51:34"
+    },
+    "bdi|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/bdi",
+      "updated_at": "2026-03-09 23:17:12"
+    },
+    "bdi|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/bdi",
+      "updated_at": "2026-03-09 23:21:23"
+    },
+    "bdi|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/bdi",
+      "updated_at": "2026-03-09 23:27:18"
+    },
+    "bdi|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/bdi",
+      "updated_at": "2026-03-09 23:52:37"
+    },
+    "bdi|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/bdi",
+      "updated_at": "2026-03-09 22:51:04"
+    },
+    "bdi|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/bdi",
+      "updated_at": "2026-03-09 23:25:22"
+    },
+    "bdi|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/bdi",
+      "updated_at": "2026-03-09 23:02:16"
+    },
+    "bdi|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/bdi",
+      "updated_at": "2026-03-09 23:41:01"
+    },
+    "bdi|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/bdi",
+      "updated_at": "2026-03-09 23:27:40"
+    },
+    "etx|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/etx",
+      "updated_at": "2026-03-09 23:39:58"
+    },
+    "etx|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/etx",
+      "updated_at": "2026-03-09 23:19:59"
+    },
+    "etx|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/etx",
+      "updated_at": "2026-03-09 23:19:10"
+    },
+    "etx|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/etx",
+      "updated_at": "2026-03-09 23:27:43"
+    },
+    "etx|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/etx",
+      "updated_at": "2026-03-09 23:44:43"
+    },
+    "etx|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/etx",
+      "updated_at": "2026-03-09 22:42:58"
+    },
+    "etx|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/etx",
+      "updated_at": "2026-03-09 23:25:47"
+    },
+    "etx|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/etx",
+      "updated_at": "2026-03-09 23:21:41"
+    },
+    "etx|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/etx",
+      "updated_at": "2026-03-09 23:43:36"
+    },
+    "etx|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/etx",
+      "updated_at": "2026-03-10 00:38:17"
+    },
+    "hc|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/hc",
+      "updated_at": "2026-03-10 01:04:12"
+    },
+    "hc|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/hc",
+      "updated_at": "2026-03-10 00:46:42"
+    },
+    "hc|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/hc",
+      "updated_at": "2026-03-10 01:04:35"
+    },
+    "hc|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/hc",
+      "updated_at": "2026-03-10 01:16:34"
+    },
+    "hc|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/hc",
+      "updated_at": "2026-03-10 01:36:55"
+    },
+    "hc|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/hc",
+      "updated_at": "2026-03-10 00:28:17"
+    },
+    "hc|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/hc",
+      "updated_at": "2026-03-10 01:16:48"
+    },
+    "hc|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/hc",
+      "updated_at": "2026-03-10 01:13:28"
+    },
+    "hc|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/hc",
+      "updated_at": "2026-03-10 01:37:33"
+    },
+    "hc|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/hc",
+      "updated_at": "2026-03-10 01:11:45"
+    },
+    "pc|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/pc",
+      "updated_at": "2026-03-10 01:25:10"
+    },
+    "pc|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/pc",
+      "updated_at": "2026-03-10 01:42:03"
+    },
+    "pc|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/pc",
+      "updated_at": "2026-03-10 01:37:01"
+    },
+    "pc|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/pc",
+      "updated_at": "2026-03-10 02:07:34"
+    },
+    "pc|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/pc",
+      "updated_at": "2026-03-10 02:01:51"
+    },
+    "pc|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/pc",
+      "updated_at": "2026-03-10 01:19:02"
+    },
+    "pc|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/pc",
+      "updated_at": "2026-03-10 01:58:22"
+    },
+    "pc|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/pc",
+      "updated_at": "2026-03-10 01:32:12"
+    },
+    "pc|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/pc",
+      "updated_at": "2026-03-10 02:39:41"
+    },
+    "pc|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/pc",
+      "updated_at": "2026-03-10 02:29:45"
+    },
+    "pfi|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/pfi",
+      "updated_at": "2026-03-10 02:55:25"
+    },
+    "pfi|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/pfi",
+      "updated_at": "2026-03-10 02:49:33"
+    },
+    "pfi|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/pfi",
+      "updated_at": "2026-03-10 02:49:58"
+    },
+    "pfi|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/pfi",
+      "updated_at": "2026-03-10 03:11:10"
+    },
+    "pfi|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/pfi",
+      "updated_at": "2026-03-10 03:30:01"
+    },
+    "pfi|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/pfi",
+      "updated_at": "2026-03-10 02:30:56"
+    },
+    "pfi|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/pfi",
+      "updated_at": "2026-03-10 03:10:59"
+    },
+    "pfi|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/pfi",
+      "updated_at": "2026-03-10 03:05:17"
+    },
+    "pfi|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/pfi",
+      "updated_at": "2026-03-10 03:32:38"
+    },
+    "pfi|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/pfi",
+      "updated_at": "2026-03-10 03:23:08"
+    },
+    "qlr|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/qlr",
+      "updated_at": "2026-03-10 03:38:46"
+    },
+    "qlr|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/qlr",
+      "updated_at": "2026-03-10 03:18:57"
+    },
+    "qlr|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/qlr",
+      "updated_at": "2026-03-10 03:10:24"
+    },
+    "qlr|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/qlr",
+      "updated_at": "2026-03-10 03:39:38"
+    },
+    "qlr|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/qlr",
+      "updated_at": "2026-03-10 04:11:40"
+    },
+    "qlr|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/qlr",
+      "updated_at": "2026-03-10 03:02:23"
+    },
+    "qlr|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/qlr",
+      "updated_at": "2026-03-10 04:06:03"
+    },
+    "qlr|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/qlr",
+      "updated_at": "2026-03-10 04:14:48"
+    },
+    "qlr|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/qlr",
+      "updated_at": "2026-03-10 04:35:15"
+    },
+    "qlr|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/qlr",
+      "updated_at": "2026-03-10 04:22:22"
+    },
+    "qo|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/qo",
+      "updated_at": "2026-03-10 04:54:08"
+    },
+    "qo|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/qo",
+      "updated_at": "2026-03-10 04:47:15"
+    },
+    "qo|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/qo",
+      "updated_at": "2026-03-10 04:41:31"
+    },
+    "qo|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/qo",
+      "updated_at": "2026-03-10 04:51:50"
+    },
+    "qo|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/qo",
+      "updated_at": "2026-03-10 05:08:26"
+    },
+    "qo|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/qo",
+      "updated_at": "2026-03-10 04:25:54"
+    },
+    "qo|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/qo",
+      "updated_at": "2026-03-10 05:03:18"
+    },
+    "qo|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/qo",
+      "updated_at": "2026-03-10 04:55:16"
+    },
+    "qo|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/qo",
+      "updated_at": "2026-03-10 05:22:45"
+    },
+    "qo|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/qo",
+      "updated_at": "2026-03-10 05:14:39"
+    },
+    "re|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/re",
+      "updated_at": "2026-03-10 05:26:28"
+    },
+    "re|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/re",
+      "updated_at": "2026-03-10 05:10:52"
+    },
+    "re|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/re",
+      "updated_at": "2026-03-10 05:33:24"
+    },
+    "re|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/re",
+      "updated_at": "2026-03-10 05:47:19"
+    },
+    "re|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/re",
+      "updated_at": "2026-03-10 06:16:32"
+    },
+    "re|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/re",
+      "updated_at": "2026-03-10 05:27:05"
+    },
+    "re|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/re",
+      "updated_at": "2026-03-10 06:03:03"
+    },
+    "re|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/re",
+      "updated_at": "2026-03-10 05:57:29"
+    },
+    "re|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/re",
+      "updated_at": "2026-03-10 06:38:07"
+    },
+    "re|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/re",
+      "updated_at": "2026-03-10 06:27:42"
+    },
+    "rssi|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/rssi",
+      "updated_at": "2026-03-10 06:50:01"
+    },
+    "rssi|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/rssi",
+      "updated_at": "2026-03-10 06:26:17"
+    },
+    "rssi|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/rssi",
+      "updated_at": "2026-03-10 06:42:38"
+    },
+    "rssi|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/rssi",
+      "updated_at": "2026-03-10 06:56:45"
+    },
+    "rssi|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/rssi",
+      "updated_at": "2026-03-10 07:12:06"
+    },
+    "rssi|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/rssi",
+      "updated_at": "2026-03-10 06:18:56"
+    },
+    "rssi|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/rssi",
+      "updated_at": "2026-03-10 07:02:08"
+    },
+    "rssi|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/rssi",
+      "updated_at": "2026-03-10 06:53:26"
+    },
+    "rssi|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/rssi",
+      "updated_at": "2026-03-10 07:26:39"
+    },
+    "rssi|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/rssi",
+      "updated_at": "2026-03-10 07:12:53"
+    },
+    "si|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/si",
+      "updated_at": "2026-03-10 07:35:39"
+    },
+    "si|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/si",
+      "updated_at": "2026-03-10 07:20:51"
+    },
+    "si|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/si",
+      "updated_at": "2026-03-10 07:02:07"
+    },
+    "si|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/si",
+      "updated_at": "2026-03-10 07:36:29"
+    },
+    "si|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/si",
+      "updated_at": "2026-03-10 07:58:16"
+    },
+    "si|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/si",
+      "updated_at": "2026-03-10 07:17:55"
+    },
+    "si|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/si",
+      "updated_at": "2026-03-10 08:16:16"
+    },
+    "si|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/si",
+      "updated_at": "2026-03-10 08:03:47"
+    },
+    "si|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/si",
+      "updated_at": "2026-03-10 08:38:16"
+    },
+    "si|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/si",
+      "updated_at": "2026-03-10 08:01:17"
+    },
+    "str|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/str",
+      "updated_at": "2026-03-10 08:59:04"
+    },
+    "str|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/str",
+      "updated_at": "2026-03-10 08:41:19"
+    },
+    "str|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/str",
+      "updated_at": "2026-03-10 08:19:51"
+    },
+    "str|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/str",
+      "updated_at": "2026-03-10 08:56:13"
+    },
+    "str|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/str",
+      "updated_at": "2026-03-10 09:10:43"
+    },
+    "str|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/str",
+      "updated_at": "2026-03-10 08:18:31"
+    },
+    "str|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/str",
+      "updated_at": "2026-03-10 08:57:33"
+    },
+    "str|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/str",
+      "updated_at": "2026-03-10 09:01:26"
+    },
+    "str|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/str",
+      "updated_at": "2026-03-10 09:21:59"
+    },
+    "str|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/str",
+      "updated_at": "2026-03-10 08:59:25"
+    },
+    "tv|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/tv",
+      "updated_at": "2026-03-10 09:24:30"
+    },
+    "tv|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/tv",
+      "updated_at": "2026-03-10 09:31:39"
+    },
+    "tv|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/tv",
+      "updated_at": "2026-03-10 09:04:35"
+    },
+    "tv|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/tv",
+      "updated_at": "2026-03-10 09:25:40"
+    },
+    "tv|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/tv",
+      "updated_at": "2026-03-10 09:56:26"
+    },
+    "tv|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/tv",
+      "updated_at": "2026-03-10 09:18:47"
+    },
+    "tv|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/tv",
+      "updated_at": "2026-03-10 09:55:15"
+    },
+    "tv|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/tv",
+      "updated_at": "2026-03-10 09:49:26"
+    },
+    "tv|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/tv",
+      "updated_at": "2026-03-10 10:10:06"
+    },
+    "tv|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/tv",
+      "updated_at": "2026-03-10 10:02:23"
+    },
+    "wr|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo01/seed1/wr",
+      "updated_at": "2026-03-10 10:11:14"
+    },
+    "wr|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo02/seed1/wr",
+      "updated_at": "2026-03-10 10:11:55"
+    },
+    "wr|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo03/seed1/wr",
+      "updated_at": "2026-03-10 10:12:17"
+    },
+    "wr|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo04/seed1/wr",
+      "updated_at": "2026-03-10 10:16:49"
+    },
+    "wr|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo05/seed1/wr",
+      "updated_at": "2026-03-10 10:23:57"
+    },
+    "wr|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo06/seed1/wr",
+      "updated_at": "2026-03-10 09:59:27"
+    },
+    "wr|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo07/seed1/wr",
+      "updated_at": "2026-03-10 10:20:14"
+    },
+    "wr|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo08/seed1/wr",
+      "updated_at": "2026-03-10 10:18:49"
+    },
+    "wr|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo09/seed1/wr",
+      "updated_at": "2026-03-10 10:27:54"
+    },
+    "wr|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/solo/logs/N100_PPM120/topo10/seed1/wr",
+      "updated_at": "2026-03-10 10:25:34"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+python3 /workspace/testbed/run_ga.py \
+  --mask-file /workspace/testbed/masks/ga/etx_pfi_rssi_re_hc_bdi_qo.yaml \
+  --ararl-dir /workspace/testbed/experiments/ararl \
+  --gradle-root /workspace/contiki-ng/tools/cooja \
+  --work-root /workspace/testbed/_work/ga_etx_pfi_rssi_re_hc_bdi_qo \
+  --ga-out /workspace/testbed/results/data/ga/etx_pfi_rssi_re_hc_bdi_qo \
+  --nodes 100 \
+  --ppm 120 \
+  --topologies 10 \
+  --traffic-seeds 1 \
+  --population 8 \
+  --generations 5 \
+  --elite 1 \
+  --cx-rate 0.85 \
+  --mut-rate 0.10 \
+  --jobs 0

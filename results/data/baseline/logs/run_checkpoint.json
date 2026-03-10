@@ -1,0 +1,1141 @@
+{
+  "version": 2,
+  "created_at": "2026-03-09 02:11:23",
+  "updated_at": "2026-03-09 13:59:30",
+  "config": {
+    "ararl_dir": "/workspace/testbed/experiments/ararl",
+    "logs_dir": "/workspace/testbed/logs",
+    "gradle_root": "/workspace/contiki-ng/tools/cooja",
+    "nodes": [
+      60,
+      80,
+      100
+    ],
+    "ppms": [
+      80,
+      100,
+      120
+    ],
+    "topology_ids": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10"
+    ],
+    "masks": [
+      {
+        "name": "etx",
+        "file": "/workspace/testbed/masks/baseline/etx.yaml"
+      },
+      {
+        "name": "etx_re_qlr_hc",
+        "file": "/workspace/testbed/masks/baseline/etx_re_qlr_hc.yaml"
+      }
+    ],
+    "duration_sf": 180,
+    "warmup_sf": 12,
+    "sim_seed": 67890,
+    "agent_seed": 12345,
+    "traffic_seeds": [
+      1
+    ],
+    "tx_range": null,
+    "int_range": null,
+    "gradle_user_home": null,
+    "jobs": 19,
+    "work_root": "/workspace/testbed/_work",
+    "keep_work": false,
+    "dry_run": false,
+    "resume": false,
+    "error_log_tail": 50,
+    "heartbeat_secs": 60
+  },
+  "task_state": {
+    "etx|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo01/seed1/etx",
+      "updated_at": "2026-03-09 02:52:48"
+    },
+    "etx|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo02/seed1/etx",
+      "updated_at": "2026-03-09 02:48:14"
+    },
+    "etx|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo03/seed1/etx",
+      "updated_at": "2026-03-09 02:43:30"
+    },
+    "etx|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo04/seed1/etx",
+      "updated_at": "2026-03-09 02:52:29"
+    },
+    "etx|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo05/seed1/etx",
+      "updated_at": "2026-03-09 02:46:12"
+    },
+    "etx|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo06/seed1/etx",
+      "updated_at": "2026-03-09 02:49:47"
+    },
+    "etx|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo07/seed1/etx",
+      "updated_at": "2026-03-09 03:00:19"
+    },
+    "etx|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo08/seed1/etx",
+      "updated_at": "2026-03-09 02:50:27"
+    },
+    "etx|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo09/seed1/etx",
+      "updated_at": "2026-03-09 02:53:15"
+    },
+    "etx|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo10/seed1/etx",
+      "updated_at": "2026-03-09 02:47:35"
+    },
+    "etx|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo01/seed1/etx",
+      "updated_at": "2026-03-09 02:51:59"
+    },
+    "etx|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo02/seed1/etx",
+      "updated_at": "2026-03-09 02:47:17"
+    },
+    "etx|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo03/seed1/etx",
+      "updated_at": "2026-03-09 02:44:43"
+    },
+    "etx|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo04/seed1/etx",
+      "updated_at": "2026-03-09 02:58:37"
+    },
+    "etx|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo05/seed1/etx",
+      "updated_at": "2026-03-09 02:49:46"
+    },
+    "etx|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo06/seed1/etx",
+      "updated_at": "2026-03-09 02:43:23"
+    },
+    "etx|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo07/seed1/etx",
+      "updated_at": "2026-03-09 02:59:27"
+    },
+    "etx|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo08/seed1/etx",
+      "updated_at": "2026-03-09 02:52:48"
+    },
+    "etx|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo09/seed1/etx",
+      "updated_at": "2026-03-09 02:58:23"
+    },
+    "etx|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo10/seed1/etx",
+      "updated_at": "2026-03-09 03:16:58"
+    },
+    "etx|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo01/seed1/etx",
+      "updated_at": "2026-03-09 03:28:39"
+    },
+    "etx|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo02/seed1/etx",
+      "updated_at": "2026-03-09 03:20:50"
+    },
+    "etx|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo03/seed1/etx",
+      "updated_at": "2026-03-09 03:14:40"
+    },
+    "etx|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo04/seed1/etx",
+      "updated_at": "2026-03-09 03:30:58"
+    },
+    "etx|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo05/seed1/etx",
+      "updated_at": "2026-03-09 03:30:05"
+    },
+    "etx|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo06/seed1/etx",
+      "updated_at": "2026-03-09 03:24:11"
+    },
+    "etx|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo07/seed1/etx",
+      "updated_at": "2026-03-09 03:31:28"
+    },
+    "etx|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo08/seed1/etx",
+      "updated_at": "2026-03-09 03:32:35"
+    },
+    "etx|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo09/seed1/etx",
+      "updated_at": "2026-03-09 03:33:31"
+    },
+    "etx|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo10/seed1/etx",
+      "updated_at": "2026-03-09 03:28:39"
+    },
+    "etx|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo01/seed1/etx",
+      "updated_at": "2026-03-09 04:13:49"
+    },
+    "etx|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo02/seed1/etx",
+      "updated_at": "2026-03-09 04:03:48"
+    },
+    "etx|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo03/seed1/etx",
+      "updated_at": "2026-03-09 03:56:42"
+    },
+    "etx|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo04/seed1/etx",
+      "updated_at": "2026-03-09 04:12:41"
+    },
+    "etx|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo05/seed1/etx",
+      "updated_at": "2026-03-09 04:12:24"
+    },
+    "etx|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo06/seed1/etx",
+      "updated_at": "2026-03-09 04:10:08"
+    },
+    "etx|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo07/seed1/etx",
+      "updated_at": "2026-03-09 04:22:20"
+    },
+    "etx|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo08/seed1/etx",
+      "updated_at": "2026-03-09 04:15:03"
+    },
+    "etx|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo09/seed1/etx",
+      "updated_at": "2026-03-09 04:36:51"
+    },
+    "etx|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo10/seed1/etx",
+      "updated_at": "2026-03-09 04:36:02"
+    },
+    "etx|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo01/seed1/etx",
+      "updated_at": "2026-03-09 04:36:11"
+    },
+    "etx|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo02/seed1/etx",
+      "updated_at": "2026-03-09 04:24:58"
+    },
+    "etx|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo03/seed1/etx",
+      "updated_at": "2026-03-09 04:33:25"
+    },
+    "etx|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo04/seed1/etx",
+      "updated_at": "2026-03-09 04:46:02"
+    },
+    "etx|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo05/seed1/etx",
+      "updated_at": "2026-03-09 04:48:11"
+    },
+    "etx|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo06/seed1/etx",
+      "updated_at": "2026-03-09 04:31:03"
+    },
+    "etx|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo07/seed1/etx",
+      "updated_at": "2026-03-09 04:51:27"
+    },
+    "etx|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo08/seed1/etx",
+      "updated_at": "2026-03-09 04:41:58"
+    },
+    "etx|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo09/seed1/etx",
+      "updated_at": "2026-03-09 04:53:27"
+    },
+    "etx|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo10/seed1/etx",
+      "updated_at": "2026-03-09 05:12:41"
+    },
+    "etx|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo01/seed1/etx",
+      "updated_at": "2026-03-09 05:15:16"
+    },
+    "etx|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo02/seed1/etx",
+      "updated_at": "2026-03-09 05:17:08"
+    },
+    "etx|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo03/seed1/etx",
+      "updated_at": "2026-03-09 05:14:06"
+    },
+    "etx|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo04/seed1/etx",
+      "updated_at": "2026-03-09 05:30:38"
+    },
+    "etx|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo05/seed1/etx",
+      "updated_at": "2026-03-09 05:29:54"
+    },
+    "etx|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo06/seed1/etx",
+      "updated_at": "2026-03-09 05:09:27"
+    },
+    "etx|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo07/seed1/etx",
+      "updated_at": "2026-03-09 05:40:44"
+    },
+    "etx|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo08/seed1/etx",
+      "updated_at": "2026-03-09 05:39:23"
+    },
+    "etx|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo09/seed1/etx",
+      "updated_at": "2026-03-09 05:48:39"
+    },
+    "etx|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo10/seed1/etx",
+      "updated_at": "2026-03-09 05:42:47"
+    },
+    "etx|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo01/seed1/etx",
+      "updated_at": "2026-03-09 06:35:36"
+    },
+    "etx|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo02/seed1/etx",
+      "updated_at": "2026-03-09 06:05:55"
+    },
+    "etx|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo03/seed1/etx",
+      "updated_at": "2026-03-09 06:22:12"
+    },
+    "etx|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo04/seed1/etx",
+      "updated_at": "2026-03-09 06:51:00"
+    },
+    "etx|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo05/seed1/etx",
+      "updated_at": "2026-03-09 07:03:58"
+    },
+    "etx|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo06/seed1/etx",
+      "updated_at": "2026-03-09 06:18:43"
+    },
+    "etx|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo07/seed1/etx",
+      "updated_at": "2026-03-09 06:49:14"
+    },
+    "etx|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo08/seed1/etx",
+      "updated_at": "2026-03-09 06:45:36"
+    },
+    "etx|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo09/seed1/etx",
+      "updated_at": "2026-03-09 07:03:57"
+    },
+    "etx|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo10/seed1/etx",
+      "updated_at": "2026-03-09 07:05:39"
+    },
+    "etx|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo01/seed1/etx",
+      "updated_at": "2026-03-09 07:25:43"
+    },
+    "etx|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo02/seed1/etx",
+      "updated_at": "2026-03-09 07:02:46"
+    },
+    "etx|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo03/seed1/etx",
+      "updated_at": "2026-03-09 06:51:54"
+    },
+    "etx|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo04/seed1/etx",
+      "updated_at": "2026-03-09 07:17:29"
+    },
+    "etx|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo05/seed1/etx",
+      "updated_at": "2026-03-09 07:34:00"
+    },
+    "etx|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo06/seed1/etx",
+      "updated_at": "2026-03-09 07:07:12"
+    },
+    "etx|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo07/seed1/etx",
+      "updated_at": "2026-03-09 07:35:19"
+    },
+    "etx|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo08/seed1/etx",
+      "updated_at": "2026-03-09 07:27:22"
+    },
+    "etx|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo09/seed1/etx",
+      "updated_at": "2026-03-09 07:44:11"
+    },
+    "etx|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo10/seed1/etx",
+      "updated_at": "2026-03-09 07:58:44"
+    },
+    "etx|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo01/seed1/etx",
+      "updated_at": "2026-03-09 08:21:21"
+    },
+    "etx|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo02/seed1/etx",
+      "updated_at": "2026-03-09 08:08:04"
+    },
+    "etx|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo03/seed1/etx",
+      "updated_at": "2026-03-09 08:18:03"
+    },
+    "etx|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo04/seed1/etx",
+      "updated_at": "2026-03-09 08:36:46"
+    },
+    "etx|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo05/seed1/etx",
+      "updated_at": "2026-03-09 08:57:23"
+    },
+    "etx|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo06/seed1/etx",
+      "updated_at": "2026-03-09 08:00:08"
+    },
+    "etx|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo07/seed1/etx",
+      "updated_at": "2026-03-09 08:41:20"
+    },
+    "etx|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo08/seed1/etx",
+      "updated_at": "2026-03-09 08:49:41"
+    },
+    "etx|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo09/seed1/etx",
+      "updated_at": "2026-03-09 09:10:24"
+    },
+    "etx|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo10/seed1/etx",
+      "updated_at": "2026-03-09 08:54:46"
+    },
+    "etx_re_qlr_hc|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 07:45:13"
+    },
+    "etx_re_qlr_hc|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 07:40:13"
+    },
+    "etx_re_qlr_hc|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 07:50:34"
+    },
+    "etx_re_qlr_hc|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:06:29"
+    },
+    "etx_re_qlr_hc|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:00:40"
+    },
+    "etx_re_qlr_hc|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:14:28"
+    },
+    "etx_re_qlr_hc|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:23:43"
+    },
+    "etx_re_qlr_hc|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:18:45"
+    },
+    "etx_re_qlr_hc|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:25:04"
+    },
+    "etx_re_qlr_hc|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM80/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:18:08"
+    },
+    "etx_re_qlr_hc|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:30:05"
+    },
+    "etx_re_qlr_hc|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:32:38"
+    },
+    "etx_re_qlr_hc|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:33:51"
+    },
+    "etx_re_qlr_hc|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:47:43"
+    },
+    "etx_re_qlr_hc|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:43:32"
+    },
+    "etx_re_qlr_hc|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:39:29"
+    },
+    "etx_re_qlr_hc|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:00:48"
+    },
+    "etx_re_qlr_hc|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:58:19"
+    },
+    "etx_re_qlr_hc|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:59:36"
+    },
+    "etx_re_qlr_hc|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM100/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:51:53"
+    },
+    "etx_re_qlr_hc|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:02:20"
+    },
+    "etx_re_qlr_hc|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:57:49"
+    },
+    "etx_re_qlr_hc|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 08:53:10"
+    },
+    "etx_re_qlr_hc|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:12:58"
+    },
+    "etx_re_qlr_hc|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:12:03"
+    },
+    "etx_re_qlr_hc|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:07:18"
+    },
+    "etx_re_qlr_hc|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:18:34"
+    },
+    "etx_re_qlr_hc|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:22:10"
+    },
+    "etx_re_qlr_hc|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:24:10"
+    },
+    "etx_re_qlr_hc|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N60_PPM120/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:20:45"
+    },
+    "etx_re_qlr_hc|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:02:18"
+    },
+    "etx_re_qlr_hc|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:57:58"
+    },
+    "etx_re_qlr_hc|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 09:57:40"
+    },
+    "etx_re_qlr_hc|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:13:32"
+    },
+    "etx_re_qlr_hc|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:10:01"
+    },
+    "etx_re_qlr_hc|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:05:28"
+    },
+    "etx_re_qlr_hc|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:17:37"
+    },
+    "etx_re_qlr_hc|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:14:41"
+    },
+    "etx_re_qlr_hc|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:20:57"
+    },
+    "etx_re_qlr_hc|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM80/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:14:59"
+    },
+    "etx_re_qlr_hc|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:19:00"
+    },
+    "etx_re_qlr_hc|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:10:18"
+    },
+    "etx_re_qlr_hc|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:13:13"
+    },
+    "etx_re_qlr_hc|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:29:10"
+    },
+    "etx_re_qlr_hc|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:30:25"
+    },
+    "etx_re_qlr_hc|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:16:31"
+    },
+    "etx_re_qlr_hc|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:40:07"
+    },
+    "etx_re_qlr_hc|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:31:28"
+    },
+    "etx_re_qlr_hc|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 10:38:56"
+    },
+    "etx_re_qlr_hc|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM100/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:07:43"
+    },
+    "etx_re_qlr_hc|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:07:43"
+    },
+    "etx_re_qlr_hc|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:10:31"
+    },
+    "etx_re_qlr_hc|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:08:24"
+    },
+    "etx_re_qlr_hc|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:20:41"
+    },
+    "etx_re_qlr_hc|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:28:06"
+    },
+    "etx_re_qlr_hc|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:03:57"
+    },
+    "etx_re_qlr_hc|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:33:39"
+    },
+    "etx_re_qlr_hc|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:25:12"
+    },
+    "etx_re_qlr_hc|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:41:59"
+    },
+    "etx_re_qlr_hc|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N80_PPM120/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:30:13"
+    },
+    "etx_re_qlr_hc|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:19:36"
+    },
+    "etx_re_qlr_hc|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:52:01"
+    },
+    "etx_re_qlr_hc|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:07:35"
+    },
+    "etx_re_qlr_hc|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:31:36"
+    },
+    "etx_re_qlr_hc|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:38:25"
+    },
+    "etx_re_qlr_hc|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 11:54:27"
+    },
+    "etx_re_qlr_hc|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:29:29"
+    },
+    "etx_re_qlr_hc|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:19:25"
+    },
+    "etx_re_qlr_hc|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:56:52"
+    },
+    "etx_re_qlr_hc|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM80/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:03:26"
+    },
+    "etx_re_qlr_hc|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:02:32"
+    },
+    "etx_re_qlr_hc|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:04:41"
+    },
+    "etx_re_qlr_hc|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:39:18"
+    },
+    "etx_re_qlr_hc|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:21:08"
+    },
+    "etx_re_qlr_hc|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:23:46"
+    },
+    "etx_re_qlr_hc|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 12:56:02"
+    },
+    "etx_re_qlr_hc|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:20:06"
+    },
+    "etx_re_qlr_hc|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:12:35"
+    },
+    "etx_re_qlr_hc|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:30:51"
+    },
+    "etx_re_qlr_hc|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM100/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:35:05"
+    },
+    "etx_re_qlr_hc|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo01/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:34:04"
+    },
+    "etx_re_qlr_hc|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo02/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:32:33"
+    },
+    "etx_re_qlr_hc|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo03/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:47:41"
+    },
+    "etx_re_qlr_hc|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo04/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:48:48"
+    },
+    "etx_re_qlr_hc|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo05/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:55:33"
+    },
+    "etx_re_qlr_hc|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo06/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:28:50"
+    },
+    "etx_re_qlr_hc|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo07/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:52:05"
+    },
+    "etx_re_qlr_hc|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo08/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:46:46"
+    },
+    "etx_re_qlr_hc|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo09/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:59:30"
+    },
+    "etx_re_qlr_hc|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/logs/N100_PPM120/topo10/seed1/etx_re_qlr_hc",
+      "updated_at": "2026-03-09 13:56:25"
+    }
+  }
+}

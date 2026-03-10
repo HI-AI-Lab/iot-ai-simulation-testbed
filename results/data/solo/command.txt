@@ -1,0 +1,11 @@
+python3 /workspace/testbed/run.py \
+  --ararl-dir /workspace/testbed/experiments/ararl \
+  --gradle-root /workspace/contiki-ng/tools/cooja \
+  --mask-file /workspace/testbed/masks/solo \
+  --nodes 100 \
+  --ppm 120 \
+  --topologies 10 \
+  --traffic-seeds 1 \
+  --logs-dir /workspace/testbed/results/data/solo/logs \
+  --work-root /workspace/testbed/_work/solo \
+  --jobs 0
