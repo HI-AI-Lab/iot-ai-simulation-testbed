@@ -1,0 +1,25 @@
+run:
+  id: ga_etx_pfi_rssi_re_hc_bdi_qo
+  notes: GA search space mask for etx, pfi, rssi, re, hc, bdi, qo
+
+features:
+  all: false
+
+  # LINK-LEVEL
+  etx:  true
+  rssi: true
+  pfi:  true
+
+  # NODE-LEVEL
+  re:   true
+  bdi:  true
+  qo:   true
+  qlr:  false
+  hc:   true
+  si:   false
+  tv:   false
+  pc:   false
+
+  # NETWORK-LEVEL
+  wr:   false
+  str:  false
