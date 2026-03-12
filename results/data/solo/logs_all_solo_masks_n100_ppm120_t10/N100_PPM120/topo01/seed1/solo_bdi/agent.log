@@ -1,0 +1,810 @@
+=== Agent started === logPath=/workspace/testbed/_work/N100_PPM120/topo01/seed1/solo_bdi/agent.log
+AGENT_SEED=12345
+1772551194671 INIT Agent: K=4 Factive=1
+1772551194676 EPS sched: start=0.3 end=0.01 anneal=500
+1772551273184 DECISION phase=4 mote=5 eps=0.298 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.030466418562988262] hc=1.00 re=1939.1 qlr=0.500
+  qValues=[0.02251989848446101, 0.014605439151637256, 0.013056471128948033, 0.009005193714983761]  action=0  chosenParent=38
+1772551301788 DECISION phase=5 mote=5 eps=0.297 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.04403409756690846] hc=1.00 re=1911.9 qlr=0.609
+  qValues=[0.03661279787775129, 0.024265629122965038, 0.0215447855880484, 0.014480573474429548]  action=0  chosenParent=38
+1772551360099 DECISION phase=7 mote=5 eps=0.296 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.10369091819509091] hc=2.00 re=1792.6 qlr=0.459
+  qValues=[0.07197692815680057, 0.049898365628905594, 0.04354976920876652, 0.028245478053577244]  action=0  chosenParent=44
+1772551389131 DECISION phase=8 mote=5 eps=0.295 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.11081973026217684] hc=3.00 re=1778.4 qlr=0.425
+  qValues=[0.09174066199921072, 0.06374195939861238, 0.055416497169062495, 0.03571500978432596]  action=0  chosenParent=44
+1772551420101 DECISION phase=9 mote=5 eps=0.295 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.0952187333292035] hc=1.00 re=1809.6 qlr=0.754
+  cand[1] id=44 features=[0.1204044447656002] hc=2.00 re=1759.2 qlr=0.400
+  qValues=[0.1229929025284946, 0.08514856500551105, 0.07764710625633597, 0.045140407513827085]  action=0  chosenParent=11
+1772551449891 DECISION phase=10 mote=5 eps=0.294 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.11534483707996102] hc=1.00 re=1769.3 qlr=0.709
+  cand[1] id=44 features=[0.12394385729167323] hc=2.00 re=1752.1 qlr=0.364
+  qValues=[0.14953537797555327, 0.10376726230606437, 0.09465650795027614, 0.054700864013284445]  action=1  chosenParent=44
+1772551481820 DECISION phase=11 mote=5 eps=0.294 cand=[11, 3, 44] valid=[true, true, true, false]
+  cand[0] id=11 features=[0.13473186048447094] hc=1.00 re=1730.5 qlr=0.688
+  cand[1] id=3 features=[0.1035830037902351] hc=2.00 re=1792.8 qlr=0.275
+  cand[2] id=44 features=[0.13850009448915857] hc=2.00 re=1723.0 qlr=0.372
+  qValues=[0.19534284668043256, 0.13487613247707486, 0.125267141032964, 0.06902652839198709]  action=1  chosenParent=3
+1772551513633 DECISION phase=12 mote=5 eps=0.293 cand=[3, 11, 44] valid=[true, true, true, false]
+  cand[0] id=3 features=[0.10741797373370965] hc=1.00 re=1785.2 qlr=0.278
+  cand[1] id=11 features=[0.14433714190590952] hc=6.00 re=1711.3 qlr=0.649
+  cand[2] id=44 features=[0.14817365645885494] hc=5.00 re=1703.7 qlr=0.341
+  qValues=[0.2348129590973258, 0.16218665149062872, 0.15049927588552237, 0.08295189868658781]  action=0  chosenParent=3
+1772551547429 DECISION phase=13 mote=5 eps=0.292 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.17376117912948197] hc=4.00 re=1652.5 qlr=0.633
+  cand[1] id=44 features=[0.1555318693198242] hc=5.00 re=1688.9 qlr=0.303
+  qValues=[0.2527727084234357, 0.17629372794181108, 0.16078238282352686, 0.09194928128272295]  action=0  chosenParent=11
+1772551581667 DECISION phase=14 mote=5 eps=0.292 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.19288149305637126] hc=4.00 re=1614.2 qlr=0.629
+  cand[1] id=44 features=[0.16247062336912133] hc=2.00 re=1675.1 qlr=0.271
+  qValues=[0.2946103345602751, 0.20558852143585682, 0.18758239410817623, 0.1070770863443613]  action=1  chosenParent=44
+1772551611895 DECISION phase=15 mote=5 eps=0.291 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.198754404658954] hc=4.00 re=1602.5 qlr=0.620
+  cand[1] id=44 features=[0.1682293695355902] hc=2.00 re=1663.5 qlr=0.249
+  qValues=[0.3386106211692095, 0.2358196172863245, 0.2153961155563593, 0.1227069292217493]  action=0  chosenParent=11
+1772551646834 DECISION phase=16 mote=5 eps=0.291 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.19935212577131955] hc=3.00 re=1601.3 qlr=0.592
+  cand[1] id=44 features=[0.17197676716296162] hc=3.00 re=1656.0 qlr=0.265
+  qValues=[0.38573132827878, 0.2679411955177784, 0.24519314989447594, 0.13912930712103844]  action=0  chosenParent=11
+1772551678229 DECISION phase=17 mote=5 eps=0.290 cand=[11, 44] valid=[true, true, false, false]
+  cand[0] id=11 features=[0.19944232753700597] hc=4.00 re=1601.1 qlr=0.579
+  cand[1] id=44 features=[0.17686712152401596] hc=5.00 re=1646.3 qlr=0.333
+  qValues=[0.43756538070738316, 0.3033634815365076, 0.27796768583357334, 0.15714159794151783]  action=0  chosenParent=11
+1772551712407 DECISION phase=18 mote=5 eps=0.290 cand=[60, 44] valid=[true, true, false, false]
+  cand[0] id=60 features=[0.060057233816688704] hc=2.00 re=1879.9 qlr=0.620
+  cand[1] id=44 features=[0.18137384871815077] hc=4.00 re=1637.3 qlr=0.336
+  qValues=[0.4727450469508767, 0.3262946540489793, 0.29651172924786806, 0.16938978526741266]  action=0  chosenParent=60
+1772551744822 DECISION phase=19 mote=5 eps=0.289 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.18631642998066356] hc=4.00 re=1627.4 qlr=0.331
+  qValues=[0.48761141020804644, 0.33461078722029924, 0.3023375766351819, 0.1753343204036355]  action=0  chosenParent=44
+1772551779282 DECISION phase=20 mote=5 eps=0.288 cand=[34, 44] valid=[true, true, false, false]
+  cand[0] id=34 features=[0.1069445898526471] hc=5.00 re=1786.1 qlr=0.237
+  cand[1] id=44 features=[0.1977804048834364] hc=5.00 re=1604.4 qlr=0.313
+  qValues=[0.6031260695308447, 0.41565187089145184, 0.3796777930110693, 0.21415448747575283]  action=0  chosenParent=34
+1772551807906 DECISION phase=21 mote=5 eps=0.288 cand=[34, 44] valid=[true, true, false, false]
+  cand[0] id=34 features=[0.10694479065264706] hc=254.00 re=1786.1 qlr=0.234
+  cand[1] id=44 features=[0.21975462662172718] hc=6.00 re=1560.5 qlr=0.297
+  qValues=[0.6749503035098314, 0.46449597366154194, 0.4257796723395586, 0.24006844498217106]  action=0  chosenParent=34
+1772551844702 DECISION phase=22 mote=5 eps=0.287 cand=[34, 44] valid=[true, true, false, false]
+  cand[0] id=34 features=[0.10695437851993306] hc=5.00 re=1786.1 qlr=0.253
+  cand[1] id=44 features=[0.22810351124840866] hc=5.00 re=1543.8 qlr=0.280
+  qValues=[0.736633813008666, 0.5060355272144079, 0.46509809605777264, 0.2623953130096197]  action=0  chosenParent=34
+1772551907334 DECISION phase=24 mote=5 eps=0.286 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.24018534637203148] hc=254.00 re=1519.6 qlr=0.271
+  qValues=[0.7310030404478312, 0.5002855900675058, 0.4563955534249544, 0.26422702707350254]  action=0  chosenParent=44
+1772551938988 DECISION phase=25 mote=5 eps=0.286 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.2401943464999967] hc=6.00 re=1519.6 qlr=0.263
+  qValues=[0.7426463179290295, 0.5096245668828487, 0.4639468304812908, 0.2690338306128979]  action=0  chosenParent=44
+1772552009238 DECISION phase=27 mote=5 eps=0.284 cand=[61] valid=[true, false, false, false]
+  cand[0] id=61 features=[0.18308578503867023] hc=6.00 re=1633.8 qlr=0.683
+  qValues=[0.710549695417285, 0.49075005762279034, 0.44366138242185116, 0.2578137945383787]  action=0  chosenParent=61
+1772552043244 DECISION phase=28 mote=5 eps=0.284 cand=[61] valid=[true, false, false, false]
+  cand[0] id=61 features=[0.18324088355510748] hc=6.00 re=1633.5 qlr=0.684
+  qValues=[0.6923097763210535, 0.481078440323472, 0.43272662349045277, 0.2518215421587229]  action=0  chosenParent=61
+1772552077411 DECISION phase=29 mote=5 eps=0.283 cand=[61] valid=[true, false, false, false]
+  cand[0] id=61 features=[0.18346018984226864] hc=6.00 re=1633.1 qlr=0.684
+  qValues=[0.6692663561552763, 0.4674840848892927, 0.4190008770674467, 0.24493361078202724]  action=0  chosenParent=61
+1772552281581 DECISION phase=35 mote=5 eps=0.280 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.028483594015543012] hc=7.00 re=1943.0 qlr=0.122
+  qValues=[0.49355916772037745, 0.35099922958761454, 0.31098603550344706, 0.18943890649825335]  action=0  chosenParent=22
+1772552312028 DECISION phase=36 mote=5 eps=0.279 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.03033090762543411] hc=7.00 re=1939.3 qlr=0.106
+  qValues=[0.4764625085517764, 0.3400826035067439, 0.30120554845780134, 0.1857848009094596]  action=0  chosenParent=22
+1772552342014 DECISION phase=37 mote=5 eps=0.279 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.03192945876042996] hc=6.00 re=1936.1 qlr=0.096
+  qValues=[0.4611661061644554, 0.3304453119635582, 0.29225216805934906, 0.1828235685825348]  action=0  chosenParent=22
+1772552372728 DECISION phase=38 mote=5 eps=0.278 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.034255365811963534] hc=7.00 re=1931.5 qlr=0.085
+  qValues=[0.44962769327685237, 0.3237023982219398, 0.28542476473376155, 0.1810802868567407]  action=0  chosenParent=22
+1772552403420 DECISION phase=39 mote=5 eps=0.277 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.035659502854920255] hc=7.00 re=1928.7 qlr=0.082
+  qValues=[0.44223687378689647, 0.31993501214310527, 0.2815905469469726, 0.1807536012493074]  action=0  chosenParent=22
+1772552436544 DECISION phase=40 mote=5 eps=0.277 cand=[22, 34] valid=[true, true, false, false]
+  cand[0] id=22 features=[0.038621217497591065] hc=7.00 re=1922.8 qlr=0.136
+  cand[1] id=34 features=[0.14094641225587956] hc=9.00 re=1718.1 qlr=0.175
+  qValues=[0.4564569960348308, 0.33603432727977633, 0.2944597522728145, 0.1891267909668386]  action=0  chosenParent=22
+1772552467513 DECISION phase=41 mote=5 eps=0.276 cand=[22, 23, 34] valid=[true, true, true, false]
+  cand[0] id=22 features=[0.04166529577312661] hc=9.00 re=1916.7 qlr=0.146
+  cand[1] id=23 features=[0.0283433492595776] hc=9.00 re=1943.3 qlr=0.081
+  cand[2] id=34 features=[0.14144926348274456] hc=9.00 re=1717.1 qlr=0.173
+  qValues=[0.45823546266183257, 0.3397972187958658, 0.2969362339936197, 0.19350564433261752]  action=1  chosenParent=23
+1772552497260 DECISION phase=42 mote=5 eps=0.276 cand=[16, 63, 34, 22] valid=[true, true, true, true]
+  cand[0] id=16 features=[0.4190500425620213] hc=3.00 re=1161.9 qlr=0.567
+  cand[1] id=63 features=[0.04508430776155736] hc=11.00 re=1909.8 qlr=0.110
+  cand[2] id=34 features=[0.14169076787985724] hc=11.00 re=1716.6 qlr=0.171
+  cand[3] id=22 features=[0.04195833974825658] hc=13.00 re=1916.1 qlr=0.141
+  qValues=[0.49182409420609474, 0.37526774778962135, 0.32706424221396446, 0.21368440613150597]  action=0  chosenParent=16
+1772552525056 DECISION phase=43 mote=5 eps=0.275 cand=[16, 54, 63, 34] valid=[true, true, true, true]
+  cand[0] id=16 features=[0.4382650294950071] hc=3.00 re=1123.5 qlr=0.548
+  cand[1] id=54 features=[0.0514423342885425] hc=11.00 re=1897.1 qlr=0.087
+  cand[2] id=63 features=[0.04511355257295879] hc=11.00 re=1909.8 qlr=0.109
+  cand[3] id=34 features=[0.1416908774798571] hc=254.00 re=1716.6 qlr=0.171
+  qValues=[0.49327180441468954, 0.37814155872911215, 0.3292876994237304, 0.21837967168539762]  action=0  chosenParent=16
+1772552553331 DECISION phase=44 mote=5 eps=0.274 cand=[16, 63, 54, 34] valid=[true, true, true, true]
+  cand[0] id=16 features=[0.46309699899926193] hc=2.00 re=1073.8 qlr=0.526
+  cand[1] id=63 features=[0.0451136319729587] hc=254.00 re=1909.8 qlr=0.107
+  cand[2] id=54 features=[0.051442444288542166] hc=11.00 re=1897.1 qlr=0.086
+  cand[3] id=34 features=[0.14176813227345464] hc=11.00 re=1716.5 qlr=0.171
+  qValues=[0.4985994161106646, 0.38449161360040307, 0.33408563444390893, 0.22544718952849507]  action=2  chosenParent=54
+1772552581572 DECISION phase=45 mote=5 eps=0.274 cand=[63, 22, 79, 34] valid=[true, true, true, true]
+  cand[0] id=63 features=[0.04936722291162088] hc=14.00 re=1901.3 qlr=0.095
+  cand[1] id=22 features=[0.041980413529382976] hc=13.00 re=1916.0 qlr=0.139
+  cand[2] id=79 features=[0.08622943502085645] hc=13.00 re=1827.5 qlr=0.222
+  cand[3] id=34 features=[0.14209674748048484] hc=13.00 re=1715.8 qlr=0.169
+  qValues=[0.46824515890330076, 0.355360041372478, 0.3067567450925708, 0.2130987336859107]  action=0  chosenParent=63
+1772552613289 DECISION phase=46 mote=5 eps=0.273 cand=[63, 22, 79, 44] valid=[true, true, true, true]
+  cand[0] id=63 features=[0.055802147727525675] hc=14.00 re=1888.4 qlr=0.165
+  cand[1] id=22 features=[0.042363721930549714] hc=13.00 re=1915.3 qlr=0.138
+  cand[2] id=79 features=[0.1322124312588956] hc=13.00 re=1735.6 qlr=0.247
+  cand[3] id=44 features=[0.24985930234967746] hc=13.00 re=1500.3 qlr=0.229
+  qValues=[0.4944350169971585, 0.3786645131185651, 0.3253626199439168, 0.2289837384596467]  action=0  chosenParent=63
+1772552645134 DECISION phase=47 mote=5 eps=0.273 cand=[79, 45, 22, 44] valid=[true, true, true, true]
+  cand[0] id=79 features=[0.1658818788444445] hc=9.00 re=1668.2 qlr=0.297
+  cand[1] id=45 features=[0.027995927990219105] hc=14.00 re=1944.0 qlr=0.000
+  cand[2] id=22 features=[0.04383131283787356] hc=13.00 re=1912.3 qlr=0.137
+  cand[3] id=44 features=[0.24992647185999806] hc=10.00 re=1500.1 qlr=0.227
+  qValues=[0.49645747151225805, 0.38161910977214575, 0.3281877329573035, 0.23458546679466963]  action=0  chosenParent=79
+1772552676981 DECISION phase=48 mote=5 eps=0.272 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.0438316124378737] hc=254.00 re=1912.3 qlr=0.136
+  cand[1] id=44 features=[0.2500270134284045] hc=5.00 re=1499.9 qlr=0.226
+  cand[2] id=34 features=[0.14341073629776324] hc=5.00 re=1713.2 qlr=0.164
+  cand[3] id=23 features=[0.0399583261292773] hc=5.00 re=1920.1 qlr=0.065
+  qValues=[0.5147929578088224, 0.4019256471656263, 0.34463451197370887, 0.24859787849709392]  action=0  chosenParent=22
+1772552705016 DECISION phase=49 mote=5 eps=0.272 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.043831784437873944] hc=254.00 re=1912.3 qlr=0.136
+  cand[1] id=44 features=[0.2958593501720771] hc=5.00 re=1408.3 qlr=0.216
+  cand[2] id=34 features=[0.1446981381394674] hc=5.00 re=1710.6 qlr=0.164
+  cand[3] id=23 features=[0.04063716114346294] hc=5.00 re=1918.7 qlr=0.064
+  qValues=[0.535207437351346, 0.42076569981873035, 0.36067445017397404, 0.26270228810608387]  action=0  chosenParent=22
+1772552733870 DECISION phase=50 mote=5 eps=0.271 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.04383225803787427] hc=254.00 re=1912.3 qlr=0.136
+  cand[1] id=44 features=[0.31573848413318795] hc=10.00 re=1368.5 qlr=0.213
+  cand[2] id=34 features=[0.14671204302041907] hc=5.00 re=1706.6 qlr=0.163
+  cand[3] id=23 features=[0.041316018157648404] hc=5.00 re=1917.4 qlr=0.063
+  qValues=[0.5529374990146607, 0.43695441517047584, 0.37402764591388404, 0.275960381841287]  action=0  chosenParent=22
+1772552759988 DECISION phase=51 mote=5 eps=0.270 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.043832411037874164] hc=254.00 re=1912.3 qlr=0.136
+  cand[1] id=44 features=[0.3157857609639828] hc=10.00 re=1368.4 qlr=0.212
+  cand[2] id=34 features=[0.14681442198425554] hc=5.00 re=1706.4 qlr=0.161
+  cand[3] id=23 features=[0.04199493317183378] hc=5.00 re=1916.0 qlr=0.063
+  qValues=[0.5669647729955614, 0.44936726754531264, 0.38428196078166366, 0.2868917207233608]  action=3  chosenParent=23
+1772552784750 DECISION phase=52 mote=5 eps=0.270 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.04383254083787391] hc=254.00 re=1912.3 qlr=0.136
+  cand[1] id=44 features=[0.315927417456368] hc=10.00 re=1368.1 qlr=0.211
+  cand[2] id=34 features=[0.15326996701908668] hc=5.00 re=1693.5 qlr=0.159
+  cand[3] id=23 features=[0.04343993393060008] hc=4.00 re=1913.1 qlr=0.062
+  qValues=[0.5818171831779182, 0.46244752733036876, 0.3949463847093284, 0.2989074341021478]  action=1  chosenParent=44
+1772552812089 DECISION phase=53 mote=5 eps=0.269 cand=[68, 22, 44, 34] valid=[true, true, true, true]
+  cand[0] id=68 features=[0.030851636798676085] hc=3.00 re=1938.3 qlr=0.111
+  cand[1] id=22 features=[0.04383264463787373] hc=254.00 re=1912.3 qlr=0.136
+  cand[2] id=44 features=[0.31592751945636766] hc=254.00 re=1368.1 qlr=0.211
+  cand[3] id=34 features=[0.15972549905391764] hc=6.00 re=1680.5 qlr=0.156
+  qValues=[0.5972408819943666, 0.47281809337437153, 0.40474783070385456, 0.3093766961246729]  action=0  chosenParent=68
+1772552838639 DECISION phase=54 mote=5 eps=0.269 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.04390493945472296] hc=7.00 re=1912.2 qlr=0.135
+  cand[1] id=44 features=[0.31592762305636757] hc=7.00 re=1368.1 qlr=0.210
+  cand[2] id=34 features=[0.1610957154140169] hc=4.00 re=1677.8 qlr=0.155
+  cand[3] id=23 features=[0.046791063060922844] hc=4.00 re=1906.4 qlr=0.060
+  qValues=[0.6031372966244817, 0.4821830363944173, 0.4124929429963231, 0.31743378285318613]  action=0  chosenParent=22
+1772552866692 DECISION phase=55 mote=5 eps=0.268 cand=[9, 22, 44, 34] valid=[true, true, true, true]
+  cand[0] id=9 features=[0.2037130982406674] hc=4.00 re=1592.6 qlr=0.282
+  cand[1] id=22 features=[0.04397723047157209] hc=5.00 re=1912.0 qlr=0.135
+  cand[2] id=44 features=[0.3159837867268116] hc=5.00 re=1368.0 qlr=0.210
+  cand[3] id=34 features=[0.16125403013773443] hc=4.00 re=1677.5 qlr=0.154
+  qValues=[0.6268357359804213, 0.5025101178325713, 0.4296011351980269, 0.33282766537740827]  action=3  chosenParent=34
+1772552893147 DECISION phase=56 mote=5 eps=0.268 cand=[9, 22, 44, 34] valid=[true, true, true, true]
+  cand[0] id=9 features=[0.20389329600470907] hc=4.00 re=1592.2 qlr=0.259
+  cand[1] id=22 features=[0.04412170450527064] hc=5.00 re=1911.8 qlr=0.134
+  cand[2] id=44 features=[0.3160399083972557] hc=5.00 re=1367.9 qlr=0.209
+  cand[3] id=34 features=[0.16141229886145192] hc=5.00 re=1677.2 qlr=0.154
+  qValues=[0.6322829807177186, 0.5086619490757585, 0.4349914724007249, 0.33948162663728]  action=0  chosenParent=9
+1772552919488 DECISION phase=57 mote=5 eps=0.267 cand=[9, 22, 44, 34] valid=[true, true, true, true]
+  cand[0] id=9 features=[0.20408528352427102] hc=5.00 re=1591.8 qlr=0.233
+  cand[1] id=22 features=[0.044194015522119656] hc=6.00 re=1911.6 qlr=0.134
+  cand[2] id=44 features=[0.31604004239725536] hc=254.00 re=1367.9 qlr=0.209
+  cand[3] id=34 features=[0.16269980670315587] hc=5.00 re=1674.6 qlr=0.154
+  qValues=[0.634920297190547, 0.5128286313265562, 0.4389056842774153, 0.3444629218429327]  action=0  chosenParent=9
+1772552946933 DECISION phase=58 mote=5 eps=0.266 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.04426626053896898] hc=6.00 re=1911.5 qlr=0.133
+  cand[1] id=44 features=[0.3162262275566532] hc=6.00 re=1367.5 qlr=0.208
+  cand[2] id=34 features=[0.16398722854486003] hc=4.00 re=1672.0 qlr=0.153
+  cand[3] id=23 features=[0.04871035874728846] hc=5.00 re=1902.6 qlr=0.058
+  qValues=[0.6186175802722573, 0.502088756300509, 0.43110351357609034, 0.33919959980994463]  action=0  chosenParent=22
+1772552971598 DECISION phase=59 mote=5 eps=0.266 cand=[22, 44, 34, 23] valid=[true, true, true, true]
+  cand[0] id=22 features=[0.04441072457266748] hc=254.00 re=1911.2 qlr=0.133
+  cand[1] id=44 features=[0.31659851027544894] hc=6.00 re=1366.8 qlr=0.208
+  cand[2] id=34 features=[0.16608384434420687] hc=6.00 re=1667.8 qlr=0.152
+  cand[3] id=23 features=[0.04904979825438116] hc=5.00 re=1901.9 qlr=0.057
+  qValues=[0.6195623883977532, 0.505516410805285, 0.4346538791432977, 0.34290599543601274]  action=2  chosenParent=34
+1772553473768 DECISION phase=80 mote=5 eps=0.254 cand=[40] valid=[true, false, false, false]
+  cand[0] id=40 features=[0.08277479234775764] hc=2.00 re=1834.5 qlr=0.046
+  qValues=[0.5329382680356503, 0.45861556753516197, 0.3933568112552166, 0.35658543929457664]  action=0  chosenParent=40
+1772553494816 DECISION phase=81 mote=5 eps=0.253 cand=[40] valid=[true, false, false, false]
+  cand[0] id=40 features=[0.14467446926010918] hc=2.00 re=1710.7 qlr=0.195
+  qValues=[0.5394809637218714, 0.46666024066507816, 0.40078861452639103, 0.36375406570732594]  action=0  chosenParent=40
+1772553519383 DECISION phase=82 mote=5 eps=0.252 cand=[22, 40, 42] valid=[true, true, true, false]
+  cand[0] id=22 features=[0.05262182210665045] hc=6.00 re=1894.8 qlr=0.129
+  cand[1] id=40 features=[0.2353744995204602] hc=5.00 re=1529.3 qlr=0.438
+  cand[2] id=42 features=[0.2039259270698529] hc=5.00 re=1592.1 qlr=0.080
+  qValues=[0.5758330579847097, 0.5098382290452719, 0.43688844703137875, 0.39730039052665234]  action=0  chosenParent=22
+1772553542827 DECISION phase=83 mote=5 eps=0.252 cand=[40, 22, 42] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.2455154879977337] hc=3.00 re=1509.0 qlr=0.461
+  cand[1] id=22 features=[0.05503646317354238] hc=4.00 re=1889.9 qlr=0.122
+  cand[2] id=42 features=[0.20410712148258636] hc=6.00 re=1591.8 qlr=0.081
+  qValues=[0.570377454161644, 0.504699632525444, 0.43190719187259674, 0.3959507495164871]  action=1  chosenParent=22
+1772553564358 DECISION phase=84 mote=5 eps=0.251 cand=[40, 22, 42] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.2471579830619347] hc=4.00 re=1505.7 qlr=0.436
+  cand[1] id=22 features=[0.055339890703739014] hc=6.00 re=1889.3 qlr=0.121
+  cand[2] id=42 features=[0.20447903750773677] hc=6.00 re=1591.0 qlr=0.071
+  qValues=[0.5658370070159435, 0.5029760710895061, 0.42978109046816826, 0.3965301476418972]  action=0  chosenParent=40
+1772553610882 DECISION phase=86 mote=5 eps=0.250 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.2047498825327172] hc=6.00 re=1590.5 qlr=0.071
+  qValues=[0.538903720676899, 0.47427601367235184, 0.4075244143605232, 0.3780386224389076]  action=0  chosenParent=42
+1772553631477 DECISION phase=87 mote=5 eps=0.250 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.20600742501052816] hc=3.00 re=1588.0 qlr=0.065
+  qValues=[0.5376261956989765, 0.47403623536229134, 0.4076470620930195, 0.3796128071844578]  action=0  chosenParent=42
+1772553681548 DECISION phase=89 mote=5 eps=0.248 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.20722830767761302] hc=4.00 re=1585.5 qlr=0.057
+  qValues=[0.5341728776693344, 0.4733126759529114, 0.40672655403614044, 0.38168585300445557]  action=0  chosenParent=42
+1772553708510 DECISION phase=90 mote=5 eps=0.248 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.20833584959348284] hc=4.00 re=1583.3 qlr=0.053
+  qValues=[0.5336862169206142, 0.47369131073355675, 0.40790317580103874, 0.38297295197844505]  action=0  chosenParent=42
+1772553756671 DECISION phase=92 mote=5 eps=0.247 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.23974714135991027] hc=5.00 re=1520.5 qlr=0.048
+  qValues=[0.5294577963650227, 0.473315704613924, 0.40920839086174965, 0.3869430311024189]  action=0  chosenParent=42
+1772553785429 DECISION phase=93 mote=5 eps=0.246 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.24359199660673947] hc=6.00 re=1512.8 qlr=0.053
+  qValues=[0.5285308696329594, 0.4734119810163975, 0.41082486882805824, 0.3889698274433613]  action=0  chosenParent=42
+1772553809457 DECISION phase=94 mote=5 eps=0.245 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.2439326484487413] hc=4.00 re=1512.1 qlr=0.052
+  qValues=[0.5285040698945522, 0.47476715967059135, 0.41264214739203453, 0.3926536701619625]  action=0  chosenParent=42
+1772553839027 DECISION phase=95 mote=5 eps=0.245 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.2832293895744453] hc=6.00 re=1433.5 qlr=0.064
+  qValues=[0.5282156467437744, 0.47745704650878906, 0.4163462519645691, 0.3972647786140442]  action=0  chosenParent=42
+1772553865705 DECISION phase=96 mote=5 eps=0.244 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.3496799095742721] hc=6.00 re=1300.6 qlr=0.072
+  qValues=[0.5285560637712479, 0.48199498653411865, 0.42183947563171387, 0.4036262482404709]  action=0  chosenParent=42
+1772553918614 DECISION phase=98 mote=5 eps=0.243 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.35470975597100385] hc=7.00 re=1290.6 qlr=0.082
+  qValues=[0.5351661443710327, 0.4911077171564102, 0.43374042212963104, 0.4131694436073303]  action=0  chosenParent=42
+1772553942527 DECISION phase=99 mote=5 eps=0.243 cand=[42] valid=[true, false, false, false]
+  cand[0] id=42 features=[0.35489449344749846] hc=4.00 re=1290.2 qlr=0.080
+  qValues=[0.5411248840391636, 0.49697329476475716, 0.44112804904580116, 0.41886914148926735]  action=0  chosenParent=42
+1772553970336 DECISION phase=100 mote=5 eps=0.242 cand=[94, 42] valid=[true, true, false, false]
+  cand[0] id=94 features=[0.2964371178494495] hc=3.00 re=1407.1 qlr=0.228
+  cand[1] id=42 features=[0.41750864009909994] hc=6.00 re=1165.0 qlr=0.103
+  qValues=[0.5399067215621471, 0.516592662781477, 0.4539637677371502, 0.439108457416296]  action=0  chosenParent=94
+1772553993545 DECISION phase=101 mote=5 eps=0.241 cand=[94, 42] valid=[true, true, false, false]
+  cand[0] id=94 features=[0.3602508642128117] hc=5.00 re=1279.5 qlr=0.265
+  cand[1] id=42 features=[0.4287997913308046] hc=5.00 re=1142.4 qlr=0.101
+  qValues=[0.5366087965667248, 0.5171211175620556, 0.4558519385755062, 0.44201476499438286]  action=1  chosenParent=42
+1772554022719 DECISION phase=102 mote=5 eps=0.241 cand=[42, 94] valid=[true, true, false, false]
+  cand[0] id=42 features=[0.42969748724510826] hc=5.00 re=1140.6 qlr=0.101
+  cand[1] id=94 features=[0.42685806632291645] hc=6.00 re=1146.3 qlr=0.290
+  qValues=[0.5310478284955025, 0.5146370604634285, 0.45545829087495804, 0.44266871362924576]  action=0  chosenParent=42
+1772554051465 DECISION phase=103 mote=5 eps=0.240 cand=[94, 42] valid=[true, true, false, false]
+  cand[0] id=94 features=[0.4628847123291313] hc=4.00 re=1074.2 qlr=0.282
+  cand[1] id=42 features=[0.42994267642459283] hc=5.00 re=1140.1 qlr=0.101
+  qValues=[0.5218915045261383, 0.5050579607486725, 0.4513500928878784, 0.4389907717704773]  action=0  chosenParent=94
+1772554075983 DECISION phase=104 mote=5 eps=0.240 cand=[94, 42] valid=[true, true, false, false]
+  cand[0] id=94 features=[0.48063816399750214] hc=4.00 re=1038.7 qlr=0.274
+  cand[1] id=42 features=[0.43702919291232367] hc=6.00 re=1125.9 qlr=0.101
+  qValues=[0.5111116357147694, 0.49429871514439583, 0.4456879682838917, 0.43418312445282936]  action=0  chosenParent=94
+1772554102269 DECISION phase=105 mote=5 eps=0.239 cand=[94, 42] valid=[true, true, false, false]
+  cand[0] id=94 features=[0.49360623607788257] hc=2.00 re=1012.8 qlr=0.272
+  cand[1] id=42 features=[0.4391534642606124] hc=6.00 re=1121.7 qlr=0.101
+  qValues=[0.5017175003886223, 0.4836558923125267, 0.44053109735250473, 0.4300822243094444]  action=0  chosenParent=94
+1772554124316 DECISION phase=106 mote=5 eps=0.239 cand=[94] valid=[true, false, false, false]
+  cand[0] id=94 features=[0.5529368228524335] hc=3.00 re=894.1 qlr=0.263
+  qValues=[0.5364565290510654, 0.49081455543637276, 0.4602961875498295, 0.4354415275156498]  action=0  chosenParent=94
+1772554147249 DECISION phase=107 mote=5 eps=0.238 cand=[94] valid=[true, false, false, false]
+  cand[0] id=94 features=[0.586123365078151] hc=4.00 re=827.8 qlr=0.291
+  qValues=[0.5382187739014626, 0.48912031203508377, 0.46390972286462784, 0.43823377043008804]  action=0  chosenParent=94
+1772554168441 DECISION phase=108 mote=5 eps=0.237 cand=[94] valid=[true, false, false, false]
+  cand[0] id=94 features=[0.7106240854224155] hc=4.00 re=578.8 qlr=0.298
+  qValues=[0.5339441634714603, 0.4864060617983341, 0.46629679575562477, 0.4414803870022297]  action=0  chosenParent=94
+1772554326853 DECISION phase=114 mote=5 eps=0.234 cand=[77] valid=[true, false, false, false]
+  cand[0] id=77 features=[0.06406495001201917] hc=4.00 re=1871.9 qlr=0.007
+  qValues=[0.6241335906088352, 0.5251858867704868, 0.5154125429689884, 0.4707619734108448]  action=0  chosenParent=77
+1772554352502 DECISION phase=115 mote=5 eps=0.233 cand=[77] valid=[true, false, false, false]
+  cand[0] id=77 features=[0.06568834988171313] hc=6.00 re=1868.6 qlr=0.007
+  qValues=[0.6302018761634827, 0.5290172398090363, 0.5215152502059937, 0.47495129704475403]  action=0  chosenParent=77
+1772554384731 DECISION phase=116 mote=5 eps=0.233 cand=[77] valid=[true, false, false, false]
+  cand[0] id=77 features=[0.06863470748907863] hc=7.00 re=1862.7 qlr=0.006
+  qValues=[0.6343862153589725, 0.5316260047256947, 0.526090893894434, 0.47836020961403847]  action=0  chosenParent=77
+1772554415501 DECISION phase=117 mote=5 eps=0.232 cand=[77] valid=[true, false, false, false]
+  cand[0] id=77 features=[0.07840468303294024] hc=7.00 re=1843.2 qlr=0.006
+  qValues=[0.6333371177315712, 0.530397318303585, 0.527296282351017, 0.4777820333838463]  action=0  chosenParent=77
+1772554444603 DECISION phase=118 mote=5 eps=0.232 cand=[77] valid=[true, false, false, false]
+  cand[0] id=77 features=[0.08105904281681886] hc=7.00 re=1837.9 qlr=0.005
+  qValues=[0.6297131553292274, 0.5270701870322227, 0.5263606086373329, 0.4756268486380577]  action=0  chosenParent=77
+1772555073587 DECISION phase=143 mote=5 eps=0.217 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.09255108493371167] hc=7.00 re=1814.9 qlr=0.000
+  qValues=[0.6402895264327526, 0.5419458262622356, 0.5368674211204052, 0.4823394678533077]  action=0  chosenParent=45
+1772555095030 DECISION phase=144 mote=5 eps=0.216 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.09416996426750335] hc=4.00 re=1811.7 qlr=0.000
+  qValues=[0.6403592675924301, 0.5419336408376694, 0.5362559109926224, 0.4820413142442703]  action=0  chosenParent=45
+1772555114904 DECISION phase=145 mote=5 eps=0.216 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.1406575869340575] hc=4.00 re=1718.7 qlr=0.000
+  qValues=[0.6261466071009636, 0.5317111685872078, 0.5269905254244804, 0.4745001867413521]  action=0  chosenParent=45
+1772555136651 DECISION phase=146 mote=5 eps=0.215 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.23365824914276356] hc=4.00 re=1532.7 qlr=0.083
+  qValues=[0.6035031713545322, 0.5157712735235691, 0.5149177499115467, 0.4638097621500492]  action=0  chosenParent=45
+1772555155860 DECISION phase=147 mote=5 eps=0.215 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.2845440808336118] hc=6.00 re=1430.9 qlr=0.101
+  qValues=[0.5986324436962605, 0.5128721781075001, 0.5141574926674366, 0.46225521340966225]  action=0  chosenParent=45
+1772555176129 DECISION phase=148 mote=5 eps=0.214 cand=[45] valid=[true, false, false, false]
+  cand[0] id=45 features=[0.2867288898095477] hc=7.00 re=1426.5 qlr=0.098
+  qValues=[0.6087227202951908, 0.5214943028986454, 0.522932443767786, 0.4677552171051502]  action=0  chosenParent=45
+1772555810565 DECISION phase=176 mote=5 eps=0.198 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.2948534664514879] hc=4.00 re=1410.3 qlr=0.386
+  qValues=[0.61201611161232, 0.542124480009079, 0.4897724837064743, 0.45589227974414825]  action=0  chosenParent=38
+1772555832138 DECISION phase=177 mote=5 eps=0.197 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.2952963284166831] hc=4.00 re=1409.4 qlr=0.395
+  qValues=[0.6140284761786461, 0.5415053591132164, 0.49138446897268295, 0.45618509501218796]  action=0  chosenParent=38
+1772555854722 DECISION phase=178 mote=5 eps=0.197 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.29571788266673793] hc=5.00 re=1408.6 qlr=0.386
+  qValues=[0.6158737614750862, 0.5390381887555122, 0.49263299256563187, 0.4563395157456398]  action=0  chosenParent=38
+1772555965851 DECISION phase=183 mote=5 eps=0.194 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.5713971506156743] hc=7.00 re=857.2 qlr=0.120
+  qValues=[0.44409825280308723, 0.4154134579002857, 0.40631363168358803, 0.3786865957081318]  action=0  chosenParent=44
+1772555987878 DECISION phase=184 mote=5 eps=0.193 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.573480511638657] hc=7.00 re=853.0 qlr=0.119
+  qValues=[0.4313291646540165, 0.40381230786442757, 0.3988232798874378, 0.3721558339893818]  action=0  chosenParent=44
+1772556014039 DECISION phase=185 mote=5 eps=0.193 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.5764645041056652] hc=7.00 re=847.1 qlr=0.133
+  qValues=[0.42267756909132004, 0.395529069006443, 0.3954782858490944, 0.36727070063352585]  action=0  chosenParent=44
+1772556037747 DECISION phase=186 mote=5 eps=0.192 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.580013074527514] hc=6.00 re=840.0 qlr=0.143
+  qValues=[0.4181250147521496, 0.39037397131323814, 0.3953997753560543, 0.36366644129157066]  action=0  chosenParent=44
+1772556064072 DECISION phase=187 mote=5 eps=0.192 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.582951256053722] hc=6.00 re=834.1 qlr=0.151
+  qValues=[0.4168247617781162, 0.38834908977150917, 0.397339541465044, 0.3621639646589756]  action=0  chosenParent=44
+1772556110918 DECISION phase=189 mote=5 eps=0.190 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.5894645645272757] hc=7.00 re=821.1 qlr=0.197
+  qValues=[0.42548583447933197, 0.39416421949863434, 0.4096643179655075, 0.3657422810792923]  action=0  chosenParent=44
+1772556136983 DECISION phase=190 mote=5 eps=0.190 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.5925412450708476] hc=6.00 re=814.9 qlr=0.204
+  qValues=[0.4280405640602112, 0.3965671509504318, 0.41271108388900757, 0.36689014732837677]  action=0  chosenParent=44
+1772556162718 DECISION phase=191 mote=5 eps=0.189 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.5951164268751719] hc=6.00 re=809.8 qlr=0.224
+  qValues=[0.4317535050213337, 0.39953354373574257, 0.4148850180208683, 0.36805057898163795]  action=0  chosenParent=44
+1772556210855 DECISION phase=193 mote=5 eps=0.188 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.600790237637767] hc=6.00 re=798.4 qlr=0.239
+  qValues=[0.40904979780316353, 0.38445641472935677, 0.39597997441887856, 0.35259099677205086]  action=0  chosenParent=44
+1772556261024 DECISION phase=195 mote=5 eps=0.187 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.6087396655432447] hc=6.00 re=782.5 qlr=0.266
+  qValues=[0.38052694126963615, 0.36500919982790947, 0.37462450191378593, 0.3324008546769619]  action=0  chosenParent=44
+1772556286553 DECISION phase=196 mote=5 eps=0.186 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.6124867873085591] hc=6.00 re=775.0 qlr=0.259
+  qValues=[0.3790791593492031, 0.3642640523612499, 0.3728438727557659, 0.32897974178195]  action=0  chosenParent=44
+1772556333544 DECISION phase=198 mote=5 eps=0.185 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.6200542677954561] hc=4.00 re=759.9 qlr=0.258
+  qValues=[0.413681797683239, 0.3858438953757286, 0.393253929913044, 0.34119609743356705]  action=0  chosenParent=44
+1772556351529 DECISION phase=199 mote=5 eps=0.185 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7046941451206192] hc=4.00 re=590.6 qlr=0.258
+  qValues=[0.4136061742901802, 0.3882303163409233, 0.39746474474668503, 0.3429086282849312]  action=0  chosenParent=44
+1772556394177 DECISION phase=201 mote=5 eps=0.183 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7140090388018554] hc=5.00 re=572.0 qlr=0.263
+  qValues=[0.4433952383697033, 0.405680563300848, 0.4097621254622936, 0.35342277213931084]  action=0  chosenParent=44
+1772556415685 DECISION phase=202 mote=5 eps=0.183 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7174936357436761] hc=6.00 re=565.0 qlr=0.265
+  qValues=[0.45189082249999046, 0.41031740233302116, 0.41181689128279686, 0.35577281937003136]  action=0  chosenParent=44
+1772556435553 DECISION phase=203 mote=5 eps=0.182 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7211191377248778] hc=6.00 re=557.8 qlr=0.270
+  qValues=[0.45086152851581573, 0.40942494571208954, 0.40875478088855743, 0.35423998534679413]  action=0  chosenParent=44
+1772556459507 DECISION phase=204 mote=5 eps=0.182 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7235529935530898] hc=6.00 re=552.9 qlr=0.268
+  qValues=[0.44518250972032547, 0.4058915302157402, 0.40248628705739975, 0.35044965893030167]  action=0  chosenParent=44
+1772556479694 DECISION phase=205 mote=5 eps=0.181 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7259654466901446] hc=7.00 re=548.1 qlr=0.267
+  qValues=[0.4393080174922943, 0.40162745118141174, 0.3961084485054016, 0.3465723395347595]  action=0  chosenParent=44
+1772556500282 DECISION phase=206 mote=5 eps=0.181 cand=[44] valid=[true, false, false, false]
+  cand[0] id=44 features=[0.7294281304328625] hc=6.00 re=541.1 qlr=0.266
+  qValues=[0.4386606477200985, 0.40023447200655937, 0.391738872975111, 0.3453542999923229]  action=0  chosenParent=44
+1772556937933 DECISION phase=242 mote=5 eps=0.160 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.5971299034348134] hc=11.00 re=805.7 qlr=0.307
+  qValues=[0.4521922580897808, 0.39830542728304863, 0.35397930070757866, 0.3524042032659054]  action=0  chosenParent=38
+1772556957645 DECISION phase=243 mote=5 eps=0.159 cand=[38] valid=[true, false, false, false]
+  cand[0] id=38 features=[0.6037396042813159] hc=4.00 re=792.5 qlr=0.306
+  qValues=[0.4487658180296421, 0.39670463278889656, 0.3503989316523075, 0.3512415327131748]  action=0  chosenParent=38
+1772556989264 DECISION phase=245 mote=5 eps=0.158 cand=[61] valid=[true, false, false, false]
+  cand[0] id=61 features=[0.552050283221163] hc=4.00 re=895.9 qlr=0.491
+  qValues=[0.47274458408355713, 0.408972829580307, 0.3564881682395935, 0.3590039908885956]  action=0  chosenParent=61
+1772557007610 DECISION phase=246 mote=5 eps=0.157 cand=[61] valid=[true, false, false, false]
+  cand[0] id=61 features=[0.577489833623402] hc=4.00 re=845.0 qlr=0.477
+  qValues=[0.4660990759730339, 0.4066585823893547, 0.35339682549238205, 0.3579140529036522]  action=0  chosenParent=61
+1772557049784 DECISION phase=248 mote=5 eps=0.156 cand=[61, 26] valid=[true, true, false, false]
+  cand[0] id=61 features=[0.7677725652989149] hc=5.00 re=464.5 qlr=0.479
+  cand[1] id=26 features=[0.32595989754316623] hc=5.00 re=1348.1 qlr=0.002
+  qValues=[0.3953513652086258, 0.3785230666399002, 0.3300500363111496, 0.3399537056684494]  action=0  chosenParent=61
+1772557066525 DECISION phase=249 mote=5 eps=0.156 cand=[61, 26] valid=[true, true, false, false]
+  cand[0] id=61 features=[0.9776963637729943] hc=4.00 re=44.6 qlr=0.482
+  cand[1] id=26 features=[0.3263054469294657] hc=7.00 re=1347.4 qlr=0.002
+  qValues=[0.3344685547053814, 0.3463743291795254, 0.3105763755738735, 0.31589823588728905]  action=1  chosenParent=26
+1772557085825 DECISION phase=250 mote=5 eps=0.155 cand=[26, 61] valid=[true, true, false, false]
+  cand[0] id=26 features=[0.32690603430473264] hc=7.00 re=1346.2 qlr=0.100
+  cand[1] id=61 features=[0.9776963637729943] hc=4.00 re=44.6 qlr=0.482
+  qValues=[0.5493937768042088, 0.49272317066788673, 0.4191082753241062, 0.4402635581791401]  action=0  chosenParent=26
+1772557105464 DECISION phase=251 mote=5 eps=0.154 cand=[54, 61, 26] valid=[true, true, true, false]
+  cand[0] id=54 features=[0.26479967064375487] hc=7.00 re=1470.4 qlr=0.101
+  cand[1] id=61 features=[0.9776963637729943] hc=4.00 re=44.6 qlr=0.482
+  cand[2] id=26 features=[0.35501928906676194] hc=8.00 re=1290.0 qlr=0.101
+  qValues=[0.6177047789096832, 0.5302636623382568, 0.44909852743148804, 0.47564736008644104]  action=0  chosenParent=54
+1772557121831 DECISION phase=252 mote=5 eps=0.154 cand=[54, 61, 26] valid=[true, true, true, false]
+  cand[0] id=54 features=[0.2652562176958688] hc=6.00 re=1469.5 qlr=0.149
+  cand[1] id=61 features=[0.9776963637729943] hc=4.00 re=44.6 qlr=0.482
+  cand[2] id=26 features=[0.3703768168847058] hc=8.00 re=1259.2 qlr=0.102
+  qValues=[0.6315845362842083, 0.5394819490611553, 0.4542711339890957, 0.48302195593714714]  action=2  chosenParent=26
+1772557134709 DECISION phase=253 mote=5 eps=0.153 cand=[54, 26] valid=[true, true, false, false]
+  cand[0] id=54 features=[0.29575356630255367] hc=7.00 re=1408.5 qlr=0.152
+  cand[1] id=26 features=[0.3809193698964244] hc=7.00 re=1238.2 qlr=0.098
+  qValues=[0.659725796431303, 0.5199570469558239, 0.433109562844038, 0.4426329992711544]  action=0  chosenParent=54
+1772557151427 DECISION phase=254 mote=5 eps=0.153 cand=[26, 54] valid=[true, true, false, false]
+  cand[0] id=26 features=[0.4131983769109031] hc=8.00 re=1173.6 qlr=0.094
+  cand[1] id=54 features=[0.29700068405324553] hc=8.00 re=1406.0 qlr=0.217
+  qValues=[0.5990746505558491, 0.4866313524544239, 0.40577492490410805, 0.41697945073246956]  action=0  chosenParent=26
+1772557165993 DECISION phase=255 mote=5 eps=0.152 cand=[26, 54, 44] valid=[true, true, true, false]
+  cand[0] id=26 features=[0.5020489852917603] hc=8.00 re=995.9 qlr=0.104
+  cand[1] id=54 features=[0.3588018164024709] hc=8.00 re=1282.4 qlr=0.215
+  cand[2] id=44 features=[0.7506213129786378] hc=9.00 re=498.8 qlr=0.243
+  qValues=[0.45832766965031624, 0.4325631149113178, 0.37074852362275124, 0.3903342969715595]  action=0  chosenParent=26
+1772557178393 DECISION phase=256 mote=5 eps=0.152 cand=[26, 54, 44] valid=[true, true, true, false]
+  cand[0] id=26 features=[0.5294207782057612] hc=254.00 re=941.2 qlr=0.100
+  cand[1] id=54 features=[0.3912667401005513] hc=2.00 re=1217.5 qlr=0.211
+  cand[2] id=44 features=[0.7513793113462122] hc=8.00 re=497.2 qlr=0.242
+  qValues=[0.42428065463900566, 0.4171309880912304, 0.3614037297666073, 0.374515812844038]  action=0  chosenParent=26
+1772557300859 DECISION phase=275 mote=5 eps=0.140 cand=[7] valid=[true, false, false, false]
+  cand[0] id=7 features=[0.6303855293119682] hc=1.00 re=739.2 qlr=0.172
+  qValues=[0.43098829686641693, 0.3711208403110504, 0.32414691150188446, 0.3365465998649597]  action=0  chosenParent=7
+1772557311412 DECISION phase=276 mote=5 eps=0.140 cand=[7] valid=[true, false, false, false]
+  cand[0] id=7 features=[0.7588218298018641] hc=0.00 re=482.4 qlr=0.187
+  qValues=[0.4005179740488529, 0.35807350650429726, 0.31402498856186867, 0.32833098247647285]  action=0  chosenParent=7
+1772557326503 DECISION phase=277 mote=5 eps=0.139 cand=[16] valid=[true, false, false, false]
+  cand[0] id=16 features=[0.5808563801001956] hc=2.00 re=838.3 qlr=0.367
+  qValues=[0.48163534328341484, 0.3921694867312908, 0.34285781905055046, 0.3536120615899563]  action=0  chosenParent=16
+1772557341139 DECISION phase=278 mote=5 eps=0.139 cand=[16] valid=[true, false, false, false]
+  cand[0] id=16 features=[0.5815004709810092] hc=2.00 re=837.0 qlr=0.362
+  qValues=[0.5007191821932793, 0.40035372227430344, 0.3520740792155266, 0.36078860610723495]  action=0  chosenParent=16
+1772557356458 DECISION phase=279 mote=5 eps=0.138 cand=[16] valid=[true, false, false, false]
+  cand[0] id=16 features=[0.5821733992177607] hc=2.00 re=835.7 qlr=0.356
+  qValues=[0.5057115741074085, 0.40050676837563515, 0.354727853089571, 0.36104627326130867]  action=0  chosenParent=16
+1772557369876 DECISION phase=280 mote=5 eps=0.138 cand=[16] valid=[true, false, false, false]
+  cand[0] id=16 features=[0.5829283520979192] hc=2.00 re=834.1 qlr=0.349
+  qValues=[0.4992702268064022, 0.39541083201766014, 0.35240500792860985, 0.35688839480280876]  action=0  chosenParent=16
+1772557383344 DECISION phase=281 mote=5 eps=0.137 cand=[16] valid=[true, false, false, false]
+  cand[0] id=16 features=[0.5834307358112454] hc=2.00 re=833.1 qlr=0.353
+  qValues=[0.4879368394613266, 0.3872669041156769, 0.34698623418807983, 0.3507026880979538]  action=0  chosenParent=16
+1772557431649 DECISION phase=284 mote=5 eps=0.135 cand=[23] valid=[true, false, false, false]
+  cand[0] id=23 features=[0.487162402526073] hc=254.00 re=1025.7 qlr=0.085
+  qValues=[0.5659612976014614, 0.4217979572713375, 0.37746286019682884, 0.37599049136042595]  action=0  chosenParent=23
+1772557446856 DECISION phase=285 mote=5 eps=0.135 cand=[16, 23] valid=[true, true, false, false]
+  cand[0] id=16 features=[0.6977968823343726] hc=3.00 re=604.4 qlr=0.430
+  cand[1] id=23 features=[0.5064607391142675] hc=4.00 re=987.1 qlr=0.083
+  qValues=[0.5064902156591415, 0.405927836894989, 0.37339095771312714, 0.37285831570625305]  action=0  chosenParent=16
+1772557465492 DECISION phase=286 mote=5 eps=0.134 cand=[23, 16] valid=[true, true, false, false]
+  cand[0] id=23 features=[0.5652590330542322] hc=2.00 re=869.5 qlr=0.079
+  cand[1] id=16 features=[0.720011832491288] hc=3.00 re=560.0 qlr=0.418
+  qValues=[0.5401941984891891, 0.42900697886943817, 0.39631812274456024, 0.3949887603521347]  action=0  chosenParent=23
+1772557484326 DECISION phase=287 mote=5 eps=0.134 cand=[23, 16] valid=[true, true, false, false]
+  cand[0] id=23 features=[0.6028509218598703] hc=2.00 re=794.3 qlr=0.076
+  cand[1] id=16 features=[0.751736287700321] hc=3.00 re=496.5 qlr=0.412
+  qValues=[0.529961958527565, 0.4267217069864273, 0.39669959247112274, 0.394276425242424]  action=0  chosenParent=23
+1772557503017 DECISION phase=288 mote=5 eps=0.133 cand=[40, 16, 23] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.497440812280853] hc=2.00 re=1005.1 qlr=0.215
+  cand[1] id=16 features=[0.7839327055460569] hc=2.00 re=432.1 qlr=0.408
+  cand[2] id=23 features=[0.6672831997046716] hc=2.00 re=665.4 qlr=0.075
+  qValues=[0.533827256411314, 0.4189828597009182, 0.4224027507007122, 0.3939562253654003]  action=0  chosenParent=40
+1772557523226 DECISION phase=289 mote=5 eps=0.132 cand=[40, 23, 16] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.5543581623815251] hc=2.00 re=891.3 qlr=0.236
+  cand[1] id=23 features=[0.6819529683002423] hc=3.00 re=636.1 qlr=0.074
+  cand[2] id=16 features=[0.8222317648441615] hc=3.00 re=355.5 qlr=0.400
+  qValues=[0.49021177366375923, 0.3957977928221226, 0.41247597709298134, 0.3747800327837467]  action=0  chosenParent=40
+1772557543991 DECISION phase=290 mote=5 eps=0.132 cand=[23, 16, 40] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.705728798121713] hc=254.00 re=588.5 qlr=0.072
+  cand[1] id=16 features=[0.8522589825189824] hc=4.00 re=295.5 qlr=0.396
+  cand[2] id=40 features=[0.5999614587090674] hc=4.00 re=800.1 qlr=0.249
+  qValues=[0.4645188935101032, 0.38437049463391304, 0.41193393245339394, 0.35887401178479195]  action=1  chosenParent=16
+1772557563676 DECISION phase=291 mote=5 eps=0.131 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.7322310465418838] hc=3.00 re=535.5 qlr=0.071
+  cand[1] id=40 features=[0.6034253955435211] hc=2.00 re=793.1 qlr=0.247
+  cand[2] id=16 features=[0.9348611490668822] hc=3.00 re=130.3 qlr=0.388
+  qValues=[0.40577276051044464, 0.35609689354896545, 0.3975711166858673, 0.3353073447942734]  action=0  chosenParent=23
+1772557582627 DECISION phase=292 mote=5 eps=0.131 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.732957344715467] hc=4.00 re=534.1 qlr=0.084
+  cand[1] id=40 features=[0.6379669116641433] hc=2.00 re=724.1 qlr=0.253
+  cand[2] id=16 features=[0.9845052559033933] hc=4.00 re=31.0 qlr=0.383
+  qValues=[0.4027130529284477, 0.35899292677640915, 0.40713585168123245, 0.33569515496492386]  action=2  chosenParent=16
+1772557601345 DECISION phase=293 mote=5 eps=0.130 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.7533713990673084] hc=3.00 re=493.3 qlr=0.090
+  cand[1] id=40 features=[0.6892178958356908] hc=2.00 re=621.6 qlr=0.263
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.404192753136158, 0.3650561794638634, 0.41764237731695175, 0.33842683583498]  action=2  chosenParent=16
+1772557621584 DECISION phase=294 mote=5 eps=0.129 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.7537365589902146] hc=3.00 re=492.5 qlr=0.089
+  cand[1] id=40 features=[0.7003114053160913] hc=7.00 re=599.4 qlr=0.266
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.4033720940351486, 0.36868995428085327, 0.42198359966278076, 0.3398883491754532]  action=2  chosenParent=16
+1772557641595 DECISION phase=295 mote=5 eps=0.129 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.7816728531697168] hc=3.00 re=436.7 qlr=0.087
+  cand[1] id=40 features=[0.7017967344083302] hc=4.00 re=596.4 qlr=0.276
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.4121996983885765, 0.38027965277433395, 0.4319945499300957, 0.3492104336619377]  action=2  chosenParent=16
+1772557660306 DECISION phase=296 mote=5 eps=0.128 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8038847709451291] hc=3.00 re=392.2 qlr=0.087
+  cand[1] id=40 features=[0.7026651903221688] hc=3.00 re=594.7 qlr=0.274
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.42513032257556915, 0.3933393210172653, 0.4426504075527191, 0.3599971830844879]  action=2  chosenParent=16
+1772557675624 DECISION phase=297 mote=5 eps=0.128 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8051110880450334] hc=254.00 re=389.8 qlr=0.086
+  cand[1] id=40 features=[0.7028849911147571] hc=3.00 re=594.2 qlr=0.273
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.43870505690574646, 0.40495210886001587, 0.45147597789764404, 0.37038084864616394]  action=2  chosenParent=16
+1772557689811 DECISION phase=298 mote=5 eps=0.127 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8051309954450405] hc=4.00 re=389.7 qlr=0.086
+  cand[1] id=40 features=[0.7562299987587286] hc=3.00 re=487.5 qlr=0.269
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.44674328714609146, 0.41298114508390427, 0.45827511698007584, 0.37835996598005295]  action=0  chosenParent=23
+1772557705658 DECISION phase=299 mote=5 eps=0.127 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8052375737879365] hc=2.00 re=389.5 qlr=0.086
+  cand[1] id=40 features=[0.79231705955878] hc=2.00 re=415.4 qlr=0.267
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.4321441613137722, 0.4067128412425518, 0.4531876854598522, 0.37423570081591606]  action=2  chosenParent=16
+1772557718564 DECISION phase=300 mote=5 eps=0.126 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8076900723877453] hc=2.00 re=384.6 qlr=0.086
+  cand[1] id=40 features=[0.7937039236758854] hc=2.00 re=412.6 qlr=0.267
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.4013160727918148, 0.38941387459635735, 0.4352814368903637, 0.3609265200793743]  action=2  chosenParent=16
+1772557731877 DECISION phase=301 mote=5 eps=0.125 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8115264377117319] hc=2.00 re=376.9 qlr=0.086
+  cand[1] id=40 features=[0.7984946379465397] hc=2.00 re=403.0 qlr=0.266
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3820814751088619, 0.3816970996558666, 0.42387352511286736, 0.3539480082690716]  action=2  chosenParent=16
+1772557747827 DECISION phase=302 mote=5 eps=0.125 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8129104024359097] hc=4.00 re=374.2 qlr=0.086
+  cand[1] id=40 features=[0.8114575487730165] hc=254.00 re=377.1 qlr=0.265
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.37503088638186455, 0.3804761581122875, 0.4186053089797497, 0.3527815006673336]  action=2  chosenParent=16
+1772557765018 DECISION phase=303 mote=5 eps=0.124 cand=[40, 23, 16] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.8268903046469934] hc=4.00 re=346.2 qlr=0.264
+  cand[1] id=23 features=[0.8167467095598965] hc=5.00 re=366.5 qlr=0.085
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.38173792138695717, 0.38597672060132027, 0.4185264892876148, 0.356458205729723]  action=0  chosenParent=40
+1772557779410 DECISION phase=304 mote=5 eps=0.124 cand=[40, 23, 16] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.8710176254701156] hc=6.00 re=258.0 qlr=0.275
+  cand[1] id=23 features=[0.8205830406838832] hc=6.00 re=358.8 qlr=0.085
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3931765966117382, 0.39647768065333366, 0.4210582934319973, 0.36173198744654655]  action=2  chosenParent=16
+1772557796945 DECISION phase=305 mote=5 eps=0.123 cand=[40, 23, 16] valid=[true, true, true, false]
+  cand[0] id=40 features=[0.8903622891602673] hc=5.00 re=219.3 qlr=0.275
+  cand[1] id=23 features=[0.8217673640846118] hc=5.00 re=356.5 qlr=0.085
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.40786536037921906, 0.4070766419172287, 0.4220588505268097, 0.36744794249534607]  action=2  chosenParent=16
+1772557811826 DECISION phase=306 mote=5 eps=0.123 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8229516394853404] hc=6.00 re=354.1 qlr=0.085
+  cand[1] id=40 features=[0.8910910778632836] hc=6.00 re=217.8 qlr=0.274
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.4248276576399803, 0.4161572679877281, 0.42911382764577866, 0.3775250241160393]  action=2  chosenParent=16
+1772557828230 DECISION phase=307 mote=5 eps=0.122 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8235438371857047] hc=254.00 re=352.9 qlr=0.085
+  cand[1] id=40 features=[0.8915817476177266] hc=6.00 re=216.8 qlr=0.274
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.40947215259075165, 0.40729765594005585, 0.4223831295967102, 0.37123939394950867]  action=2  chosenParent=16
+1772557842553 DECISION phase=308 mote=5 eps=0.121 cand=[23, 40, 16] valid=[true, true, true, false]
+  cand[0] id=23 features=[0.8235438431857047] hc=254.00 re=352.9 qlr=0.085
+  cand[1] id=40 features=[0.8946394599884727] hc=6.00 re=210.7 qlr=0.273
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3919227905571461, 0.39889879897236824, 0.4142635501921177, 0.3642294593155384]  action=2  chosenParent=16
+1772557853393 DECISION phase=309 mote=5 eps=0.121 cand=[23, 40, 16, 45] valid=[true, true, true, true]
+  cand[0] id=23 features=[0.824136014886069] hc=6.00 re=351.7 qlr=0.085
+  cand[1] id=40 features=[0.8976075601073078] hc=6.00 re=204.8 qlr=0.273
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  cand[3] id=45 features=[0.7755241309109582] hc=6.00 re=449.0 qlr=0.079
+  qValues=[0.3550773933529854, 0.37052250653505325, 0.4077674522995949, 0.3362051919102669]  action=2  chosenParent=16
+1772557860378 DECISION phase=310 mote=5 eps=0.120 cand=[23, 40, 16, 45] valid=[true, true, true, true]
+  cand[0] id=23 features=[0.8253202882867976] hc=6.00 re=349.4 qlr=0.085
+  cand[1] id=40 features=[0.9013870025907307] hc=6.00 re=197.2 qlr=0.273
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  cand[3] id=45 features=[0.7784537330443249] hc=4.00 re=443.1 qlr=0.079
+  qValues=[0.34405527636408806, 0.3663654439151287, 0.4076329730451107, 0.3341876082122326]  action=3  chosenParent=45
+1772557866272 DECISION phase=311 mote=5 eps=0.120 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9089458951575766] hc=5.00 re=182.1 qlr=0.272
+  cand[1] id=23 features=[0.8259124399871619] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7799940843783304] hc=4.00 re=440.0 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.34309568256139755, 0.3662070855498314, 0.40405432134866714, 0.3335869088768959]  action=2  chosenParent=45
+1772557870984 DECISION phase=312 mote=5 eps=0.119 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.909815320020824] hc=6.00 re=180.4 qlr=0.271
+  cand[1] id=23 features=[0.8259124699871618] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823046133793387] hc=4.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3444998487830162, 0.3690243288874626, 0.4075847193598747, 0.33724426478147507]  action=2  chosenParent=45
+1772557876116 DECISION phase=313 mote=5 eps=0.118 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.910670361226775] hc=5.00 re=178.7 qlr=0.271
+  cand[1] id=23 features=[0.8259124979871617] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823046573793386] hc=254.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3699381425976753, 0.38458266109228134, 0.4231090173125267, 0.35225988179445267]  action=2  chosenParent=45
+1772557879943 DECISION phase=314 mote=5 eps=0.118 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9153017769088498] hc=6.00 re=169.4 qlr=0.270
+  cand[1] id=23 features=[0.8259125239871616] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823046813793385] hc=254.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3819490037858486, 0.3901533745229244, 0.4252459965646267, 0.35916290804743767]  action=2  chosenParent=45
+1772557884510 DECISION phase=315 mote=5 eps=0.117 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9160161815545697] hc=5.00 re=168.0 qlr=0.270
+  cand[1] id=23 features=[0.8259125559871616] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823047093793385] hc=254.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.3810614235699177, 0.3850971646606922, 0.41940977051854134, 0.3582054115831852]  action=2  chosenParent=45
+1772557888834 DECISION phase=316 mote=5 eps=0.117 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9164924474517162] hc=5.00 re=167.0 qlr=0.269
+  cand[1] id=23 features=[0.8259125839871615] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823047333793385] hc=254.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.38763318210840225, 0.38301030546426773, 0.4164305105805397, 0.3600289300084114]  action=2  chosenParent=45
+1772557893176 DECISION phase=317 mote=5 eps=0.116 cand=[40, 23, 45, 16] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9166187759546509] hc=254.00 re=166.8 qlr=0.269
+  cand[1] id=23 features=[0.8259126179871614] hc=254.00 re=348.2 qlr=0.085
+  cand[2] id=45 features=[0.7823047693793383] hc=254.00 re=435.4 qlr=0.078
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.39818572998046875, 0.3848148435354233, 0.4155218154191971, 0.3643794655799866]  action=1  chosenParent=23
+1772557897785 DECISION phase=318 mote=5 eps=0.116 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.3510968324316315] hc=1.00 re=1297.8 qlr=0.397
+  cand[1] id=40 features=[0.9166188893546509] hc=254.00 re=166.8 qlr=0.269
+  cand[2] id=23 features=[0.8259127213871613] hc=2.00 re=348.2 qlr=0.084
+  cand[3] id=45 features=[0.7823047913793383] hc=254.00 re=435.4 qlr=0.078
+  qValues=[0.595408245921135, 0.46507908403873444, 0.4661436975002289, 0.4435836970806122]  action=0  chosenParent=73
+1772557907088 DECISION phase=319 mote=5 eps=0.115 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.39822552511593057] hc=1.00 re=1203.5 qlr=0.380
+  cand[1] id=40 features=[0.9172039505726101] hc=2.00 re=165.6 qlr=0.269
+  cand[2] id=23 features=[0.8644090208138675] hc=2.00 re=271.2 qlr=0.083
+  cand[3] id=45 features=[0.7823048753793382] hc=2.00 re=435.4 qlr=0.078
+  qValues=[0.5525325164198875, 0.4378639981150627, 0.4481280967593193, 0.42278825491666794]  action=0  chosenParent=73
+1772557917670 DECISION phase=320 mote=5 eps=0.114 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.45685002679150455] hc=1.00 re=1086.3 qlr=0.388
+  cand[1] id=40 features=[0.9177889421905693] hc=2.00 re=164.4 qlr=0.269
+  cand[2] id=23 features=[0.9409305009359699] hc=1.00 re=118.1 qlr=0.080
+  cand[3] id=45 features=[0.7827950320219763] hc=2.00 re=434.4 qlr=0.078
+  qValues=[0.5160274617373943, 0.41618989035487175, 0.43468235060572624, 0.4068334363400936]  action=0  chosenParent=73
+1772557928968 DECISION phase=321 mote=5 eps=0.114 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.49723945275002657] hc=1.00 re=1005.5 qlr=0.407
+  cand[1] id=40 features=[0.9189588274264878] hc=2.00 re=162.1 qlr=0.268
+  cand[2] id=23 features=[0.9912413433999475] hc=2.00 re=17.5 qlr=0.079
+  cand[3] id=45 features=[0.7832852086646144] hc=3.00 re=433.4 qlr=0.078
+  qValues=[0.4969055987894535, 0.40375130251049995, 0.4290308840572834, 0.39879243448376656]  action=0  chosenParent=73
+1772557943010 DECISION phase=322 mote=5 eps=0.113 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.5536849543788582] hc=1.00 re=892.6 qlr=0.399
+  cand[1] id=40 features=[0.918969955667307] hc=2.00 re=162.1 qlr=0.268
+  cand[2] id=23 features=[0.9912413433999475] hc=2.00 re=17.5 qlr=0.079
+  cand[3] id=45 features=[0.7835094314418118] hc=3.00 re=433.0 qlr=0.078
+  qValues=[0.46525633335113525, 0.38651636242866516, 0.4198131412267685, 0.38480590283870697]  action=0  chosenParent=73
+1772557955675 DECISION phase=323 mote=5 eps=0.113 cand=[73, 40, 23, 45] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.7398250929192287] hc=1.00 re=520.3 qlr=0.416
+  cand[1] id=40 features=[0.9201398629032255] hc=2.00 re=159.7 qlr=0.268
+  cand[2] id=23 features=[0.9912413433999475] hc=2.00 re=17.5 qlr=0.079
+  cand[3] id=45 features=[0.7839996000844499] hc=2.00 re=432.0 qlr=0.077
+  qValues=[0.38817157968878746, 0.35368461534380913, 0.40372292324900627, 0.353766780346632]  action=2  chosenParent=23
+1772557968782 DECISION phase=324 mote=5 eps=0.112 cand=[73, 40, 45, 16] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.8400077348858501] hc=3.00 re=320.0 qlr=0.439
+  cand[1] id=40 features=[0.9223117682650599] hc=3.00 re=155.4 qlr=0.266
+  cand[2] id=45 features=[0.784489750727088] hc=2.00 re=431.0 qlr=0.077
+  cand[3] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  qValues=[0.37986209243535995, 0.3521576300263405, 0.4075673893094063, 0.3491111323237419]  action=2  chosenParent=45
+1772557982133 DECISION phase=325 mote=5 eps=0.111 cand=[73, 40, 16, 26] valid=[true, true, true, true]
+  cand[0] id=73 features=[0.8712182744563755] hc=5.00 re=257.6 qlr=0.444
+  cand[1] id=40 features=[0.9225122815201636] hc=3.00 re=155.0 qlr=0.266
+  cand[2] id=16 features=[0.9865970327650656] hc=4.00 re=26.8 qlr=0.383
+  cand[3] id=26 features=[0.6956460591783062] hc=5.00 re=608.7 qlr=0.078
+  qValues=[0.3568146154284477, 0.34903550893068314, 0.41221313923597336, 0.34579629451036453]  action=2  chosenParent=16
+1772557995470 DECISION phase=326 mote=5 eps=0.111 cand=[26, 45, 40, 73] valid=[true, true, true, true]
+  cand[0] id=26 features=[0.6987296776238869] hc=5.00 re=602.5 qlr=0.078
+  cand[1] id=45 features=[0.820647603392563] hc=5.00 re=358.7 qlr=0.103
+  cand[2] id=40 features=[0.9232929213535648] hc=4.00 re=153.4 qlr=0.275
+  cand[3] id=73 features=[0.9254335261439515] hc=6.00 re=149.1 qlr=0.439
+  qValues=[0.42055292055010796, 0.3769192360341549, 0.4375244490802288, 0.3716842643916607]  action=2  chosenParent=40
+1772558009016 DECISION phase=327 mote=5 eps=0.110 cand=[40, 26, 45, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9245763014030368] hc=4.00 re=150.8 qlr=0.273
+  cand[1] id=26 features=[0.6989827078872217] hc=254.00 re=602.0 qlr=0.078
+  cand[2] id=45 features=[0.8334678896878542] hc=6.00 re=333.1 qlr=0.102
+  cand[3] id=14 features=[0.6455461745898674] hc=5.00 re=708.9 qlr=0.316
+  qValues=[0.36516574770212173, 0.35537806898355484, 0.4127173200249672, 0.3456999734044075]  action=2  chosenParent=45
+1772558018593 DECISION phase=328 mote=5 eps=0.110 cand=[40, 26, 45, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9259347569977725] hc=4.00 re=148.1 qlr=0.268
+  cand[1] id=26 features=[0.6989827198872216] hc=254.00 re=602.0 qlr=0.078
+  cand[2] id=45 features=[0.8480818360190788] hc=254.00 re=303.8 qlr=0.104
+  cand[3] id=14 features=[0.6474847243864655] hc=6.00 re=705.0 qlr=0.316
+  qValues=[0.3614209331572056, 0.35569292679429054, 0.4203895218670368, 0.3457123078405857]  action=2  chosenParent=45
+1772558023531 DECISION phase=329 mote=5 eps=0.109 cand=[40, 45, 26, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9264106390611968] hc=254.00 re=147.2 qlr=0.266
+  cand[1] id=45 features=[0.8480831282190784] hc=254.00 re=303.8 qlr=0.104
+  cand[2] id=26 features=[0.6989827358872216] hc=254.00 re=602.0 qlr=0.078
+  cand[3] id=14 features=[0.6475421649921996] hc=5.00 re=704.9 qlr=0.315
+  qValues=[0.3871043249964714, 0.3705187812447548, 0.43475598841905594, 0.357286237180233]  action=2  chosenParent=26
+1772558028457 DECISION phase=330 mote=5 eps=0.109 cand=[40, 26, 45, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9264114252611968] hc=254.00 re=147.2 qlr=0.266
+  cand[1] id=26 features=[0.6989829380872218] hc=254.00 re=602.0 qlr=0.078
+  cand[2] id=45 features=[0.8480831958190783] hc=254.00 re=303.8 qlr=0.104
+  cand[3] id=14 features=[0.6477584224269564] hc=2.00 re=704.5 qlr=0.315
+  qValues=[0.3447866141796112, 0.3517131060361862, 0.42189256846904755, 0.34000712633132935]  action=2  chosenParent=45
+1772558034529 DECISION phase=331 mote=5 eps=0.108 cand=[40, 45, 26, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9264122332611969] hc=254.00 re=147.2 qlr=0.266
+  cand[1] id=45 features=[0.8480833168190782] hc=254.00 re=303.8 qlr=0.104
+  cand[2] id=26 features=[0.6989829580872218] hc=254.00 re=602.0 qlr=0.078
+  cand[3] id=14 features=[0.6496969864235544] hc=2.00 re=700.6 qlr=0.315
+  qValues=[0.35780319571495056, 0.3596837520599365, 0.42451611161231995, 0.34489166736602783]  action=2  chosenParent=26
+1772558039214 DECISION phase=332 mote=5 eps=0.107 cand=[40, 45, 26, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9264122732611968] hc=254.00 re=147.2 qlr=0.266
+  cand[1] id=45 features=[0.8480833804190782] hc=254.00 re=303.8 qlr=0.104
+  cand[2] id=26 features=[0.6989830198872218] hc=254.00 re=602.0 qlr=0.078
+  cand[3] id=14 features=[0.6509893904212865] hc=2.00 re=698.0 qlr=0.314
+  qValues=[0.36492152512073517, 0.3668699711561203, 0.42474524676799774, 0.34997494518756866]  action=2  chosenParent=26
+1772558043372 DECISION phase=333 mote=5 eps=0.107 cand=[40, 26, 45, 14] valid=[true, true, true, true]
+  cand[0] id=40 features=[0.9264123072611967] hc=254.00 re=147.2 qlr=0.266
+  cand[1] id=26 features=[0.6989830678872218] hc=254.00 re=602.0 qlr=0.078
+  cand[2] id=45 features=[0.8480834064190781] hc=254.00 re=303.8 qlr=0.104
+  cand[3] id=14 features=[0.6529279504178844] hc=1.00 re=694.1 qlr=0.314
+  qValues=[0.3525620885193348, 0.36497313156723976, 0.4170309193432331, 0.34809165075421333]  action=2  chosenParent=45
+1772558132697 DECISION phase=359 mote=5 eps=0.092 cand=[26] valid=[true, false, false, false]
+  cand[0] id=26 features=[0.789977638112241] hc=1.00 re=420.0 qlr=0.074
+  qValues=[0.4288136437535286, 0.4056389704346657, 0.32809265702962875, 0.36053483933210373]  action=0  chosenParent=26
+1772558140777 DECISION phase=360 mote=5 eps=0.091 cand=[26] valid=[true, false, false, false]
+  cand[0] id=26 features=[0.9978813333346717] hc=1.00 re=4.2 qlr=0.082
+  qValues=[0.40644169971346855, 0.40869782492518425, 0.3325137756764889, 0.3654293231666088]  action=0  chosenParent=26
+1772558150006 DECISION phase=361 mote=5 eps=0.091 cand=[80] valid=[true, false, false, false]
+  cand[0] id=80 features=[0.5792093567082042] hc=2.00 re=841.6 qlr=0.199
+  qValues=[0.5343335755169392, 0.43536682799458504, 0.34890686348080635, 0.37919265404343605]  action=0  chosenParent=80
+1772558161017 DECISION phase=362 mote=5 eps=0.090 cand=[80] valid=[true, false, false, false]
+  cand[0] id=80 features=[0.5811716547377878] hc=4.00 re=837.7 qlr=0.252
+  qValues=[0.5354830883443356, 0.43449973687529564, 0.346711914986372, 0.3780960999429226]  action=0  chosenParent=80
+1772558172267 DECISION phase=363 mote=5 eps=0.089 cand=[77, 80] valid=[true, true, false, false]
+  cand[0] id=77 features=[0.14816569032315352] hc=4.00 re=1703.7 qlr=0.137
+  cand[1] id=80 features=[0.5836577798474691] hc=5.00 re=832.7 qlr=0.244
+  qValues=[0.7889870088547468, 0.5299599301069975, 0.42736186645925045, 0.46314739994704723]  action=0  chosenParent=77
+1772558184111 DECISION phase=364 mote=5 eps=0.089 cand=[80, 2, 63, 77] valid=[true, true, true, true]
+  cand[0] id=80 features=[0.5843187414189916] hc=4.00 re=831.4 qlr=0.277
+  cand[1] id=2 features=[0.31002545458193664] hc=6.00 re=1379.9 qlr=0.170
+  cand[2] id=63 features=[0.5449606058544776] hc=4.00 re=910.1 qlr=0.242
+  cand[3] id=77 features=[0.14918995922333866] hc=6.00 re=1701.6 qlr=0.152
+  qValues=[0.43604811653494835, 0.3675811402499676, 0.3361290656030178, 0.3368885777890682]  action=1  chosenParent=2
+1772558194747 DECISION phase=365 mote=5 eps=0.088 cand=[80, 2, 63, 77] valid=[true, true, true, true]
+  cand[0] id=80 features=[0.5846498748625828] hc=4.00 re=830.7 qlr=0.281
+  cand[1] id=2 features=[0.31006771159551116] hc=5.00 re=1379.9 qlr=0.169
+  cand[2] id=63 features=[0.5483706742643983] hc=4.00 re=903.3 qlr=0.243
+  cand[3] id=77 features=[0.15033059519213854] hc=5.00 re=1699.3 qlr=0.165
+  qValues=[0.42156726494431496, 0.36081159487366676, 0.32604895904660225, 0.3297721780836582]  action=0  chosenParent=80
+1772558205779 DECISION phase=366 mote=5 eps=0.088 cand=[2, 80, 63, 77] valid=[true, true, true, true]
+  cand[0] id=2 features=[0.31029795880778366] hc=5.00 re=1379.4 qlr=0.163
+  cand[1] id=80 features=[0.5850878975545825] hc=4.00 re=829.8 qlr=0.278
+  cand[2] id=63 features=[0.5579793310582354] hc=4.00 re=884.0 qlr=0.252
+  cand[3] id=77 features=[0.15143525735206165] hc=5.00 re=1697.1 qlr=0.163
+  qValues=[0.5574772208929062, 0.40834277868270874, 0.36120982468128204, 0.375751256942749]  action=0  chosenParent=2
+1772558214920 DECISION phase=367 mote=5 eps=0.087 cand=[2, 80, 63, 77] valid=[true, true, true, true]
+  cand[0] id=2 features=[0.31035082305074646] hc=5.00 re=1379.3 qlr=0.162
+  cand[1] id=80 features=[0.5859292881066107] hc=5.00 re=828.1 qlr=0.275
+  cand[2] id=63 features=[0.563750233625253] hc=4.00 re=872.5 qlr=0.255
+  cand[3] id=77 features=[0.15179159615034565] hc=5.00 re=1696.4 qlr=0.165
+  qValues=[0.5737272761762142, 0.41538357362151146, 0.36524927243590355, 0.3801979832351208]  action=0  chosenParent=2
+1772558225206 DECISION phase=368 mote=5 eps=0.087 cand=[2, 63, 80, 77] valid=[true, true, true, true]
+  cand[0] id=2 features=[0.31037190625753364] hc=5.00 re=1379.3 qlr=0.161
+  cand[1] id=63 features=[0.5692577862834126] hc=4.00 re=861.5 qlr=0.267
+  cand[2] id=80 features=[0.5890568297656689] hc=5.00 re=821.9 qlr=0.274
+  cand[3] id=77 features=[0.15180223861710218] hc=254.00 re=1696.4 qlr=0.165
+  qValues=[0.6017486974596977, 0.42834990471601486, 0.3761603757739067, 0.38987167924642563]  action=0  chosenParent=2
+1772558237074 DECISION phase=369 mote=5 eps=0.086 cand=[80] valid=[true, false, false, false]
+  cand[0] id=80 features=[0.5912372558996382] hc=4.00 re=817.5 qlr=0.283
+  qValues=[0.5445851422846317, 0.43992072716355324, 0.3387930579483509, 0.37441718950867653]  action=0  chosenParent=80
+1772558248204 DECISION phase=370 mote=5 eps=0.085 cand=[80] valid=[true, false, false, false]
+  cand[0] id=80 features=[0.6203910528644714] hc=4.00 re=759.2 qlr=0.279
+  qValues=[0.5368238687515259, 0.44061943888664246, 0.3394787609577179, 0.3736426830291748]  action=0  chosenParent=80
+1772558260042 DECISION phase=371 mote=5 eps=0.085 cand=[80] valid=[true, false, false, false]
+  cand[0] id=80 features=[0.643541957540871] hc=4.00 re=712.9 qlr=0.275
+  qValues=[0.5199993718415499, 0.43682883866131306, 0.3364055994898081, 0.3694958109408617]  action=0  chosenParent=80
+1772558269359 DECISION phase=372 mote=5 eps=0.084 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.18791778871423115] hc=5.00 re=1624.2 qlr=0.104
+  qValues=[0.7755697704851627, 0.5085344798862934, 0.3949708081781864, 0.41994256153702736]  action=0  chosenParent=22
+1772558278589 DECISION phase=373 mote=5 eps=0.084 cand=[22] valid=[true, false, false, false]
+  cand[0] id=22 features=[0.27406528032991817] hc=5.00 re=1451.9 qlr=0.100
+  qValues=[0.687895031645894, 0.4792906064540148, 0.36890495754778385, 0.3962568212300539]  action=0  chosenParent=22
