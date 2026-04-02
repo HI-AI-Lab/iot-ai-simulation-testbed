@@ -161,6 +161,11 @@ public class Agent implements Serializable {
 
     private int phase = 0;
     private long trainSteps = 0;
+    private long policyEvalStates = 0;
+    private long policyEvalChoiceStates = 0;
+    private long policyEvalGreedyTop1 = 0;
+    private double policyEvalGreedyRewardSum = 0.0;
+    private double policyEvalBestRewardSum = 0.0;
 
     // PER
     private static final int CAP = 1000;
@@ -271,6 +276,7 @@ public class Agent implements Serializable {
 
         double[] q = qValues(online, flat);
         int greedy = argmaxMasked(q, valid);
+        trackPolicyEvidence(valid, candIds, hcArr, reArr, qlrArr, greedy);
         int action = (rnd.nextDouble() < epsilon)
                 ? randomValid(valid)
                 : greedy;
@@ -304,6 +310,9 @@ public class Agent implements Serializable {
         open.clear();
 
         if (!replay.isEmpty()) trainOneBatch();
+
+        logPolicyEvidenceSummary();
+        resetPolicyEvidence();
 
         phase++;
 
@@ -473,6 +482,78 @@ public class Agent implements Serializable {
                 .max().orElse(1.0);
 
         pri.put(t, mx + 1e-3);
+    }
+
+    // -------------------------------------------------------------------
+    private void trackPolicyEvidence(
+            boolean[] valid,
+            int[] candIds,
+            double[] hcArr,
+            double[] reArr,
+            double[] qlrArr,
+            int greedy)
+    {
+        int candidates = (candIds == null) ? 0 : candIds.length;
+        if (candidates <= 0) return;
+
+        policyEvalStates++;
+
+        int upper = Math.min(k, candidates);
+        int validCount = 0;
+        int best = -1;
+        double bestReward = Double.NEGATIVE_INFINITY;
+
+        for (int i = 0; i < upper; i++) {
+            boolean ok = (valid == null) || (i < valid.length && valid[i]);
+            if (!ok) continue;
+
+            validCount++;
+            double rewardNow = reward(safe(hcArr, i), safe(reArr, i), safe(qlrArr, i));
+            if (rewardNow > bestReward) {
+                bestReward = rewardNow;
+                best = i;
+            }
+        }
+
+        if (validCount < 2 || greedy < 0 || greedy >= upper || best < 0) return;
+
+        double greedyReward = reward(safe(hcArr, greedy), safe(reArr, greedy), safe(qlrArr, greedy));
+
+        policyEvalChoiceStates++;
+        policyEvalGreedyRewardSum += greedyReward;
+        policyEvalBestRewardSum += bestReward;
+        if (greedy == best) policyEvalGreedyTop1++;
+    }
+
+    private void logPolicyEvidenceSummary() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("POLICY_EVAL phase=").append(phase)
+          .append(" states=").append(policyEvalStates)
+          .append(" choiceStates=").append(policyEvalChoiceStates);
+
+        if (policyEvalChoiceStates > 0) {
+            double meanGreedy = policyEvalGreedyRewardSum / policyEvalChoiceStates;
+            double meanBest = policyEvalBestRewardSum / policyEvalChoiceStates;
+            double meanRegret = (policyEvalBestRewardSum - policyEvalGreedyRewardSum) / policyEvalChoiceStates;
+            double top1 = (double) policyEvalGreedyTop1 / policyEvalChoiceStates;
+            double rewardRatio = (meanBest > 0.0) ? (meanGreedy / meanBest) : 0.0;
+
+            sb.append(" greedyTop1=").append(String.format("%.3f", top1))
+              .append(" meanGreedyReward=").append(String.format("%.4f", meanGreedy))
+              .append(" meanBestReward=").append(String.format("%.4f", meanBest))
+              .append(" meanRegret=").append(String.format("%.4f", meanRegret))
+              .append(" rewardRatio=").append(String.format("%.3f", rewardRatio));
+        }
+
+        log(sb.toString());
+    }
+
+    private void resetPolicyEvidence() {
+        policyEvalStates = 0;
+        policyEvalChoiceStates = 0;
+        policyEvalGreedyTop1 = 0;
+        policyEvalGreedyRewardSum = 0.0;
+        policyEvalBestRewardSum = 0.0;
     }
 
     // -------------------------------------------------------------------
