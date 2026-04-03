@@ -1,0 +1,2773 @@
+{
+  "version": 2,
+  "created_at": "2026-03-25 21:16:50",
+  "updated_at": "2026-03-27 02:48:46",
+  "config": {
+    "ararl_dir": "/workspace/testbed/experiments/ararl",
+    "logs_dir": "/workspace/testbed/results/data/fullgrid/logs",
+    "gradle_root": "/workspace/contiki-ng/tools/cooja",
+    "nodes": [
+      60,
+      80,
+      100
+    ],
+    "ppms": [
+      80,
+      100,
+      120
+    ],
+    "topology_ids": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10"
+    ],
+    "masks": [
+      {
+        "name": "etx-pfi-re-qo-hc__1011011",
+        "file": "/workspace/testbed/masks/ga_etx_winners/etx-pfi-re-qo-hc__1011011.yaml"
+      },
+      {
+        "name": "etx-re-bdi-qo__1001110",
+        "file": "/workspace/testbed/masks/ga_etx_winners/etx-re-bdi-qo__1001110.yaml"
+      },
+      {
+        "name": "pfi-bdi__0010100",
+        "file": "/workspace/testbed/masks/ga_etx_winners/pfi-bdi__0010100.yaml"
+      },
+      {
+        "name": "re-bdi-qo__0001110",
+        "file": "/workspace/testbed/masks/ga_etx_winners/re-bdi-qo__0001110.yaml"
+      },
+      {
+        "name": "rssi-re-bdi-qo-hc__0101111",
+        "file": "/workspace/testbed/masks/ga_etx_winners/rssi-re-bdi-qo-hc__0101111.yaml"
+      }
+    ],
+    "duration_sf": 180,
+    "warmup_sf": 12,
+    "sim_seed": 67890,
+    "agent_seed": 12345,
+    "traffic_seeds": [
+      1
+    ],
+    "tx_range": null,
+    "int_range": null,
+    "gradle_user_home": null,
+    "jobs": 19,
+    "work_root": "/workspace/testbed/results/data/fullgrid/_work",
+    "keep_work": false,
+    "dry_run": false,
+    "resume": false,
+    "error_log_tail": 50,
+    "heartbeat_secs": 60
+  },
+  "task_state": {
+    "etx-pfi-re-qo-hc__1011011|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:58:03"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:53:07"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:52:38"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:58:36"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:53:09"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:59:55"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:08:09"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:59:40"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:59:16"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:52:00"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:58:52"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:52:07"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:53:00"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:05:20"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:55:45"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:50:37"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:05:20"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:59:21"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 21:59:42"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:24:53"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:36:22"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:27:37"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:22:27"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:37:14"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:34:16"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:27:17"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:38:03"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:42:44"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:43:03"
+    },
+    "etx-pfi-re-qo-hc__1011011|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 22:37:54"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:14:25"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:09:34"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:04:14"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:20:44"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:18:07"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:08:57"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:27:59"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:26:45"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:44:39"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:40:30"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:45:17"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:30:40"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:36:59"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:55:37"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:54:34"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:41:15"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:59:24"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-25 23:53:15"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:01:10"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:15:28"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:20:43"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:18:53"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:19:32"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:29:39"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:41:38"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:17:59"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:47:48"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:42:56"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:56:45"
+    },
+    "etx-pfi-re-qo-hc__1011011|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 00:54:39"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:44:38"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:18:29"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:29:24"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:02:22"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:07:28"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:25:26"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:53:21"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:45:50"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:03:11"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:14:05"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:14:57"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:18:27"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 01:58:50"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:33:29"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:48:01"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:09:26"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:44:42"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:38:11"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 02:54:20"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:16:06"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo01/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:21:11"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo02/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:08:27"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo03/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:37:32"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo04/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:45:16"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo05/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 04:09:31"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo06/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:07:19"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo07/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:53:30"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo08/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:37:01"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo09/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 04:12:49"
+    },
+    "etx-pfi-re-qo-hc__1011011|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo10/seed1/etx-pfi-re-qo-hc__1011011",
+      "updated_at": "2026-03-26 03:58:47"
+    },
+    "etx-re-bdi-qo__1001110|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 02:54:35"
+    },
+    "etx-re-bdi-qo__1001110|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 02:48:55"
+    },
+    "etx-re-bdi-qo__1001110|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 02:51:05"
+    },
+    "etx-re-bdi-qo__1001110|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:14:54"
+    },
+    "etx-re-bdi-qo__1001110|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:12:06"
+    },
+    "etx-re-bdi-qo__1001110|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:25:47"
+    },
+    "etx-re-bdi-qo__1001110|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:37:27"
+    },
+    "etx-re-bdi-qo__1001110|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:27:14"
+    },
+    "etx-re-bdi-qo__1001110|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:32:23"
+    },
+    "etx-re-bdi-qo__1001110|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:28:29"
+    },
+    "etx-re-bdi-qo__1001110|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:35:24"
+    },
+    "etx-re-bdi-qo__1001110|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:41:23"
+    },
+    "etx-re-bdi-qo__1001110|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:43:06"
+    },
+    "etx-re-bdi-qo__1001110|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:59:32"
+    },
+    "etx-re-bdi-qo__1001110|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:52:23"
+    },
+    "etx-re-bdi-qo__1001110|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 03:45:34"
+    },
+    "etx-re-bdi-qo__1001110|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:06:55"
+    },
+    "etx-re-bdi-qo__1001110|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:06:17"
+    },
+    "etx-re-bdi-qo__1001110|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:08:40"
+    },
+    "etx-re-bdi-qo__1001110|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:02:59"
+    },
+    "etx-re-bdi-qo__1001110|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:14:45"
+    },
+    "etx-re-bdi-qo__1001110|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:10:13"
+    },
+    "etx-re-bdi-qo__1001110|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:05:11"
+    },
+    "etx-re-bdi-qo__1001110|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:21:56"
+    },
+    "etx-re-bdi-qo__1001110|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:17:33"
+    },
+    "etx-re-bdi-qo__1001110|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:14:37"
+    },
+    "etx-re-bdi-qo__1001110|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:25:16"
+    },
+    "etx-re-bdi-qo__1001110|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:29:00"
+    },
+    "etx-re-bdi-qo__1001110|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:29:33"
+    },
+    "etx-re-bdi-qo__1001110|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 04:30:34"
+    },
+    "etx-re-bdi-qo__1001110|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:09:32"
+    },
+    "etx-re-bdi-qo__1001110|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:12:55"
+    },
+    "etx-re-bdi-qo__1001110|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:06:25"
+    },
+    "etx-re-bdi-qo__1001110|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:23:59"
+    },
+    "etx-re-bdi-qo__1001110|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:25:20"
+    },
+    "etx-re-bdi-qo__1001110|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:14:51"
+    },
+    "etx-re-bdi-qo__1001110|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:30:34"
+    },
+    "etx-re-bdi-qo__1001110|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:25:35"
+    },
+    "etx-re-bdi-qo__1001110|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:33:49"
+    },
+    "etx-re-bdi-qo__1001110|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:25:22"
+    },
+    "etx-re-bdi-qo__1001110|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:30:04"
+    },
+    "etx-re-bdi-qo__1001110|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:18:42"
+    },
+    "etx-re-bdi-qo__1001110|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:14:54"
+    },
+    "etx-re-bdi-qo__1001110|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:35:32"
+    },
+    "etx-re-bdi-qo__1001110|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:41:03"
+    },
+    "etx-re-bdi-qo__1001110|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:26:18"
+    },
+    "etx-re-bdi-qo__1001110|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:49:06"
+    },
+    "etx-re-bdi-qo__1001110|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:40:22"
+    },
+    "etx-re-bdi-qo__1001110|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 05:45:13"
+    },
+    "etx-re-bdi-qo__1001110|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:18:15"
+    },
+    "etx-re-bdi-qo__1001110|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:20:14"
+    },
+    "etx-re-bdi-qo__1001110|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:22:17"
+    },
+    "etx-re-bdi-qo__1001110|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:19:09"
+    },
+    "etx-re-bdi-qo__1001110|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:25:50"
+    },
+    "etx-re-bdi-qo__1001110|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:36:52"
+    },
+    "etx-re-bdi-qo__1001110|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:16:47"
+    },
+    "etx-re-bdi-qo__1001110|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:46:10"
+    },
+    "etx-re-bdi-qo__1001110|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:36:39"
+    },
+    "etx-re-bdi-qo__1001110|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:47:13"
+    },
+    "etx-re-bdi-qo__1001110|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 06:41:30"
+    },
+    "etx-re-bdi-qo__1001110|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:33:45"
+    },
+    "etx-re-bdi-qo__1001110|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:11:44"
+    },
+    "etx-re-bdi-qo__1001110|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:20:12"
+    },
+    "etx-re-bdi-qo__1001110|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:39:52"
+    },
+    "etx-re-bdi-qo__1001110|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:53:55"
+    },
+    "etx-re-bdi-qo__1001110|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:12:07"
+    },
+    "etx-re-bdi-qo__1001110|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:40:03"
+    },
+    "etx-re-bdi-qo__1001110|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:27:24"
+    },
+    "etx-re-bdi-qo__1001110|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:16:58"
+    },
+    "etx-re-bdi-qo__1001110|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:15:27"
+    },
+    "etx-re-bdi-qo__1001110|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:18:10"
+    },
+    "etx-re-bdi-qo__1001110|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:18:01"
+    },
+    "etx-re-bdi-qo__1001110|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:04:53"
+    },
+    "etx-re-bdi-qo__1001110|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:29:35"
+    },
+    "etx-re-bdi-qo__1001110|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:42:26"
+    },
+    "etx-re-bdi-qo__1001110|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 07:59:22"
+    },
+    "etx-re-bdi-qo__1001110|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:38:06"
+    },
+    "etx-re-bdi-qo__1001110|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:17:02"
+    },
+    "etx-re-bdi-qo__1001110|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:38:51"
+    },
+    "etx-re-bdi-qo__1001110|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:09:18"
+    },
+    "etx-re-bdi-qo__1001110|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo01/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:05:51"
+    },
+    "etx-re-bdi-qo__1001110|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo02/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:58:37"
+    },
+    "etx-re-bdi-qo__1001110|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo03/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:21:07"
+    },
+    "etx-re-bdi-qo__1001110|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo04/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:37:00"
+    },
+    "etx-re-bdi-qo__1001110|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo05/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:53:37"
+    },
+    "etx-re-bdi-qo__1001110|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo06/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 08:58:07"
+    },
+    "etx-re-bdi-qo__1001110|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo07/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:44:01"
+    },
+    "etx-re-bdi-qo__1001110|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo08/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 09:31:10"
+    },
+    "etx-re-bdi-qo__1001110|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo09/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 10:10:26"
+    },
+    "etx-re-bdi-qo__1001110|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo10/seed1/etx-re-bdi-qo__1001110",
+      "updated_at": "2026-03-26 10:04:33"
+    },
+    "pfi-bdi__0010100|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 08:56:57"
+    },
+    "pfi-bdi__0010100|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 08:51:27"
+    },
+    "pfi-bdi__0010100|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 08:51:50"
+    },
+    "pfi-bdi__0010100|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 08:59:06"
+    },
+    "pfi-bdi__0010100|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:03:23"
+    },
+    "pfi-bdi__0010100|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:17:01"
+    },
+    "pfi-bdi__0010100|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:27:10"
+    },
+    "pfi-bdi__0010100|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:22:35"
+    },
+    "pfi-bdi__0010100|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:32:05"
+    },
+    "pfi-bdi__0010100|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:24:58"
+    },
+    "pfi-bdi__0010100|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:37:36"
+    },
+    "pfi-bdi__0010100|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:32:34"
+    },
+    "pfi-bdi__0010100|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:32:50"
+    },
+    "pfi-bdi__0010100|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:46:14"
+    },
+    "pfi-bdi__0010100|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:39:45"
+    },
+    "pfi-bdi__0010100|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:35:29"
+    },
+    "pfi-bdi__0010100|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:55:24"
+    },
+    "pfi-bdi__0010100|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:55:47"
+    },
+    "pfi-bdi__0010100|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:02:25"
+    },
+    "pfi-bdi__0010100|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:56:26"
+    },
+    "pfi-bdi__0010100|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:07:41"
+    },
+    "pfi-bdi__0010100|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:01:27"
+    },
+    "pfi-bdi__0010100|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 09:59:44"
+    },
+    "pfi-bdi__0010100|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:16:03"
+    },
+    "pfi-bdi__0010100|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:12:14"
+    },
+    "pfi-bdi__0010100|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:07:05"
+    },
+    "pfi-bdi__0010100|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:16:17"
+    },
+    "pfi-bdi__0010100|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:22:45"
+    },
+    "pfi-bdi__0010100|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:20:45"
+    },
+    "pfi-bdi__0010100|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:17:04"
+    },
+    "pfi-bdi__0010100|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:02:28"
+    },
+    "pfi-bdi__0010100|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:57:08"
+    },
+    "pfi-bdi__0010100|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 10:54:23"
+    },
+    "pfi-bdi__0010100|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:15:45"
+    },
+    "pfi-bdi__0010100|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:15:19"
+    },
+    "pfi-bdi__0010100|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:02:50"
+    },
+    "pfi-bdi__0010100|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:18:22"
+    },
+    "pfi-bdi__0010100|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:14:22"
+    },
+    "pfi-bdi__0010100|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:23:44"
+    },
+    "pfi-bdi__0010100|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:20:18"
+    },
+    "pfi-bdi__0010100|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:24:48"
+    },
+    "pfi-bdi__0010100|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:12:47"
+    },
+    "pfi-bdi__0010100|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:11:51"
+    },
+    "pfi-bdi__0010100|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:31:33"
+    },
+    "pfi-bdi__0010100|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:34:49"
+    },
+    "pfi-bdi__0010100|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:14:22"
+    },
+    "pfi-bdi__0010100|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:40:20"
+    },
+    "pfi-bdi__0010100|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:31:03"
+    },
+    "pfi-bdi__0010100|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 11:38:12"
+    },
+    "pfi-bdi__0010100|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:04:45"
+    },
+    "pfi-bdi__0010100|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:09:38"
+    },
+    "pfi-bdi__0010100|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:10:33"
+    },
+    "pfi-bdi__0010100|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:04:50"
+    },
+    "pfi-bdi__0010100|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:21:12"
+    },
+    "pfi-bdi__0010100|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:34:21"
+    },
+    "pfi-bdi__0010100|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:05:30"
+    },
+    "pfi-bdi__0010100|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:34:50"
+    },
+    "pfi-bdi__0010100|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:28:35"
+    },
+    "pfi-bdi__0010100|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:33:44"
+    },
+    "pfi-bdi__0010100|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:30:03"
+    },
+    "pfi-bdi__0010100|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:23:27"
+    },
+    "pfi-bdi__0010100|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 12:56:26"
+    },
+    "pfi-bdi__0010100|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:08:18"
+    },
+    "pfi-bdi__0010100|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:33:20"
+    },
+    "pfi-bdi__0010100|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:38:25"
+    },
+    "pfi-bdi__0010100|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:06:42"
+    },
+    "pfi-bdi__0010100|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:34:28"
+    },
+    "pfi-bdi__0010100|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:13:12"
+    },
+    "pfi-bdi__0010100|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:58:12"
+    },
+    "pfi-bdi__0010100|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:06:09"
+    },
+    "pfi-bdi__0010100|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:07:26"
+    },
+    "pfi-bdi__0010100|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:05:18"
+    },
+    "pfi-bdi__0010100|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:46:46"
+    },
+    "pfi-bdi__0010100|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:22:21"
+    },
+    "pfi-bdi__0010100|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:43:48"
+    },
+    "pfi-bdi__0010100|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 13:47:57"
+    },
+    "pfi-bdi__0010100|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:30:55"
+    },
+    "pfi-bdi__0010100|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:13:35"
+    },
+    "pfi-bdi__0010100|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:40:14"
+    },
+    "pfi-bdi__0010100|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:00:04"
+    },
+    "pfi-bdi__0010100|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo01/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:07:50"
+    },
+    "pfi-bdi__0010100|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo02/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:53:27"
+    },
+    "pfi-bdi__0010100|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo03/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:49:29"
+    },
+    "pfi-bdi__0010100|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo04/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:20:22"
+    },
+    "pfi-bdi__0010100|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo05/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:42:26"
+    },
+    "pfi-bdi__0010100|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo06/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 14:53:58"
+    },
+    "pfi-bdi__0010100|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo07/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:30:15"
+    },
+    "pfi-bdi__0010100|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo08/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:14:45"
+    },
+    "pfi-bdi__0010100|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo09/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:55:32"
+    },
+    "pfi-bdi__0010100|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo10/seed1/pfi-bdi__0010100",
+      "updated_at": "2026-03-26 15:53:51"
+    },
+    "re-bdi-qo__0001110|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 14:44:52"
+    },
+    "re-bdi-qo__0001110|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 14:39:24"
+    },
+    "re-bdi-qo__0001110|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 14:40:11"
+    },
+    "re-bdi-qo__0001110|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 14:55:30"
+    },
+    "re-bdi-qo__0001110|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 14:56:12"
+    },
+    "re-bdi-qo__0001110|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:11:09"
+    },
+    "re-bdi-qo__0001110|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:27:47"
+    },
+    "re-bdi-qo__0001110|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:18:41"
+    },
+    "re-bdi-qo__0001110|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:20:38"
+    },
+    "re-bdi-qo__0001110|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:17:03"
+    },
+    "re-bdi-qo__0001110|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:24:57"
+    },
+    "re-bdi-qo__0001110|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:22:46"
+    },
+    "re-bdi-qo__0001110|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:27:23"
+    },
+    "re-bdi-qo__0001110|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:41:13"
+    },
+    "re-bdi-qo__0001110|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:32:15"
+    },
+    "re-bdi-qo__0001110|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:26:46"
+    },
+    "re-bdi-qo__0001110|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:47:28"
+    },
+    "re-bdi-qo__0001110|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:47:48"
+    },
+    "re-bdi-qo__0001110|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:53:06"
+    },
+    "re-bdi-qo__0001110|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:48:08"
+    },
+    "re-bdi-qo__0001110|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:59:04"
+    },
+    "re-bdi-qo__0001110|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:53:12"
+    },
+    "re-bdi-qo__0001110|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:48:36"
+    },
+    "re-bdi-qo__0001110|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:05:03"
+    },
+    "re-bdi-qo__0001110|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:02:12"
+    },
+    "re-bdi-qo__0001110|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 15:59:08"
+    },
+    "re-bdi-qo__0001110|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:07:54"
+    },
+    "re-bdi-qo__0001110|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:09:14"
+    },
+    "re-bdi-qo__0001110|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:13:31"
+    },
+    "re-bdi-qo__0001110|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:08:13"
+    },
+    "re-bdi-qo__0001110|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:50:59"
+    },
+    "re-bdi-qo__0001110|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:48:46"
+    },
+    "re-bdi-qo__0001110|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:40:27"
+    },
+    "re-bdi-qo__0001110|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:09:22"
+    },
+    "re-bdi-qo__0001110|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:08:07"
+    },
+    "re-bdi-qo__0001110|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 16:55:07"
+    },
+    "re-bdi-qo__0001110|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:13:23"
+    },
+    "re-bdi-qo__0001110|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:12:03"
+    },
+    "re-bdi-qo__0001110|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:15:20"
+    },
+    "re-bdi-qo__0001110|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:08:58"
+    },
+    "re-bdi-qo__0001110|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:13:02"
+    },
+    "re-bdi-qo__0001110|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:03:09"
+    },
+    "re-bdi-qo__0001110|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:00:42"
+    },
+    "re-bdi-qo__0001110|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:20:36"
+    },
+    "re-bdi-qo__0001110|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:24:24"
+    },
+    "re-bdi-qo__0001110|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:07:02"
+    },
+    "re-bdi-qo__0001110|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:27:10"
+    },
+    "re-bdi-qo__0001110|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:19:20"
+    },
+    "re-bdi-qo__0001110|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:32:39"
+    },
+    "re-bdi-qo__0001110|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:54:43"
+    },
+    "re-bdi-qo__0001110|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:00:15"
+    },
+    "re-bdi-qo__0001110|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:00:51"
+    },
+    "re-bdi-qo__0001110|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 17:58:39"
+    },
+    "re-bdi-qo__0001110|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:11:40"
+    },
+    "re-bdi-qo__0001110|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:22:43"
+    },
+    "re-bdi-qo__0001110|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:02:00"
+    },
+    "re-bdi-qo__0001110|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:29:13"
+    },
+    "re-bdi-qo__0001110|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:19:31"
+    },
+    "re-bdi-qo__0001110|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:34:08"
+    },
+    "re-bdi-qo__0001110|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:27:08"
+    },
+    "re-bdi-qo__0001110|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:14:16"
+    },
+    "re-bdi-qo__0001110|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:46:05"
+    },
+    "re-bdi-qo__0001110|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:56:57"
+    },
+    "re-bdi-qo__0001110|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:24:59"
+    },
+    "re-bdi-qo__0001110|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:33:24"
+    },
+    "re-bdi-qo__0001110|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 18:52:49"
+    },
+    "re-bdi-qo__0001110|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:16:22"
+    },
+    "re-bdi-qo__0001110|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:14:20"
+    },
+    "re-bdi-qo__0001110|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:53:25"
+    },
+    "re-bdi-qo__0001110|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:58:33"
+    },
+    "re-bdi-qo__0001110|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:56:49"
+    },
+    "re-bdi-qo__0001110|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:54:59"
+    },
+    "re-bdi-qo__0001110|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:40:12"
+    },
+    "re-bdi-qo__0001110|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:18:47"
+    },
+    "re-bdi-qo__0001110|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:25:58"
+    },
+    "re-bdi-qo__0001110|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 19:53:40"
+    },
+    "re-bdi-qo__0001110|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:22:42"
+    },
+    "re-bdi-qo__0001110|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:04:27"
+    },
+    "re-bdi-qo__0001110|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:29:21"
+    },
+    "re-bdi-qo__0001110|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:44:56"
+    },
+    "re-bdi-qo__0001110|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo01/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:53:40"
+    },
+    "re-bdi-qo__0001110|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo02/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:37:17"
+    },
+    "re-bdi-qo__0001110|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo03/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:10:36"
+    },
+    "re-bdi-qo__0001110|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo04/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:20:42"
+    },
+    "re-bdi-qo__0001110|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo05/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:33:26"
+    },
+    "re-bdi-qo__0001110|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo06/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 20:39:44"
+    },
+    "re-bdi-qo__0001110|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo07/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:24:43"
+    },
+    "re-bdi-qo__0001110|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo08/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:14:25"
+    },
+    "re-bdi-qo__0001110|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo09/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 22:04:00"
+    },
+    "re-bdi-qo__0001110|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo10/seed1/re-bdi-qo__0001110",
+      "updated_at": "2026-03-26 21:49:54"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 20:35:15"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 20:31:07"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 20:32:27"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 20:45:45"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 20:53:09"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:02:57"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:14:49"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:08:21"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:12:29"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM80/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:06:43"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:16:04"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:12:47"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:13:55"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:32:28"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:22:56"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:24:42"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:40:18"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:43:30"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:47:57"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM100/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:42:42"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:53:08"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:47:10"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:40:39"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:57:40"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:54:27"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:48:56"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 21:57:02"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:06:12"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:06:03"
+    },
+    "rssi-re-bdi-qo-hc__0101111|60|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N60_PPM120/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:02:33"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:41:09"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:47:31"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:38:29"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:02:19"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:57:52"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:52:07"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:06:15"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:04:44"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:10:06"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM80/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:04:07"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:06:38"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:56:39"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 22:58:13"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:15:30"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:17:41"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:01:31"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:24:08"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:16:41"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:25:14"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM100/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:49:01"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:52:15"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:55:57"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:55:22"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:08:30"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:15:42"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-26 23:50:15"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:24:08"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:14:53"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:22:45"
+    },
+    "rssi-re-bdi-qo-hc__0101111|80|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N80_PPM120/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:18:56"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:07:44"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:38:59"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:49:15"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:20:36"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:28:03"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:42:58"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:16:10"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 00:57:02"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:43:48"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|80|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM80/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:50:22"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:52:35"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:50:24"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:35:37"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:09:45"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:14:07"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 01:40:37"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:13:00"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:01:01"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:15:50"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|100|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM100/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:22:33"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|01|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo01/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:25:56"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|02|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo02/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:16:38"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|03|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo03/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:31:35"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|04|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo04/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:38:07"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|05|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo05/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:44:22"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|06|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo06/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:26:47"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|07|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo07/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:40:58"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|08|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo08/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:38:35"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|09|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo09/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:48:46"
+    },
+    "rssi-re-bdi-qo-hc__0101111|100|120|10|1": {
+      "status": "done",
+      "ok": true,
+      "run_dir": "/workspace/testbed/results/data/fullgrid/logs/N100_PPM120/topo10/seed1/rssi-re-bdi-qo-hc__0101111",
+      "updated_at": "2026-03-27 02:45:11"
+    }
+  }
+}
