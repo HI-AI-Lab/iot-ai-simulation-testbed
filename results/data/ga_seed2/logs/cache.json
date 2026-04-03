@@ -1,0 +1,1200 @@
+{
+  "meta": {
+    "version": 2,
+    "mask_file": "/workspace/testbed/masks/ga/etx_pfi_rssi_re_hc_bdi_qo.yaml",
+    "search_features": [
+      "etx",
+      "rssi",
+      "pfi",
+      "re",
+      "bdi",
+      "qo",
+      "hc"
+    ],
+    "feature_order": [
+      "etx",
+      "rssi",
+      "pfi",
+      "re",
+      "bdi",
+      "qo",
+      "qlr",
+      "hc",
+      "si",
+      "tv",
+      "pc",
+      "wr",
+      "str"
+    ],
+    "allow_empty_mask": false,
+    "nodes": [
+      100
+    ],
+    "ppms": [
+      120
+    ],
+    "topologies": 10,
+    "topology_ids": [],
+    "traffic_seeds": [
+      1
+    ],
+    "duration_sf": 180,
+    "warmup_sf": 12,
+    "sim_seed": 67890,
+    "agent_seed": 12345,
+    "tx_range": null,
+    "int_range": null,
+    "weights": {
+      "w_nlt": 0.5,
+      "w_prr": 0.25,
+      "w_dly": 0.25
+    },
+    "delay_scale_ms": 1000.0,
+    "prr_min": 0.85,
+    "lambda_stability": 0.0,
+    "beta_prr_penalty": 0.0,
+    "gamma_missing_penalty": 0.0
+  },
+  "masks": {
+    "re-bdi__0001100": {
+      "mask_id": "re-bdi__0001100",
+      "mask_label": "re-bdi",
+      "bits": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "selected_features": [
+        "re",
+        "bdi"
+      ],
+      "fitness": 0.6057726212272208,
+      "detail": {
+        "mu": 0.6057726212272208,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6057726212272208,
+        "prr_mean": 0.3582049249957542,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2735.130177514793,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3582049249957542,
+          "nlt": 846315.5,
+          "delay": 2735.130177514793,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/re-bdi__0001100/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "bdi-qo__0000110": {
+      "mask_id": "bdi-qo__0000110",
+      "mask_label": "bdi-qo",
+      "bits": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "selected_features": [
+        "bdi",
+        "qo"
+      ],
+      "fitness": 0.6012814353729495,
+      "detail": {
+        "mu": 0.6012814353729495,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6012814353729495,
+        "prr_mean": 0.3586116514204167,
+        "nlt_mean": 797672.9,
+        "delay_mean": 3068.0,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3586116514204167,
+          "nlt": 797672.9,
+          "delay": 3068.0,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/bdi-qo__0000110/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "pfi-re-hc__0011001": {
+      "mask_id": "pfi-re-hc__0011001",
+      "mask_label": "pfi-re-hc",
+      "bits": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "selected_features": [
+        "pfi",
+        "re",
+        "hc"
+      ],
+      "fitness": 0.6058754265861299,
+      "detail": {
+        "mu": 0.6058754265861299,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6058754265861299,
+        "prr_mean": 0.3647893867726615,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2835.105700712589,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3647893867726615,
+          "nlt": 846315.5,
+          "delay": 2835.105700712589,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/pfi-re-hc__0011001/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "qo-hc__0000011": {
+      "mask_id": "qo-hc__0000011",
+      "mask_label": "qo-hc",
+      "bits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6051783369560518,
+      "detail": {
+        "mu": 0.6051783369560518,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6051783369560518,
+        "prr_mean": 0.36284577450007477,
+        "nlt_mean": 776434.2,
+        "delay_mean": 2849.5980975029725,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.36284577450007477,
+          "nlt": 776434.2,
+          "delay": 2849.5980975029725,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/qo-hc__0000011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "etx-qo-hc__1000011": {
+      "mask_id": "etx-qo-hc__1000011",
+      "mask_label": "etx-qo-hc",
+      "bits": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6085548112950427,
+      "detail": {
+        "mu": 0.6085548112950427,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6085548112950427,
+        "prr_mean": 0.3845643892927886,
+        "nlt_mean": 856524.7,
+        "delay_mean": 3002.659090909091,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3845643892927886,
+          "nlt": 856524.7,
+          "delay": 3002.659090909091,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/etx-qo-hc__1000011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "etx-re-qo__1001010": {
+      "mask_id": "etx-re-qo__1001010",
+      "mask_label": "etx-re-qo",
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "selected_features": [
+        "etx",
+        "re",
+        "qo"
+      ],
+      "fitness": 0.6066365869780574,
+      "detail": {
+        "mu": 0.6066365869780574,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6066365869780574,
+        "prr_mean": 0.36274712176185847,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2752.0142180094786,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.36274712176185847,
+          "nlt": 846315.5,
+          "delay": 2752.0142180094786,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/etx-re-qo__1001010/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "rssi-re-hc__0101001": {
+      "mask_id": "rssi-re-hc__0101001",
+      "mask_label": "rssi-re-hc",
+      "bits": [
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1
+      ],
+      "selected_features": [
+        "rssi",
+        "re",
+        "hc"
+      ],
+      "fitness": 0.6038909797854031,
+      "detail": {
+        "mu": 0.6038909797854031,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6038909797854031,
+        "prr_mean": 0.35503517425951336,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2804.6369047619046,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.35503517425951336,
+          "nlt": 846315.5,
+          "delay": 2804.6369047619046,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/rssi-re-hc__0101001/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "pfi-re-qo-hc__0011011": {
+      "mask_id": "pfi-re-qo-hc__0011011",
+      "mask_label": "pfi-re-qo-hc",
+      "bits": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "pfi",
+        "re",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6081136141080109,
+      "detail": {
+        "mu": 0.6081136141080109,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6081136141080109,
+        "prr_mean": 0.3738130090493079,
+        "nlt_mean": 864677.1,
+        "delay_mean": 2836.3135391923993,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3738130090493079,
+          "nlt": 864677.1,
+          "delay": 2836.3135391923993,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_001/logs/N100_PPM120/pfi-re-qo-hc__0011011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 1
+    },
+    "re-bdi-hc__0001101": {
+      "mask_id": "re-bdi-hc__0001101",
+      "mask_label": "re-bdi-hc",
+      "bits": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1
+      ],
+      "selected_features": [
+        "re",
+        "bdi",
+        "hc"
+      ],
+      "fitness": 0.6033991518974511,
+      "detail": {
+        "mu": 0.6033991518974511,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6033991518974511,
+        "prr_mean": 0.3634716551427351,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2993.2363420427555,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3634716551427351,
+          "nlt": 846315.5,
+          "delay": 2993.2363420427555,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_002/logs/N100_PPM120/re-bdi-hc__0001101/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 2
+    },
+    "rssi-pfi-re-qo-hc__0111011": {
+      "mask_id": "rssi-pfi-re-qo-hc__0111011",
+      "mask_label": "rssi-pfi-re-qo-hc",
+      "bits": [
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi",
+        "re",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6129160524416464,
+      "detail": {
+        "mu": 0.6129160524416464,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6129160524416464,
+        "prr_mean": 0.39051698052920786,
+        "nlt_mean": 846976.6,
+        "delay_mean": 2794.4707287933093,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.39051698052920786,
+          "nlt": 846976.6,
+          "delay": 2794.4707287933093,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_002/logs/N100_PPM120/rssi-pfi-re-qo-hc__0111011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 2
+    },
+    "etx-hc__1000001": {
+      "mask_id": "etx-hc__1000001",
+      "mask_label": "etx-hc",
+      "bits": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "hc"
+      ],
+      "fitness": 0.6093929578782351,
+      "detail": {
+        "mu": 0.6093929578782351,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6093929578782351,
+        "prr_mean": 0.37600903964429994,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2787.697619047619,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.37600903964429994,
+          "nlt": 846315.5,
+          "delay": 2787.697619047619,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_002/logs/N100_PPM120/etx-hc__1000001/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 2
+    },
+    "etx-bdi-qo-hc__1000111": {
+      "mask_id": "etx-bdi-qo-hc__1000111",
+      "mask_label": "etx-bdi-qo-hc",
+      "bits": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "bdi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6018509458415047,
+      "detail": {
+        "mu": 0.6018509458415047,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6018509458415047,
+        "prr_mean": 0.36050784281443743,
+        "nlt_mean": 868058.4,
+        "delay_mean": 3059.8241626794256,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.36050784281443743,
+          "nlt": 868058.4,
+          "delay": 3059.8241626794256,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_002/logs/N100_PPM120/etx-bdi-qo-hc__1000111/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 2
+    },
+    "etx-pfi-re-qo-hc__1011011": {
+      "mask_id": "etx-pfi-re-qo-hc__1011011",
+      "mask_label": "etx-pfi-re-qo-hc",
+      "bits": [
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "pfi",
+        "re",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6080061975235338,
+      "detail": {
+        "mu": 0.6080061975235338,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6080061975235338,
+        "prr_mean": 0.3678433032117953,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2746.040476190476,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3678433032117953,
+          "nlt": 846315.5,
+          "delay": 2746.040476190476,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/etx-pfi-re-qo-hc__1011011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "etx-pfi-qo-hc__1010011": {
+      "mask_id": "etx-pfi-qo-hc__1010011",
+      "mask_label": "etx-pfi-qo-hc",
+      "bits": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "pfi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6034577063596385,
+      "detail": {
+        "mu": 0.6034577063596385,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6034577063596385,
+        "prr_mean": 0.36060671371535696,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2933.243757431629,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.36060671371535696,
+          "nlt": 846315.5,
+          "delay": 2933.243757431629,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/etx-pfi-qo-hc__1010011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "rssi-pfi-re-hc__0111001": {
+      "mask_id": "rssi-pfi-re-hc__0111001",
+      "mask_label": "rssi-pfi-re-hc",
+      "bits": [
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi",
+        "re",
+        "hc"
+      ],
+      "fitness": 0.6072298171949901,
+      "detail": {
+        "mu": 0.6072298171949901,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6072298171949901,
+        "prr_mean": 0.3718338294521525,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2863.206197854589,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3718338294521525,
+          "nlt": 846315.5,
+          "delay": 2863.206197854589,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/rssi-pfi-re-hc__0111001/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "re-bdi-qo-hc__0001111": {
+      "mask_id": "re-bdi-qo-hc__0001111",
+      "mask_label": "re-bdi-qo-hc",
+      "bits": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "selected_features": [
+        "re",
+        "bdi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6043843367893947,
+      "detail": {
+        "mu": 0.6043843367893947,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6043843367893947,
+        "prr_mean": 0.36135010053117783,
+        "nlt_mean": 859227.8,
+        "delay_mean": 2879.065476190476,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.36135010053117783,
+          "nlt": 859227.8,
+          "delay": 2879.065476190476,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/re-bdi-qo-hc__0001111/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "rssi-pfi-re__0111000": {
+      "mask_id": "rssi-pfi-re__0111000",
+      "mask_label": "rssi-pfi-re",
+      "bits": [
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi",
+        "re"
+      ],
+      "fitness": 0.6059704572686249,
+      "detail": {
+        "mu": 0.6059704572686249,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6059704572686249,
+        "prr_mean": 0.3596618734388174,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2745.44128113879,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3596618734388174,
+          "nlt": 846315.5,
+          "delay": 2745.44128113879,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/rssi-pfi-re__0111000/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "rssi-pfi__0110000": {
+      "mask_id": "rssi-pfi__0110000",
+      "mask_label": "rssi-pfi",
+      "bits": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi"
+      ],
+      "fitness": 0.6095411152086146,
+      "detail": {
+        "mu": 0.6095411152086146,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6095411152086146,
+        "prr_mean": 0.3766991918980645,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2789.282996432818,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3766991918980645,
+          "nlt": 846315.5,
+          "delay": 2789.282996432818,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_003/logs/N100_PPM120/rssi-pfi__0110000/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 3
+    },
+    "etx-pfi-re-bdi-qo-hc__1011111": {
+      "mask_id": "etx-pfi-re-bdi-qo-hc__1011111",
+      "mask_label": "etx-pfi-re-bdi-qo-hc",
+      "bits": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "pfi",
+        "re",
+        "bdi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6093357989312135,
+      "detail": {
+        "mu": 0.6093357989312135,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6093357989312135,
+        "prr_mean": 0.37746310496966057,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2815.4112038140643,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.37746310496966057,
+          "nlt": 846315.5,
+          "delay": 2815.4112038140643,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_004/logs/N100_PPM120/etx-pfi-re-bdi-qo-hc__1011111/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 4
+    },
+    "etx-pfi-re__1011000": {
+      "mask_id": "etx-pfi-re__1011000",
+      "mask_label": "etx-pfi-re",
+      "bits": [
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "selected_features": [
+        "etx",
+        "pfi",
+        "re"
+      ],
+      "fitness": 0.6079526965220317,
+      "detail": {
+        "mu": 0.6079526965220317,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6079526965220317,
+        "prr_mean": 0.368734233876345,
+        "nlt_mean": 859879.0,
+        "delay_mean": 2763.4061757719714,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.368734233876345,
+          "nlt": 859879.0,
+          "delay": 2763.4061757719714,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_004/logs/N100_PPM120/etx-pfi-re__1011000/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 4
+    },
+    "rssi-pfi-qo-hc__0110011": {
+      "mask_id": "rssi-pfi-qo-hc__0110011",
+      "mask_label": "rssi-pfi-qo-hc",
+      "bits": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6054329207065746,
+      "detail": {
+        "mu": 0.6054329207065746,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6054329207065746,
+        "prr_mean": 0.3602984600357106,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2789.804502369668,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3602984600357106,
+          "nlt": 846315.5,
+          "delay": 2789.804502369668,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_004/logs/N100_PPM120/rssi-pfi-qo-hc__0110011/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 4
+    },
+    "etx-re-bdi-qo-hc__1001111": {
+      "mask_id": "etx-re-bdi-qo-hc__1001111",
+      "mask_label": "etx-re-bdi-qo-hc",
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "selected_features": [
+        "etx",
+        "re",
+        "bdi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6076826221299271,
+      "detail": {
+        "mu": 0.6076826221299271,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6076826221299271,
+        "prr_mean": 0.3716468751584705,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2828.8016627078387,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3716468751584705,
+          "nlt": 846315.5,
+          "delay": 2828.8016627078387,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_005/logs/N100_PPM120/etx-re-bdi-qo-hc__1001111/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 5
+    },
+    "rssi-pfi-re-bdi-qo-hc__0111111": {
+      "mask_id": "rssi-pfi-re-bdi-qo-hc__0111111",
+      "mask_label": "rssi-pfi-re-bdi-qo-hc",
+      "bits": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "selected_features": [
+        "rssi",
+        "pfi",
+        "re",
+        "bdi",
+        "qo",
+        "hc"
+      ],
+      "fitness": 0.6067317917822996,
+      "detail": {
+        "mu": 0.6067317917822996,
+        "sigma": 0.0,
+        "prr_penalty": 0.0,
+        "missing_penalty": 0.0,
+        "missing_fraction": 0.0,
+        "score_mean": 0.6067317917822996,
+        "prr_mean": 0.3612729536540353,
+        "nlt_mean": 846315.5,
+        "delay_mean": 2723.35349940688,
+        "runs_total_mean": 10.0,
+        "runs_valid_mean": 10.0,
+        "expected_runs_per_scenario": 10,
+        "scenario_coverage_mean": 1.0,
+        "expected_scenarios": 1,
+        "found_scenarios": 1
+      },
+      "scenarios": [
+        {
+          "nodes": 100,
+          "ppm": 120,
+          "prr": 0.3612729536540353,
+          "nlt": 846315.5,
+          "delay": 2723.35349940688,
+          "runs_total": 10,
+          "runs_valid": 10,
+          "path": "/workspace/testbed/results/data/ga_seed2/logs/runs/gen_005/logs/N100_PPM120/rssi-pfi-re-bdi-qo-hc__0111111/aggregated_results.json"
+        }
+      ],
+      "generation_evaluated": 5
+    }
+  }
+}
