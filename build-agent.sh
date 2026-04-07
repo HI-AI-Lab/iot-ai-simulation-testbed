@@ -5,10 +5,19 @@ set -e
 AGENT_DIR="/workspace/agent"
 COOJA_LIB_DIR="/workspace/contiki-ng/tools/cooja/lib"
 
-# Step 1: Build fat jar with Gradle wrapper
+# Step 1: Build fat jar
 echo "[INFO] Building RL Agent fat jar..."
 cd "$AGENT_DIR"
-./gradlew clean shadowJar
+
+if [ -f "$AGENT_DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+  ./gradlew clean shadowJar
+elif command -v gradle >/dev/null 2>&1; then
+  echo "[INFO] Gradle wrapper jar not found. Falling back to system Gradle..."
+  gradle clean shadowJar
+else
+  echo "[ERROR] Neither Gradle wrapper nor system Gradle is available."
+  exit 1
+fi
 
 # Step 2: Locate jar
 JAR="$AGENT_DIR/build/libs/rl-agent-all.jar"
