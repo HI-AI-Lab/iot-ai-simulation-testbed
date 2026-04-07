@@ -8,7 +8,7 @@ var K = 4;
 var INIT_ENERGY = 2000.0;
 var MASK_PATH = java.lang.System.getenv("MASK_FILE");
 if(MASK_PATH === null || (""+MASK_PATH).trim().length === 0) {
-  MASK_PATH = "/workspace/testbed/mask.yaml";
+  MASK_PATH = "/workspace/masks/baseline/etx.yaml";
 }
 
 var RPL_ROOT_RANK      = 256;

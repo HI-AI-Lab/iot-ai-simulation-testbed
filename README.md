@@ -2,6 +2,15 @@
 
 A Dockerized environment for running the IoT-AI simulation workflow with lab-controlled Contiki-NG and Cooja dependencies.
 
+The standard clone -> setup -> Docker -> build-agent -> run flow is intended to work on Linux machines, including Linux lab servers.
+
+## Prerequisites
+
+Before using this repository, make sure Docker is installed on the host machine.
+
+- On Linux, install Docker Engine and make sure the Docker service is running.
+- On Windows, install Docker Desktop and use Git Bash for the shell scripts.
+
 ## Dependency Layout
 
 This repository uses:
@@ -26,6 +35,7 @@ Initialize the pinned Contiki-NG and Cooja checkouts:
 ./setup_repo.sh
 ```
 
+On Linux, the shell scripts can be run directly.
 On Windows, run the shell scripts from Git Bash.
 
 ## Daily Workflow
@@ -65,8 +75,8 @@ python3 run.py \
   --nodes 60 \
   --ppm 80 \
   --topology-ids 01 \
-  --mask-file /workspace/mask.yaml \
-  --mask-name baseline \
+  --mask-file /workspace/masks/baseline/etx.yaml \
+  --mask-name etx \
   --traffic-seeds 1 \
   --jobs 1 \
   --work-root /workspace/_work
@@ -93,7 +103,7 @@ Inside the container:
 ```text
 /workspace/agent
 /workspace/experiments/ararl
-/workspace/mask.yaml
+/workspace/masks
 /workspace/contiki-ng
 /workspace/contiki-ng/tools/cooja
 ```

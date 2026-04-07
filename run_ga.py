@@ -11,7 +11,7 @@ Key behavior:
 
 Example:
   python3 /workspace/run_ga.py \
-    --mask-file /workspace/mask.yaml \
+    --mask-file /workspace/masks/baseline/etx_re_qlr_hc.yaml \
     --ararl-dir /workspace/experiments/ararl \
     --gradle-root /workspace/contiki-ng/tools/cooja \
     --work-root /workspace/_work \

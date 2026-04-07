@@ -7,8 +7,8 @@ python3 run.py \
   --nodes 60 80 100 \
   --ppm 80 100 120 \
   --topologies 10 \
-  --mask-file /workspace/mask.yaml \
-  --mask-name baseline \
+  --mask-file /workspace/masks/baseline/etx.yaml \
+  --mask-name etx \
   --jobs 0 \
   --work-root /workspace/_work
 """
