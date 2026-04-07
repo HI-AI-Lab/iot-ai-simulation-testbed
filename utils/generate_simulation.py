@@ -17,8 +17,8 @@ Article-aligned defaults (can be overridden via CLI):
 - Sink at edge-center (W/2, 0)
 
 Example (batch):
-  python3 /workspace/testbed/utils/generate_simulation.py \
-    --template /workspace/testbed/utils/simulation_template.csc \
+  python3 /workspace/utils/generate_simulation.py \
+    --template /workspace/utils/simulation_template.csc \
     --batch --nodes-list 60 80 100 --count 10 \
     --width 300 --height 300 \
     --tx_range 150 --int_range 160 \
@@ -26,8 +26,8 @@ Example (batch):
     --seed-start 10001 --check-connected
 
 Single-run (legacy) example:
-  python3 /workspace/testbed/utils/generate_simulation.py \
-    --template /workspace/testbed/utils/simulation_template.csc \
+  python3 /workspace/utils/generate_simulation.py \
+    --template /workspace/utils/simulation_template.csc \
     --out /workspace/experiments/ararl/topologies/N60/simulation-nodes60-topo01.csc \
     --motes 60 --width 300 --height 300 \
     --placement-seed 10001 --sim-seed 10001 \

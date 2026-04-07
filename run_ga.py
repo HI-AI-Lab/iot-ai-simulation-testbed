@@ -10,12 +10,12 @@ Key behavior:
   maximum parallelism globally across (mask, nodes, ppm, topology, seed).
 
 Example:
-  python3 /workspace/testbed/run_ga.py \
-    --mask-file /workspace/testbed/mask.yaml \
-    --ararl-dir /workspace/testbed/experiments/ararl \
+  python3 /workspace/run_ga.py \
+    --mask-file /workspace/mask.yaml \
+    --ararl-dir /workspace/experiments/ararl \
     --gradle-root /workspace/contiki-ng/tools/cooja \
-    --work-root /workspace/testbed/_work \
-    --ga-out /workspace/testbed/ga_out \
+    --work-root /workspace/_work \
+    --ga-out /workspace/ga_out \
     --nodes 60 80 100 --ppm 80 100 120 --topologies 10 --traffic-seeds 1 \
     --population 16 --generations 12 --elite 2 --cx-rate 0.8 --mut-rate 0.08 \
     --jobs 24

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-python3 run_parallel.py \
-  --ararl-dir /workspace/testbed/experiments/ararl \
-  --logs-dir  /workspace/testbed/logs \
+python3 run.py \
+  --ararl-dir /workspace/experiments/ararl \
+  --logs-dir  /workspace/logs \
   --gradle-root /workspace/contiki-ng/tools/cooja \
   --nodes 60 80 100 \
   --ppm 80 100 120 \
   --topologies 10 \
-  --mask-file /workspace/testbed/mask.yaml \
+  --mask-file /workspace/mask.yaml \
   --mask-name baseline \
   --jobs 0 \
-  --work-root /workspace/testbed/_work
+  --work-root /workspace/_work
 """
 from __future__ import annotations
 

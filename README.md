@@ -1,142 +1,106 @@
-# IOT-AI Simulation Testbed (Docker + Contiki-NG + COOJA)
+# IoT-AI Simulation Testbed
 
-A reproducible, Dockerized platform for running Contiki-NG simulations (COOJA-based) with optional reinforcement learning (Python).
+A Dockerized environment for running the IoT-AI simulation workflow with lab-controlled Contiki-NG and Cooja dependencies.
 
----
+## Dependency Layout
 
-## ✅ HOW TO RUN A SIMULATION
+This repository uses:
 
-### 🧰 1. Install Required Host Packages
+- `contiki-ng/` from `https://github.com/HI-AI-Lab/contiki-ng.git`
+- `contiki-ng/tools/cooja/` from `https://github.com/HI-AI-Lab/cooja.git`
+
+Do not manually clone upstream Contiki-NG or Cooja into this repo. Use the provided setup script so the expected paths stay correct.
+
+## First-Time Setup
+
+Clone the repository:
 
 ```bash
-sudo apt update
-sudo apt install -y docker.io x11-apps xauth git
-sudo usermod -aG docker $USER
-newgrp docker
-xhost +local:root
+git clone https://github.com/HI-AI-Lab/iot-ai-simulation-testbed.git
+cd iot-ai-simulation-testbed
 ```
 
----
-
-### 📥 2. Clone the Required Repositories
-
-#### Clone Contiki-NG (with submodules)
+Initialize the pinned Contiki-NG and Cooja checkouts:
 
 ```bash
-cd ~/Documents/IOT-AI
-git clone --recurse-submodules https://github.com/contiki-ng/contiki-ng.git
+./setup_repo.sh
 ```
 
----
+On Windows, run the shell scripts from Git Bash.
 
-### 🐳 3. Build the Docker Image
+## Daily Workflow
+
+From the repository root, start Docker with:
 
 ```bash
-cd ~/Documents/IOT-AI/testbed
-docker build -t cooja-rl-env .
+./docker_run.sh
 ```
 
----
+This script:
 
-### 🚀 4. Run the Docker Container (with GUI Access)
+- mounts the repo at `/workspace`
+- checks that `contiki-ng` is initialized
+- checks that `contiki-ng/tools/cooja` is initialized
+- verifies the remotes are the lab forks
+- builds the Docker image automatically if it does not already exist
+- attaches to the running container if it is already up
+
+Inside the container, rebuild the RL agent when needed:
 
 ```bash
-cd ~/Documents/IOT-AI/testbed
-docker run -it --rm \
-  -v "$PWD":/workspace \
-  -v "$PWD/../contiki-ng":/workspace/contiki-ng \
-  -e DISPLAY=$DISPLAY \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  cooja-rl-env
+./build-agent.sh
 ```
 
-✅ You will now be inside the container at `/workspace`.
+Run `build-agent.sh` after a fresh clone or after changing Java agent code.
 
----
+## Run One Simulation
 
-### 🧪 5. Launch COOJA GUI (Inside Docker)
+Inside the container, a single simulation run can be launched with:
 
 ```bash
-cd /workspace
+python3 run.py \
+  --ararl-dir /workspace/experiments/ararl \
+  --logs-dir /workspace/results/data/manual_single/logs \
+  --gradle-root /workspace/contiki-ng/tools/cooja \
+  --nodes 60 \
+  --ppm 80 \
+  --topology-ids 01 \
+  --mask-file /workspace/mask.yaml \
+  --mask-name baseline \
+  --traffic-seeds 1 \
+  --jobs 1 \
+  --work-root /workspace/_work
+```
+
+This command runs exactly one task because it selects:
+
+- one node count
+- one PPM value
+- one topology
+- one traffic seed
+- one mask
+
+## Launch Cooja Manually
+
+Inside the container:
+
+```bash
 ./contiki-ng/tools/cooja/gradlew -p contiki-ng/tools/cooja run
 ```
 
-✅ The COOJA GUI window should appear on your host machine.
+## Important Paths Inside Docker
 
----
-
-### 🔧 6. Compile and Run a Simulation
-
-#### Compile Firmware
-
-Example (serial-ask from `moots/`):
-```bash
-cd /workspace/contiki-ng/examples/serial-ask
-make clean
-make TARGET=cooja
+```text
+/workspace/agent
+/workspace/experiments/ararl
+/workspace/mask.yaml
+/workspace/contiki-ng
+/workspace/contiki-ng/tools/cooja
 ```
 
-#### Load in COOJA
+## Troubleshooting
 
-1. File → New Simulation  
-2. Add Mote Type → Compile `serial-ask.c`  
-3. Add motes → layout topology  
-4. Start simulation  
-
----
-
-### 🧠 7. (Optional) Run Python RL Agent
-
-If your Contiki app communicates over serial socket:
-
-1. In COOJA → Tools → Serial Socket (set TCP port)
-2. In another terminal or inside the container:
-```bash
-python3 RL-agent/listener.py
-```
-
----
-
-## 📁 PROJECT STRUCTURE (ACTUAL)
-
-```
-IOT-AI/
-├── contiki-ng/                # Contiki-NG full repo (manually cloned)
-└── testbed/
-    ├── Dockerfile             # Docker environment
-    ├── include/               # MSP430 headers
-    ├── ldscripts/             # MSP430 linker scripts
-    ├── moots/                 # Your Contiki-NG .c apps (e.g., serial-ask)
-    ├── RL-agent/              # Python RL bridge
-    ├── msp430-gcc-*.tar.bz2   # MSP430 GCC toolchain
-```
-
----
-
-## 🔗 CONTIKI-NG REPO
-
-This setup works with the official Contiki-NG repository:
-
-```
-https://github.com/contiki-ng/contiki-ng.git
-```
-
-Use `--recurse-submodules` to ensure all dependencies are included.
-
----
-
-## 🆘 TROUBLESHOOTING
-
-- **COOJA GUI not opening?**
-  - Run `xhost +local:root` on host
-  - Test with `xeyes` inside the container
-
-- **Mote not printing?**
-  - Double-check `.c` file is compiled and linked to the correct target
-
-- **Python not receiving from COOJA?**
-  - Check Serial Socket plugin and ensure port numbers match
-
----
-
-**You're now ready to simulate and build intelligent IoT networks!**
+- If `docker_run.sh` says dependencies are missing, run `./setup_repo.sh`.
+- If someone changes a submodule remote, run `./setup_repo.sh` again to resync the lab-managed URLs.
+- If you changed Java agent code, rerun `./build-agent.sh` before starting simulations.
+- If the Cooja GUI does not open in your environment, check host display forwarding separately from this repository.
