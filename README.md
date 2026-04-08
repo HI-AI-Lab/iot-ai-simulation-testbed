@@ -2,14 +2,13 @@
 
 A Dockerized environment for running the IoT-AI simulation workflow with lab-controlled Contiki-NG and Cooja dependencies.
 
-The standard clone -> setup -> Docker -> build-agent -> run flow is intended to work on Linux machines, including Linux lab servers.
+The standard clone -> setup -> Docker -> build-agent -> run flow is tested on Linux.
 
 ## Prerequisites
 
 Before using this repository, make sure Docker is installed on the host machine.
 
-- On Linux, install Docker Engine and make sure the Docker service is running.
-- On Windows, install Docker Desktop and use Git Bash for the shell scripts.
+- Install Docker Engine and make sure the Docker service is running.
 
 ## Dependency Layout
 
@@ -35,8 +34,7 @@ Initialize the pinned Contiki-NG and Cooja checkouts:
 ./setup_repo.sh
 ```
 
-On Linux, the shell scripts can be run directly.
-On Windows, run the shell scripts from Git Bash.
+The shell scripts can be run directly on Linux.
 
 ## Daily Workflow
 
@@ -90,27 +88,34 @@ This command runs exactly one task because it selects:
 - one traffic seed
 - one mask
 
-## Launch Cooja Manually
+## Run A Small GA Test
 
-Inside the container:
+Inside the container, a small GA test can be launched with:
 
 ```bash
-./contiki-ng/tools/cooja/gradlew -p contiki-ng/tools/cooja run
+python3 run_ga.py \
+  --mask-file /workspace/masks/baseline/etx_re_qlr_hc.yaml \
+  --ararl-dir /workspace/experiments/ararl \
+  --gradle-root /workspace/contiki-ng/tools/cooja \
+  --work-root /workspace/_work \
+  --ga-out /workspace/results/data/manual_ga \
+  --nodes 60 \
+  --ppm 80 \
+  --topologies 1 \
+  --traffic-seeds 1 \
+  --population 4 \
+  --generations 2 \
+  --elite 1 \
+  --cx-rate 0.8 \
+  --mut-rate 0.08 \
+  --jobs 1
 ```
 
-## Important Paths Inside Docker
+This keeps the GA run intentionally small for testing:
 
-```text
-/workspace/agent
-/workspace/experiments/ararl
-/workspace/masks
-/workspace/contiki-ng
-/workspace/contiki-ng/tools/cooja
-```
-
-## Troubleshooting
-
-- If `docker_run.sh` says dependencies are missing, run `./setup_repo.sh`.
-- If someone changes a submodule remote, run `./setup_repo.sh` again to resync the lab-managed URLs.
-- If you changed Java agent code, rerun `./build-agent.sh` before starting simulations.
-- If the Cooja GUI does not open in your environment, check host display forwarding separately from this repository.
+- one node count
+- one PPM value
+- one topology
+- one traffic seed
+- small population
+- two generations
